@@ -26,6 +26,7 @@ class FreelancerController {
           gender: req.body.gender,
           dob: req.body.dob,
           tel_no: req.body.tel_no,
+          profile_pic: req.file ? req.file.originalname : "default.jpeg",
         });
         await freelancerPayload.save();
         res.status(200).json({ message: "Account created" });
@@ -53,6 +54,7 @@ class FreelancerController {
                 gender: req.body.gender,
                 dob: req.body.dob,
                 tel_no: req.body.tel_no,
+                profile_pic: req.file ? req.file.originalname : "default.jpeg",
               },
               {
                 new: true,
@@ -69,29 +71,29 @@ class FreelancerController {
       res.status(500).json({ message: error.message });
     }
   }
-    static async delete(req, res, next) {
-      try {
-        const freelancer = await freelancerModel.findByIdAndDelete(req.params.id);
-        if (freelancer) {
-          res.status(200).json({ message: "Freelancer deleted successfully" });
-        } else {
-          res.status(400).json({ message: "Freelancer not found" });
-        }
-      } catch (err) {
-        res.status(500).json({ message: err.message });
+  static async delete(req, res, next) {
+    try {
+      const freelancer = await freelancerModel.findByIdAndDelete(req.params.id);
+      if (freelancer) {
+        res.status(200).json({ message: "Freelancer deleted successfully" });
+      } else {
+        res.status(400).json({ message: "Freelancer not found" });
       }
+    } catch (err) {
+      res.status(500).json({ message: err.message });
+    }
   }
-    static async show(req, res, next) {
-      try {
-        const freelancer = await freelancerModel.findById(req.params.id);
-        if (freelancer) {
-          res.status(200).json({ freelancer });
-        } else {
-          res.status(400).json({ message: "Freelancer not found" });
-        }
-      } catch (err) {
-        res.status(500).json({ message: err.message });
+  static async show(req, res, next) {
+    try {
+      const freelancer = await freelancerModel.findById(req.params.id);
+      if (freelancer) {
+        res.status(200).json({ freelancer });
+      } else {
+        res.status(400).json({ message: "Freelancer not found" });
       }
+    } catch (err) {
+      res.status(500).json({ message: err.message });
+    }
   }
 }
 module.exports = FreelancerController;
