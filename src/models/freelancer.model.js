@@ -6,16 +6,7 @@ const freelancerSchema = new mongoose.Schema({
     required: false,
     default: "",
   },
-  candidate_id: {
-    type: String,
-    required: false,
-    default: "",
-  },
-  email: {
-    type: String,
-    required: true,
-  },
-  password: {
+  freelancer_id: {
     type: String,
     required: false,
     default: "",
@@ -23,6 +14,15 @@ const freelancerSchema = new mongoose.Schema({
   profile_pic: {
     type: String,
     required: false,
+  },
+  email_address: {
+    type: String,
+    required: true,
+  },
+  password: {
+    type: String,
+    required: false,
+    default: "",
   },
   first_name: {
     type: String,

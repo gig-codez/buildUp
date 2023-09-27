@@ -9,7 +9,11 @@ const adminSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    email: {
+    profile_pic: {
+        type: String,
+        required: false,
+      },
+    email_address: {
         type: String,
         required: true
     },
@@ -17,9 +21,5 @@ const adminSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    profile_picture: {
-        type: String,
-        required: true
-    }
 });
 module.exports = mongoose.model("admin", adminSchema);

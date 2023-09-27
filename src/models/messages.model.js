@@ -12,6 +12,10 @@ const messagesModel = new mongoose.Schema({
     type: String,
     required: true,
   },
+  message: {
+    type: String,
+    required: true,
+  },
   time: {
     type: String,
     required: true,

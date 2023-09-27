@@ -4,11 +4,11 @@ const jobContractSchema = new mongoose.Schema({
     type: mongoose.Types.ObjectId,
     required: true,
   },
-  contractee_id: {
+  contractee_user_id: {
     type: mongoose.Types.ObjectId,
     required: true,
   },
-  contractor_id: {
+  contractor_user_id: {
     type: mongoose.Types.ObjectId,
     required: true,
   },
@@ -28,7 +28,7 @@ const jobContractSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  outstanding_detail: {
+  outstanding_details: {
     type: String,
     required: true,
   },

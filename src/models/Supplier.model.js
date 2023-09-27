@@ -8,15 +8,15 @@ const supplierModel = new mongoose.SupplierModel({
     type: String,
     required: true,
   },
-  business_email: {
+  profile_pic: {
+    type: String,
+    required: true,
+  },
+  business_email_address: {
     type: String,
     required: true,
   },
   password: {
-    type: String,
-    required: true,
-  },
-  profile_pic: {
     type: String,
     required: true,
   },

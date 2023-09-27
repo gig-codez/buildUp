@@ -10,7 +10,11 @@ const employerModel = new mongoose.Schema({
     required: false,
     default: "",
   },
-  email: {
+  profile_pic: {
+    type: String,
+    required: false,
+  },
+  email_address: {
     type: String,
     required: true,
     }, 
@@ -25,10 +29,6 @@ const employerModel = new mongoose.Schema({
   last_name: {
     type: String,
     required: true,
-  },
-  profile_pic: {
-    type: String,
-    required: false,
   },
   TIN_NIN: {
     type: String,
