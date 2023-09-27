@@ -9,7 +9,7 @@ const messagesModel = new mongoose.Schema({
     required: true,
   },
   receiver_id: {
-    type: String,
+    type: mongoose.Types.ObjectId,
     required: true,
   },
   message: {

@@ -2,12 +2,12 @@ const { default: mongoose } = require("mongoose");
 
 const freelancerSchema = new mongoose.Schema({
   user_id: {
-    type: String,
+    type: mongoose.Types.ObjectId,
     required: false,
     default: "",
   },
   freelancer_id: {
-    type: String,
+    type: mongoose.Types.ObjectId,
     required: false,
     default: "",
   },

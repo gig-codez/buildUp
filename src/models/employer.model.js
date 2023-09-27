@@ -1,12 +1,12 @@
 const { default: mongoose } = require("mongoose");
 const employerModel = new mongoose.Schema({
   user_id: {
-    type: String,
+    type: mongoose.Types.ObjectId,
     required: false,
     default: "",
   },
   employer_id: {
-    type: String,
+    type: mongoose.Types.ObjectId,
     required: false,
     default: "",
   },

@@ -5,7 +5,7 @@ const supplierModel = new mongoose.SupplierModel({
     required: false,
   },
   supplier_id: {
-    type: String,
+    type: mongoose.Types.ObjectId,
     required: true,
   },
   profile_pic: {

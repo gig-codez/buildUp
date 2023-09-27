@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 
 const adminSchema = new mongoose.Schema({
     user_id: {
-        type: String,
+        type: mongoose.Types.ObjectId,
         required: true
     },
     admin_id: {
