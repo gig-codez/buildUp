@@ -16,6 +16,14 @@ const supplierModel = new mongoose.SupplierModel({
     type: String,
     required: true,
   },
+  about_business: {
+    type: String,
+    required: true,
+  },
+  type_of_product: {
+    type: String,
+    required: true,
+  },
   password: {
     type: String,
     required: true,

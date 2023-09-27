@@ -4,7 +4,7 @@ const socket = io("http://localhost:4000")
 const messageCotainer = document.getElementById('send-container')
 const mesasgeInput = document.getElementById('message-input')
 
-const name = document.getElementById('user_name')
+const name = document.getElementById('first_name') //getting the user's name
 
 appendMessage('You joined')
 socket.emit('new-user', name)
