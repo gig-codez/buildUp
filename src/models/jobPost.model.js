@@ -1,26 +1,34 @@
 const { default: mongoose } = require("mongoose");
-const jobContractSchema = new mongoose.Schema({
-  job_contract_id: {
+const jobPostSchema = new mongoose.Schema({
+  job_post_id: {
     type: mongoose.Types.ObjectId,
     required: true,
   },
-  contractee_id: {
+  employer_id: {
     type: mongoose.Types.ObjectId,
     required: true,
   },
-  contractor_id: {
-    type: mongoose.Types.ObjectId,
-    required: true,
-  },
-  payment_amount: {
-    type: Number,
-    required: true,
-  },
-  start_date: {
+  job_title: {
     type: String,
     required: true,
   },
-  end_date: {
+  job_description: {
+    type: Number,
+    required: true,
+  },
+  salary_type: {
+    type: String,
+    required: true,
+  },
+  salary_range_max: {
+    type: Number,
+    required: true,
+  },
+  salary_range_min: {
+    type: Number,
+    required: true,
+  },
+  job_duration: {
     type: String,
     required: true,
   },
@@ -28,17 +36,9 @@ const jobContractSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  outstanding_detail: {
-    type: String,
-    required: true,
-  },
-  time: {
-    type: String,
-    required: true,
-  },
-  date: {
-    type: String,
+  payment_amount: {
+    type: Number,
     required: true,
   },
 });
-module.exports = mongoose.model("jobContract", jobContractSchema);
+module.exports = mongoose.model("jobPost", jobPostSchema);

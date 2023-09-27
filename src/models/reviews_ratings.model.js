@@ -1,24 +1,20 @@
 const { default: mongoose } = require("mongoose");
-const messagesModel = new mongoose.Schema({
-  message_id: {
+const reviewsRatingsSchema = new mongoose.Schema({
+  review_id: {
     type: mongoose.Types.ObjectId,
     required: true,
   },
-  sender_id: {
+  user_id: {
     type: mongoose.Types.ObjectId,
     required: true,
   },
-  receiver_id: {
+  review_message: {
     type: String,
     required: true,
   },
-  time: {
-    type: String,
-    required: true,
-  },
-  date: {
-    type: String,
+  rating: {
+    type: Number,
     required: true,
   },
 });
-module.exports = mongoose.model("messages", messagesModel);
+module.exports = mongoose.model("reviewsRatings", reviewsRatingsSchema);
