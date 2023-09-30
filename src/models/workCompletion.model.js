@@ -1,28 +1,28 @@
 const { default: mongoose } = require("mongoose");
-const messagesModel = new mongoose.Schema({
-  message_id: {
+const workCompletionSchema = new mongoose.Schema({
+  work_completion_id: {
     type: mongoose.Types.ObjectId,
     required: true,
   },
-  sender_id: {
+  user_id: {
     type: mongoose.Types.ObjectId,
     required: true,
   },
-  receiver_id: {
+  job_contract_id: {
     type: mongoose.Types.ObjectId,
-    required: true,
-  },
-  message: {
-    type: String,
     required: true,
   },
   time: {
-    type: String,
+    type: Number,
     required: true,
   },
   date: {
     type: String,
     required: true,
   },
+  progress_document: {
+    type: String,
+    required: true,
+  },
 });
-module.exports = mongoose.model("messages", messagesModel);
+module.exports = mongoose.model("workCompletion", workCompletionSchema);

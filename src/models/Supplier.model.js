@@ -1,18 +1,18 @@
 const { default: mongoose } = require("mongoose");
 const supplierModel = new mongoose.SupplierModel({
-  freelancer: {
+  user_id: {
     type: mongoose.Types.ObjectId,
     required: false,
   },
-  business_name: {
+  supplier_id: {
+    type: mongoose.Types.ObjectId,
+    required: true,
+  },
+  profile_pic: {
     type: String,
     required: true,
   },
-  year_of_foundation: {
-    type: Number,
-    required: true,
-  },
-  business_email: {
+  business_email_address: {
     type: String,
     required: true,
   },
@@ -20,18 +20,29 @@ const supplierModel = new mongoose.SupplierModel({
     type: String,
     required: true,
   },
+  type_of_product: {
+    type: String,
+    required: true,
+  },
+  password: {
+    type: String,
+    required: true,
+  },
+  country: {
+    type: String,
+    required: true,
+  },
   TIN: {
     type: String,
     required: true,
   },
-  business_address: {
+  business_ver_document: {
     type: String,
     required: true,
   },
-  social_links: {
-    type: Array,
-    required: false,
-    default: [],
+  business_tel: {
+    type: String,
+    required: true,
   },
 });
 module.exports = mongoose.model("supplier", supplierModel);

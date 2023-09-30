@@ -1,14 +1,28 @@
 const { default: mongoose } = require("mongoose");
 
 const freelancerSchema = new mongoose.Schema({
-  username: {
-    type: String,
+  user_id: {
+    type: mongoose.Types.ObjectId,
+    required: false,
+    default: "",
+  },
+  freelancer_id: {
+    type: mongoose.Types.ObjectId,
     required: false,
     default: "",
   },
   profile_pic: {
     type: String,
     required: false,
+  },
+  email_address: {
+    type: String,
+    required: true,
+  },
+  password: {
+    type: String,
+    required: false,
+    default: "",
   },
   first_name: {
     type: String,
@@ -18,25 +32,24 @@ const freelancerSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  email: {
-    type: String,
-    required: true,
-  },
-  password: {
-    type: String,
-    required: false,
-    default: "",
-  },
-  gender: {
-    type: String,
-    required: true,
-  },
-  dob: {
-    type: String,
-    required: true,
-  },
-  tel_no: {
+  tel_num: {
     type: Number,
+    required: true,
+  },
+  country: {
+    type: String,
+    required: true,
+  },
+  NIN: {
+    type: Number,
+    required: true,
+  },
+  profession: {
+    type: String,
+    required: true,
+  },
+  cv_document: {
+    type: String,
     required: true,
   },
 });

@@ -1,18 +1,34 @@
 const { default: mongoose } = require("mongoose");
 const paymentModel = new mongoose.Schema({
-    freelancer: {
+    payment_id: {
         type: mongoose.Types.ObjectId,
         required: true,
     },
-    employer: {
+    contractee_user_id: {
         type: mongoose.Types.ObjectId,
         required: true,
     },
-    amount: {
+    contractor_user_id: {
+        type: mongoose.Types.ObjectId,
+        required: true,
+    },
+    job_contract_id: {
+        type: mongoose.Types.ObjectId,
+        required: true,
+    },
+    payment_amount: {
         type: Number,
         required: true,
     },
-    date_time: {
+    service_description: {
+        type: String,
+        required: true,
+    },
+    time: {
+        type: String,
+        required: true,
+    },
+    date: {
         type: String,
         required: true,
     },
