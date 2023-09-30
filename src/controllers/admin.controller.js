@@ -1,6 +1,7 @@
 const adminSchema = require("../models/admin.model");
 const bcrypt = require("bcrypt");
 class AdminController {
+  // creating admins
   static async store(req, res, next) {
     //  first check if admin exists
     let adminData = await adminSchema.findOne({ email: req.body.email });

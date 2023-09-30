@@ -19,16 +19,16 @@ const dbOptions = {
 };
 
 // connecting to the database
-// mongoose.set("strictQuery", false);
-// mongoose.connect(process.env.DB_URL, dbOptions)
-//   .then(() => {
-//     console.log("Connected to db");
-//   })
-//   .catch((err) => {
-//     console.error("Connection error", err);
-//     process.exit();
-//   });
+mongoose.set("strictQuery", false);
+mongoose.connect(process.env.DB_URL, dbOptions)
+  .then(() => {
+    console.log("Connected to db");
+  })
+  .catch((err) => {
+    console.error("Connection error", err);
+    process.exit();
+  });
   // end of db connection
 app.listen(4000, () => {
-  console.log(`Server running on port ${process.env.PORT}`);
+  console.log(`Server running on port => http://127.0.0.1:${process.env.PORT}`);
 });
