@@ -1,34 +1,22 @@
 const { default: mongoose } = require("mongoose");
-const jobContractSchema = new mongoose.Schema({
-  job_contract_id: {
+const meetingsSchema = new mongoose.Schema({
+  meeting_id: {
     type: mongoose.Types.ObjectId,
     required: true,
   },
-  contractee_user_id: {
+  employer_id: {
     type: mongoose.Types.ObjectId,
     required: true,
   },
-  contractor_user_id: {
+  job_seeker_id: {
     type: mongoose.Types.ObjectId,
     required: true,
   },
-  payment_amount: {
+  meeting_subject: {
     type: Number,
     required: true,
   },
-  start_date: {
-    type: String,
-    required: true,
-  },
-  end_date: {
-    type: String,
-    required: true,
-  },
-  service_description: {
-    type: String,
-    required: true,
-  },
-  outstanding_details: {
+  meeting_link: {
     type: String,
     required: true,
   },
@@ -41,4 +29,4 @@ const jobContractSchema = new mongoose.Schema({
     required: true,
   },
 });
-module.exports = mongoose.model("jobContract", jobContractSchema);
+module.exports = mongoose.model("meetings", meetingsSchema);
