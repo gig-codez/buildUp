@@ -1,8 +1,8 @@
 const messagesModel = require("../models/messages.model");
 const socket = io("http://localhost:4000")
 
-const messageCotainer = document.getElementById('send-container')
-const mesasgeInput = document.getElementById('message-input')
+const messageContainer = document.getElementById('send-container')
+const messageInput = document.getElementById('message-input')
 
 const name = document.getElementById('first_name') //getting the user's name
 
@@ -30,7 +30,7 @@ messageForm.addEventListener('submit', e =>{
 })
 
 function appendMessage(message) {
-  const messagElement = document.createElement('div')
+  const messageElement = document.createElement('div')
   messageElement.innerText = message
   messageContainer.append(messageElement)
 }

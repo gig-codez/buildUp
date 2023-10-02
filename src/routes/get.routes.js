@@ -4,6 +4,6 @@ const AccountVerification = require("../Auth/emailVerification");
 const router = express.Router();
 
 router.get("/admin", AdminController.index);
-router.get("/verifyEmail/:id",AccountVerification.verifyToken);
+router.get("/verifyToken/:id",AccountVerification.verifyToken);
 
 module.exports = router;

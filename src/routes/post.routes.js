@@ -7,9 +7,9 @@ const imageUpload = require("../helpers/imageUpload");
 const AccountVerification = require("../Auth/emailVerification");
 const router = express.Router();
 
-// accout verification
+// account verification
 router.post('/verifyEmail', AccountVerification.verifyEmail);
-//admin Routes
+//admin Routes4
 router.post("/create/admin", AdminController.store);
 router.post("/login/admin", AdminLogin.login);
 // freelancer routes
