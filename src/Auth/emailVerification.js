@@ -78,4 +78,5 @@ class AccountVerification {
     }
   }
 }
+
 module.exports = AccountVerification;

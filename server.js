@@ -10,24 +10,24 @@ app.use("/image", express.static("./uploads"));
 app.use(express.json());
 
 //web socket server connection for chatrooms
-const io = require("socket.io")();
-const users = {};
-io.on("connection", (socket) => {
-  socket.on("new-user", (name) => {
-    users[socket.id] = name;
-    socket.broadcast.emit("user-connected", name);
-  });
-  socket.on("send-chat-message", (message) => {
-    socket.broadcast.emit("chat-message", {
-      message: message,
-      name: users[socket.id],
-    });
-  });
-  socket.on("disconnect", () => {
-    socket.broadcast.emit("user-disconnected", user[socket.id]);
-    delete users[socket.id];
-  });
-});
+// const io = require("socket.io");
+// const users = {};
+// io().on("connection", (socket) => {
+//   socket.on("new-user", (name) => {
+//     users[socket.id] = name;
+//     socket.broadcast.emit("user-connected", name);
+//   });
+//   socket.on("send-chat-message", (message) => {
+//     socket.broadcast.emit("chat-message", {
+//       message: message,
+//       name: users[socket.id],
+//     });
+//   });
+//   socket.on("disconnect", () => {
+//     socket.broadcast.emit("user-disconnected", user[socket.id]);
+//     delete users[socket.id];
+//   });
+// });
 
 // register routes
 app.use("/get", require("./src/routes/get.routes"));
@@ -48,7 +48,7 @@ mongoose.set("strictQuery", false);
 mongoose
   .connect(process.env.DB_URL, dbOptions)
   .then(() => {
-    console.log("Connected to db");
+    console.log("Connected to database successful\n");
   })
   .catch((err) => {
     console.error("Connection error", err);
@@ -58,4 +58,5 @@ mongoose
 // end of db connection
 app.listen(4000, () => {
   console.log(`Server running on port => http://127.0.0.1:${process.env.PORT}`);
+  console.table("\nWaiting for database connection");
 });

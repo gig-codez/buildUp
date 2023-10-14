@@ -15,15 +15,17 @@ class AdminLogin {
           expiresIn: "1h",
         });
         if (isMatch) {
-            res.status(200).json({
-                token: token,
-                userId: userAccount._id,
-                name: userAccount.name,
-                email: userAccount.email
-            });
+          res.status(200).json({
+            token: token,
+            userId: userAccount._id,
+            name: userAccount.name,
+            email: userAccount.email,
+          });
         } else {
           res.status(401).json({ message: "Invalid email or password" });
         }
+      } else {
+        res.status(400).json({ message: "No user founds" });
       }
     } catch (error) {
       res.status(500).json({ message: error.message });
