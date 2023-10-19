@@ -1,5 +1,5 @@
 const express = require("express");
-const EmployerController = require("../controllers/employer.controller");
+// const EmployerController = require("../controllers/employer.controller");
 const AdminController = require("../controllers/admin.controller");
 const router = express.Router();
 
