@@ -38,7 +38,7 @@ const freelancerSchema = new mongoose.Schema({
   },
   country: {
     type: String,
-    required: true,
+    required: false,
   },
   NIN: {
     type: Number,
@@ -46,11 +46,11 @@ const freelancerSchema = new mongoose.Schema({
   },
   profession: {
     type: String,
-    required: true,
+    required: false,
   },
   cv_document: {
     type: String,
-    required: true,
+    required: false,
   },
 });
 

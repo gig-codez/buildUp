@@ -17,10 +17,14 @@ const employerModel = new mongoose.Schema({
   email_address: {
     type: String,
     required: true,
-    }, 
+  },
+  address: {
+    type: String,
+    required: false,
+  },
   password: {
-      type: String,
-      required: true,
+    type: String,
+    required: true,
   },
   first_name: {
     type: String,
@@ -32,10 +36,18 @@ const employerModel = new mongoose.Schema({
   },
   TIN_NIN: {
     type: String,
-    required: false,
+    required: true,
   },
   country: {
     type: String,
+    required: false,
+  },
+  business_name: {
+    type: String,
+    required: true,
+  },
+  year_of_foundation: {
+    type: Number,
     required: false,
   },
   business_ver_document: {
