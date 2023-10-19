@@ -1,6 +1,5 @@
 const { default: mongoose } = require("mongoose");
 const employerModel = new mongoose.Schema({
- 
   profile_pic: {
     type: String,
     required: false,
@@ -33,25 +32,6 @@ const employerModel = new mongoose.Schema({
     type: String,
     required: false,
   },
-  business_name: {
-    type: String,
-    required: true,
-  },
-  year_of_foundation: {
-    type: Number,
-    required: false,
-  },
-  business_ver_document: {
-    type: String,
-    required: false,
-  },
-  about_business: {
-    type: String,
-    required: false,
-  },
-  business_tel: {
-    type: String,
-    required: false,
-  },
+
 });
 module.exports = mongoose.model("employer", employerModel);

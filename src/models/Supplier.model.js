@@ -1,13 +1,5 @@
 const { default: mongoose } = require("mongoose");
 const supplierModel = new mongoose.SupplierModel({
-  user_id: {
-    type: mongoose.Types.ObjectId,
-    required: false,
-  },
-  supplier_id: {
-    type: mongoose.Types.ObjectId,
-    required: true,
-  },
   profile_pic: {
     type: String,
     required: true,
