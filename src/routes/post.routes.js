@@ -3,10 +3,12 @@ const AdminController = require("../controllers/admin.controller");
 const AdminLogin = require("../Auth/adminLogin");
 const FreelancerController = require("../controllers/freelancer.controller");
 const FreelancerLogin = require("../Auth/freelancerLogin");
-// const EmployerController = require("../controllers/employer.controller");
 const imageUpload = require("../helpers/imageUpload");
 const AccountVerification = require("../Auth/emailVerification");
 const RoleController = require("../controllers/role.controller");
+const EmployerController = require("../controllers/employer.controller");
+const BusinessController = require("../controllers/business.controller");
+const SupplierController = require("../controllers/supplier.controller");
 const router = express.Router();
 
 // account verification
@@ -23,4 +25,10 @@ router.post(
 );
 router.post("/login/freelancer", FreelancerLogin.login);
 
+//employer account
+router.post("/create/employer", EmployerController.store);
+//business of employer
+router.post("/create/business/:id", BusinessController.store);
+//supplier
+router.post("/create/supplier", SupplierController.store);
 module.exports = router;

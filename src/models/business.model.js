@@ -3,8 +3,8 @@ const { default: mongoose } = require("mongoose");
 const businessModel = mongoose.Schema(
   {
     employer: {
-          type: mongoose.Types.ObjectId,
-        ref:'employer',
+      type: mongoose.Types.ObjectId,
+      ref: "employer",
       required: true,
     },
     business_name: {
@@ -20,7 +20,7 @@ const businessModel = mongoose.Schema(
       required: true,
     },
     tin_number: {
-      type: Number,
+      type: String,
       required: false,
     },
     address: {
@@ -41,7 +41,7 @@ const businessModel = mongoose.Schema(
     },
   },
   {
-    timestamps,
+    timestamps: true,
   }
 );
 module.exports = mongoose.model("business", businessModel);
