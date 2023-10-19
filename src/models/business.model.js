@@ -31,6 +31,14 @@ const businessModel = mongoose.Schema(
       type: String,
       required: false,
     },
+    about_business: {
+      type: String,
+      required: false,
+    },
+    business_ver_document: {
+      type: String,
+      required: false,
+    },
   },
   {
     timestamps,

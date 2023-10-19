@@ -1,15 +1,5 @@
 const { default: mongoose } = require("mongoose");
 const employerModel = new mongoose.Schema({
-  user_id: {
-    type: mongoose.Types.ObjectId,
-    required: false,
-    default: "",
-  },
-  employer_id: {
-    type: mongoose.Types.ObjectId,
-    required: false,
-    default: "",
-  },
   profile_pic: {
     type: String,
     required: false,
@@ -38,17 +28,6 @@ const employerModel = new mongoose.Schema({
     type: String,
     required: false,
   },
-  business_ver_document: {
-    type: String,
-    required: false,
-  },
-  about_business: {
-    type: String,
-    required: false,
-  },
-  business_tel: {
-    type: String,
-    required: false,
-  },
+
 });
 module.exports = mongoose.model("employer", employerModel);
