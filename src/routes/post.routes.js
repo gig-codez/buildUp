@@ -26,7 +26,7 @@ router.post(
 router.post("/login/freelancer", FreelancerLogin.login);
 
 //employer account
-router.post("/create/employer", EmployerController.store);
+router.post("/create/employer", EmployerController.storeEmployer);
 //business of employer
 router.post("/create/business/:id", BusinessController.store);
 //supplier

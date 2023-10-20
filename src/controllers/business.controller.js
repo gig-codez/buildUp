@@ -11,7 +11,7 @@ class BusinessController {
   }
   static async store(req, res) {
     if (!req.body.employer) req.body.employer = req.params.id;
-   
+
     try {
       const businessData = await businessModel.findOne({
         business_email: req.body.business_email,
@@ -31,6 +31,60 @@ class BusinessController {
         });
       }
     } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  }
+  static async updateBusiness(req, res) {
+    try {
+      const updatedBusiness = await businessModel.findByIdAndUpdate(
+        req.params.id,
+        req.body,
+        { new: true }
+      );
+
+      if (!updatedBusiness) {
+        return res.status(404).json({ message: "Business not found" });
+      }
+
+      res.status(200).json({
+        message: "Business updated successfully",
+        data: updatedBusiness,
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: error.message });
+    }
+  }
+  static async getBusinessById(req, res) {
+    try {
+      const business = await businessModel.findById(req.params.id);
+
+      if (!business) {
+        return res.status(404).json({ message: "Business not found" });
+      }
+
+      res.status(200).json({ data: business });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: error.message });
+    }
+  }
+  static async deleteBusiness(req, res) {
+    try {
+      const businessId = req.params.id;
+      const deletedBusiness = await businessModel.findByIdAndDelete(businessId);
+
+      if (!deletedBusiness) {
+        return res.status(404).json({ message: "Business not found" });
+      }
+      const employerId = deletedBusiness.employer;
+      await EmployerModel.findByIdAndUpdate(employerId, {
+        $pull: { business: businessId },
+      });
+
+      res.status(200).json({ message: "Business deleted successfully" });
+    } catch (error) {
+      console.error(error);
       res.status(500).json({ message: error.message });
     }
   }
