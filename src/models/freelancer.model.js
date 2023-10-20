@@ -6,7 +6,7 @@ const freelancerSchema = new mongoose.Schema(
       type: String,
       required: false,
     },
-    email_address: {
+    email: {
       type: String,
       required: true,
     },
@@ -30,7 +30,7 @@ const freelancerSchema = new mongoose.Schema(
       type: String,
       required: false,
     },
-    NIN: {
+    NIN_NUM: {
       type: String,
       required: true,
     },
@@ -38,6 +38,11 @@ const freelancerSchema = new mongoose.Schema(
       type: String,
       required: false,
     },
+    address: {
+      type: String,
+      required: true,
+    },
+    gender: { type: String, enum: ["Male", "Female"], required: true },
     cv_document: {
       type: String,
       required: false,
