@@ -1,57 +1,56 @@
 const { default: mongoose } = require("mongoose");
 
-const freelancerSchema = new mongoose.Schema({
-  user_id: {
-    type: mongoose.Types.ObjectId,
-    required: false,
-    default: "",
+const freelancerSchema = new mongoose.Schema(
+  {
+    profile_pic: {
+      type: String,
+      required: false,
+    },
+    email: {
+      type: String,
+      required: true,
+    },
+    password: {
+      type: String,
+      required: true,
+    },
+    first_name: {
+      type: String,
+      required: true,
+    },
+    last_name: {
+      type: String,
+      required: true,
+    },
+    tel_num: {
+      type: Number,
+      required: true,
+    },
+    country: {
+      type: String,
+      required: false,
+    },
+    NIN_NUM: {
+      type: String,
+      required: true,
+    },
+    profession: {
+      type: String,
+      required: false,
+    },
+    address: {
+      type: String,
+      required: true,
+    },
+    gender: { type: String, enum: ["Male", "Female"], required: true },
+    cv_document: {
+      type: String,
+      required: false,
+    },
   },
-  freelancer_id: {
-    type: mongoose.Types.ObjectId,
-    required: false,
-    default: "",
-  },
-  profile_pic: {
-    type: String,
-    required: false,
-  },
-  email_address: {
-    type: String,
-    required: true,
-  },
-  password: {
-    type: String,
-    required: false,
-    default: "",
-  },
-  first_name: {
-    type: String,
-    required: true,
-  },
-  last_name: {
-    type: String,
-    required: true,
-  },
-  tel_num: {
-    type: Number,
-    required: true,
-  },
-  country: {
-    type: String,
-    required: true,
-  },
-  NIN: {
-    type: Number,
-    required: true,
-  },
-  profession: {
-    type: String,
-    required: true,
-  },
-  cv_document: {
-    type: String,
-    required: true,
-  },
-});
+  {
+    timestamps: true,
+  }
+);
 
 module.exports = mongoose.model("freelancer", freelancerSchema);

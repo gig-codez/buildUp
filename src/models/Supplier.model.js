@@ -1,8 +1,12 @@
 const { default: mongoose } = require("mongoose");
-const supplierModel = new mongoose.SupplierModel({
-  profile_pic: {
+const supplierModel = new mongoose.Schema({
+  business_name: {
     type: String,
     required: true,
+  },
+  profile_pic: {
+    type: String,
+    required: false,
   },
   business_email_address: {
     type: String,
@@ -10,11 +14,11 @@ const supplierModel = new mongoose.SupplierModel({
   },
   about_business: {
     type: String,
-    required: true,
+    required: false,
   },
   type_of_product: {
     type: String,
-    required: true,
+    required: false,
   },
   password: {
     type: String,
@@ -22,7 +26,7 @@ const supplierModel = new mongoose.SupplierModel({
   },
   country: {
     type: String,
-    required: true,
+    required: false,
   },
   TIN: {
     type: String,
@@ -30,7 +34,7 @@ const supplierModel = new mongoose.SupplierModel({
   },
   business_ver_document: {
     type: String,
-    required: true,
+    required: false,
   },
   business_tel: {
     type: String,
