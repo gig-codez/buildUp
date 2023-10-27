@@ -30,6 +30,7 @@ class SupplierController {
               email_address: req.body.email_address,
               TIN: req.body.TIN,
               business_tel: req.body.business_tel,
+              role: req.body.role,
             });
             const newSupplier = await supplierPayload.save();
             res.status(200).json({

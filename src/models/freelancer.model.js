@@ -47,6 +47,11 @@ const freelancerSchema = new mongoose.Schema(
       type: String,
       required: false,
     },
+    role: {
+      type: mongoose.Types.ObjectId,
+      ref: "role",
+      required: true,
+    },
   },
   {
     timestamps: true,

@@ -16,6 +16,7 @@ class EmployerController {
     }
   }
   static async storeEmployer(req, res) {
+    console.log(req.body);
     try {
       const employerData = await employerModel.findOne({
         email_address: req.body.email_address,
@@ -34,8 +35,11 @@ class EmployerController {
               email_address: req.body.email_address,
               TIN_NIN: req.body.TIN_NIN,
               country: req.body.country,
+              role: req.body.role,
             });
+            console.log(req.body);
             const newEmployee = await employerPayload.save();
+            console.log(newEmployee);
             res.status(200).json({
               message: "Employer created successfully",
               data: newEmployee,
@@ -57,6 +61,7 @@ class EmployerController {
           email_address: req.body.email_address,
           TIN_NIN: req.body.TIN_NIN,
           country: req.body.country,
+           
         },
         { new: true }
       );

@@ -29,6 +29,7 @@ class FreelancerController {
           gender: req.body.gender,
           address: req.body.address,
           tel_num: req.body.tel_num,
+          role: req.body.role,
         });
         const newfreelancer = await freelancerPayload.save();
         res
@@ -61,6 +62,7 @@ class FreelancerController {
                 address: req.body.address,
                 gender: req.body.gender,
                 tel_num: req.body.tel_num,
+                role: req.body.role,
               },
               {
                 new: true,
