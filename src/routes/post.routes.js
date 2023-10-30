@@ -9,6 +9,8 @@ const RoleController = require("../controllers/role.controller");
 const EmployerController = require("../controllers/employer.controller");
 const BusinessController = require("../controllers/business.controller");
 const SupplierController = require("../controllers/supplier.controller");
+const employerlogin = require("../Auth/employerlogin");
+const SupplierLogin = require("../Auth/supplierlogin");
 const router = express.Router();
 
 // account verification
@@ -26,9 +28,11 @@ router.post(
 router.post("/login/freelancer", FreelancerLogin.login);
 
 //employer account
+router.post("/login/employer", employerlogin.login);
 router.post("/create/employer", EmployerController.storeEmployer);
 //business of employer
 router.post("/create/business/:id", BusinessController.store);
 //supplier
 router.post("/create/supplier", SupplierController.store);
+router.post("/login/supplier", SupplierLogin.login);
 module.exports = router;
