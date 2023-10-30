@@ -29,11 +29,6 @@ const employerModel = new mongoose.Schema(
       type: String,
       required: false,
     },
-    role: {
-      type: mongoose.Types.ObjectId,
-      ref: "role",
-      required: true,
-    },
     business: [{ type: mongoose.Types.ObjectId, ref: "business" }],
   },
   {

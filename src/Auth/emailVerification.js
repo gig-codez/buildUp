@@ -1,6 +1,7 @@
 const nodemailer = require("nodemailer");
 const jwt = require("jsonwebtoken");
 const adminModel = require("../models/admin.model");
+const freelancerModel = require("../models/freelancer.model");
 // const employerModel = require("../models/employer.model");
 require("dotenv").config();
 //
@@ -10,11 +11,11 @@ class AccountVerification {
   static async verifyEmail(req, res, next) {
     try {
       let email = req.body.email;
-      let auth = {
+      const admin_auth = {
         user: process.env.EMAIL,
         pass: process.env.PASSWORD,
       };
-      console.log(auth);
+
       //  first if the email provided exists in any of the user modules
       //  if it does, then send an email to the user to verify the email
       //  if it doesn't, then send an error message
@@ -33,10 +34,7 @@ class AccountVerification {
         const link = `http://127.0.0.1:4000/get/verifyToken/${token}`;
         const transporter = nodemailer.createTransport({
           service: "gmail",
-          auth: {
-            user: process.env.EMAIL,
-            pass: process.env.PASSWORD,
-          },
+          auth: admin_auth,
         });
         const mailOptions = {
           from: process.env.EMAIL,
@@ -59,6 +57,49 @@ class AccountVerification {
       res.status(500).json({ message: error.message });
     }
   }
+
+  // function to handle otp sent to the account owner
+  static async sendOtp(req, res) {
+    try {
+      let email = req.body.email;
+      const user = freelancerModel.findOne({ email_address: email });
+      if (!user) {
+        res.status(400).json({ message: `${email} does not exist` });
+      } else {
+        // object that holds the admin's credentials
+        const admin_auth = {
+          user: process.env.EMAIL,
+          pass: process.env.PASSWORD,
+        };
+        // creating the transporter, for sending otp mails to designated users
+        const transporter = nodemailer.createTransport({
+          service: "gmail",
+          auth: admin_auth,
+        });
+        // mail configuration
+        const mailOptions = {
+          from: process.env.EMAIL,
+          to: email,
+          subject: "OTP code",
+          html: `<h2>Your OTP code is <b>${user.otp}</b></h2>
+               `,
+        };
+        // sending the mail
+        transporter.sendMail(mailOptions, (err, info) => {
+          if (err) {
+            res.status(500).json({ mail_error: err });
+          } else {
+            res
+              .status(200)
+              .json({ message: `Email sent successfully => ${info}` });
+          }
+        });
+      }
+    } catch (error) {
+      res.status(500).json({ message: `${error.message}` });
+    }
+  }
+  q;
   static async verifyToken(req, res) {
     try {
       // console.log(req.params.id);

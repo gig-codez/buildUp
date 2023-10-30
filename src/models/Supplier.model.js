@@ -40,10 +40,5 @@ const supplierModel = new mongoose.Schema({
     type: String,
     required: true,
   },
-  role: {
-    type: mongoose.Types.ObjectId,
-    ref: "role",
-    required: true,
-  },
 });
 module.exports = mongoose.model("supplier", supplierModel);
