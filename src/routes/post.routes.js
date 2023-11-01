@@ -12,6 +12,7 @@ const SupplierController = require("../controllers/supplier.controller");
 const employerlogin = require("../Auth/employerlogin");
 const SupplierLogin = require("../Auth/supplierlogin");
 const OtpController = require("../controllers/otpController");
+const VerifyOtp = require("../Auth/verifyotp");
 const router = express.Router();
 
 // account verification
@@ -38,5 +39,6 @@ router.post("/create/supplier", SupplierController.store);
 router.post("/login/supplier", SupplierLogin.login);
 //otp
 router.post("/send-otp", OtpController.sendOTP);
+router.post("/verifyotp", VerifyOtp.verify);
 
 module.exports = router;
