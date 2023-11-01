@@ -27,7 +27,6 @@ class SupplierController {
               business_name: req.body.business_name,
               business_email_address: req.body.business_email_address,
               password: hashedPassword,
-              email_address: req.body.email_address,
               TIN: req.body.TIN,
               business_tel: req.body.business_tel,
               role: req.body.role,

@@ -7,7 +7,7 @@ class employerlogin {
   static async login(req, res) {
     try {
       const employer = await employerModel.findOne({
-        email: req.body.email,
+        email_address: req.body.email_address,
       });
       if (employer) {
         let isMatch = bcrypt.compareSync(req.body.password, employer.password);
@@ -18,8 +18,8 @@ class employerlogin {
           res.status(200).json({
             token: token,
             userId: employer._id,
-            name: employer.name,
-            email: employer.email,
+            first_name: employer.first_name,
+            email_address: employer.email_address,
           });
         } else {
           res.status(401).json({ message: "Invalid email or password" });

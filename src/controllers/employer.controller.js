@@ -44,6 +44,7 @@ class EmployerController {
               message: "Employer created successfully",
               data: newEmployee,
             });
+
           }
         });
       }

@@ -9,6 +9,7 @@ class FreelancerLogin {
       const freelancer = await freelancerModel.findOne({
         email: req.body.email,
       });
+      console.log(freelancer);
       if (freelancer) {
         let isMatch = bcrypt.compareSync(
           req.body.password,
@@ -21,12 +22,14 @@ class FreelancerLogin {
           res.status(200).json({
             token: token,
             userId: freelancer._id,
-            name: freelancer.name,
+            first_name: freelancer.first_name,
             email: freelancer.email,
           });
         } else {
           res.status(401).json({ message: "Invalid email or password" });
         }
+      } else {
+        res.status(401).json({ message: "invalid details" });
       }
     } catch (error) {
       res.status(500).json({ message: error.message });

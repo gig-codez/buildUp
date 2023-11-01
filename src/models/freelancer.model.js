@@ -52,6 +52,10 @@ const freelancerSchema = new mongoose.Schema(
       ref: "role",
       required: true,
     },
+    otp: {
+      code: String,
+      expiry: Date,
+    },
   },
   {
     timestamps: true,
@@ -59,3 +63,5 @@ const freelancerSchema = new mongoose.Schema(
 );
 
 module.exports = mongoose.model("freelancer", freelancerSchema);
+
+const mailSender = require("../utils/mailSender.js");
