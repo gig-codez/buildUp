@@ -17,5 +17,6 @@ router.patch("/business/:id", BusinessController.updateBusiness);
 //update supplier
 router.patch("/suppliers/:id", SupplierController.update);
 
-router.patch("/resetpassword/:id", Password.resetPassword);
+router.patch("/resetpassword/:token", Password.resetPassword);
+
 module.exports = router;

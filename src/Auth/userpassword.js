@@ -1,6 +1,7 @@
 const freelancerModel = require("../models/freelancer.model");
 const SupplierModel = require("../models/Supplier.model");
 const EmployerModel = require("../models/Employer.model");
+const mailSender = require("../utils/mailSender.js");
 const crypto = require("crypto");
 
 class Password {
@@ -13,7 +14,6 @@ class Password {
         business_email_address,
       });
       const checkEmployer = await EmployerModel.findOne({ email_address });
-
       if (!checkEmployer) {
         res.status(400).json({ message: "wrong  email" });
       }
@@ -28,12 +28,40 @@ class Password {
       //lets generate the the token using crypto w/c isin built
       const resetToken = checkEmployer.createResetPasswordToken();
       await checkEmployer.save({ validateBeforeSave: false });
+
+      //send the token back to the user emaill
+      const reseturl = `${req.protocol}://${req.get(
+        "host"
+      )}/resetPassword/${resetToken}`;
+
+      const message = `We have received a password reset request .Please use the below link to reset your password\n\n${reseturl}\n\nThis reset password link valid only for 10 minutes`;
+
+      try {
+        await mailSender(email_address, "Password change request", message);
+        res.status(200).json({
+          status: "Success",
+          message: "Password reset link was successfully sent",
+        });
+      } catch (error) {
+        checkEmployer.passwordResetToken = undefined;
+        checkEmployer.passwordResetTokenExpires = undefined;
+        checkEmployer.save({ validateBeforeSave: false });
+      }
     } catch (error) {
       console.log(error.message);
       res.status(500).json({ success: false, error: error.message });
     }
   }
 
-  static async resetPassword(res, req) {}
+  static async resetPassword(req,res) {
+    const token = crypto
+      .createHash("sha256")
+      .update(req.params.token)
+      .digest("hex");
+    const employer=await EmployerModel.findOne({ passwordResetToken: token,passwordResetTokenExpires:{$gt:Date.now()} });
+    if(!employer){
+      return res.status(404).json("Invalid token or token has expired ");
+    }
+  }
 }
 module.exports = Password;
