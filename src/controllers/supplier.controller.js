@@ -1,6 +1,7 @@
 const SupplierModel = require("../models/Supplier.model");
 const supplierModel = require("../models/Supplier.model");
 const bcrypt = require("bcrypt");
+const otpModel = require("../models/otp.model");
 class SupplierController {
   static async getAll(req, res) {
     try {

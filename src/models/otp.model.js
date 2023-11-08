@@ -25,7 +25,7 @@ async function sendVerificationEmail(email, otp) {
       "Verification Email",
       `<h1>Please confirm your OTP</h1>
        <p>Here is your OTP code:<span style="color:purple">${otp}</span> </p>
-       <p>It expires within 24 hrs</p>`
+       <p>It expires within 5 minutes </p>`
     );
     console.log("Email sent successfully: ", mailResponse);
   } catch (error) {

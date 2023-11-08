@@ -19,17 +19,6 @@ class FreelancerController {
       if (oldAccount) {
         res.status(400).json({ message: "Account already exists" });
       } else {
-        //Checking the email in the
-        // const response = await otpModel
-        //   .find({ email })
-        //   .sort({ createdAt: -1 })
-        //   .limit(1);
-        // if (response.length === 0 || otp !== response[0].otp) {
-        //   return res.status(400).json({
-        //     success: false,
-        //     message: "The OTP is not valid",
-        //   });
-        // }
         let hashedPassword = bcrypt.hashSync(req.body.password, 10);
         const freelancerPayload = new freelancerModel({
           first_name: req.body.first_name,

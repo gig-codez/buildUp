@@ -1,4 +1,4 @@
-const { verify } = require("jsonwebtoken");
+// const { verify } = require("jsonwebtoken");
 const otpModel = require("../models/otp.model");
 
 class VerifyOtp {
