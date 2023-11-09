@@ -4,86 +4,134 @@ const EmployerModel = require("../models/Employer.model");
 const mailSender = require("../utils/mailSender.js");
 const crypto = require("crypto");
 const jwt = require("jsonwebtoken");
+const bcrypt = require("bcrypt");
 
 class Password {
   static async forgotPassword(req, res) {
-    const { email, business_email_address, email_address } = req.body;
     try {
-      //am getting the user based ion email
-      const checkUserPresent = await freelancerModel.findOne({ email });
-      const checkSupplier = await SupplierModel.findOne({
-        business_email_address,
-      });
-      const checkEmployer = await EmployerModel.findOne({ email_address });
-      if (!checkEmployer) {
-        res.status(400).json({ message: "wrong  email" });
+      let user, userType;
+      // Finding the user based on different models
+      if (req.body.email) {
+        user = await freelancerModel.findOne({ email: req.body.email });
+        userType = "Freelancer";
+      } else if (req.body.business_email_address) {
+        user = await SupplierModel.findOne({
+          business_email_address: req.body.business_email_address,
+        });
+        userType = "Supplier";
+      } else if (req.body.email_address) {
+        user = await EmployerModel.findOne({
+          email_address: req.body.email_address,
+        });
+        userType = "Employer";
       }
 
-      //am checking if the email passedin exists
-      //   if (!checkUserPresent || !checkSupplier || !checkEmployer) {
-      //     return res.status(401).json({
-      //       success: false,
-      //       message: "Couldnt find the user with given email..!",
-      //     });
-      //   }
-      //lets generate the the token using crypto w/c isin built
-      const resetToken = checkEmployer.createResetPasswordToken();
-      await checkEmployer.save({ validateBeforeSave: false });
+      if (!user) {
+        return res.status(400).json({ message: `Wrong ${userType} email` });
+      }
 
-      //send the token back to the user emaill
-      const reseturl = `${req.protocol}://${req.get(
+      const resetToken = user.createResetPasswordToken();
+      user.passwordResetToken = resetToken;
+      user.passwordResetTokenExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
+
+      await user.save({ validateBeforeSave: false });
+
+      const resetUrl = `${req.protocol}://${req.get(
         "host"
       )}/update/resetPassword/${resetToken}`;
-
-      const message = `We have received a password reset request .Please use the below link to reset your password\n\n${reseturl}\n\nThis reset password link valid only for 10 minutes`;
+      const message = `We have received a password reset request for your ${userType} account. Please use the link to reset your password:\n\n${resetUrl}\n\nThis password reset link is valid for 10 minutes.`;
 
       try {
-        await mailSender(email_address, "Password change request", message);
-        res.status(200).json({
+        if (userType === "Employer") {
+          await mailSender(
+            user.email_address,
+            "Password Change Request",
+            message
+          );
+        } else if (userType === "Freelancer") {
+          await mailSender(user.email, "Password Change Request", message);
+        } else if (userType === "Supplier") {
+          await mailSender(
+            user.business_email_address,
+            "Password Change Request",
+            message
+          );
+        }
+
+        return res.status(200).json({
           status: "Success",
           message: "Password reset link was successfully sent",
         });
       } catch (error) {
-        checkEmployer.passwordResetToken = undefined;
-        checkEmployer.passwordResetTokenExpires = undefined;
-        checkEmployer.save({ validateBeforeSave: false });
+        user.passwordResetToken = undefined;
+        user.passwordResetTokenExpires = undefined;
+        await user.save({ validateBeforeSave: false });
+        return res.status(500).json({
+          success: false,
+          error: "Error sending the email for password reset",
+        });
       }
     } catch (error) {
       console.log(error.message);
-      res.status(500).json({ success: false, error: error.message });
+      return res.status(500).json({ success: false, error: error.message });
     }
   }
 
   static async resetPassword(req, res) {
-    //checking for the token..!
-    const token = crypto
-      .createHash("sha256")
-      .update(req.params.token)
-      .digest("hex");
-    console.log(token);
-    const employer = await EmployerModel.findOne({
-      passwordResetToken: token,
-      passwordResetTokenExpires: { $gt: Date.now() },
-    });
-    console.log(employer);
-    if (!employer) {
-      return res.status(404).json("Invalid token or token has expired ");
+    try {
+      const token = req.params.token;
+
+      let user, userType;
+
+      user = await EmployerModel.findOne({
+        passwordResetToken: token,
+        passwordResetTokenExpires: { $gt: Date.now() },
+      });
+
+      if (!user) {
+        user = await freelancerModel.findOne({
+          passwordResetToken: token,
+          passwordResetTokenExpires: { $gt: Date.now() },
+        });
+
+        if (user) {
+          userType = "Freelancer";
+        } else {
+          user = await SupplierModel.findOne({
+            passwordResetToken: token,
+            passwordResetTokenExpires: { $gt: Date.now() },
+          });
+
+          if (user) {
+            userType = "Supplier";
+          }
+        }
+      } else {
+        userType = "Employer";
+      }
+
+      if (!user) {
+        return res.status(404).json("Invalid token or token has expired");
+      }
+
+      const hashedPassword = await bcrypt.hash(req.body.password, 10);
+
+      user.password = hashedPassword;
+      user.confirmPassword = hashedPassword;
+      user.passwordResetToken = undefined;
+      user.passwordResetTokenExpires = undefined;
+      user.passwordChangedAt = Date.now();
+
+      await user.save();
+
+      let tokenn = jwt.sign({ id: user._id }, process.env.SECRET_KEY, {
+        expiresIn: "1h",
+      });
+      res.status(200).json({ tokenn, userType });
+    } catch (error) {
+      console.log(error.message);
+      res.status(500).json({ success: false, error: error.message });
     }
-
-    employer.password = req.body.password;
-    employer.confirmPassword = req.body.confirmPassword;
-    employer.passwordResetToken = undefined;
-    employer.passwordResetTokenExpires = undefined;
-    employer.passwordChangedAt = Date.now();
-
-    employer.save();
-    //login the user automatically
-    let tokenn = jwt.sign({ id: employer._id }, process.env.SECRET_KEY, {
-      expiresIn: "1h",
-    });
-    res.status(200).json({
-      token: tokenn,
-    });
   }
 }
 module.exports = Password;

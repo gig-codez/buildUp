@@ -35,8 +35,8 @@ class OtpController {
         });
         result = await otpModel.findOne({ otp: otp });
       }
-
-
+      const otpPayload = { email, otp };
+      const otpBody = await otpModel.create(otpPayload);
       res.status(200).json({
         success: true,
         message: "OTP sent successfully",
