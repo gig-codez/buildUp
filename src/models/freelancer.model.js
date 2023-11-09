@@ -56,6 +56,9 @@ const freelancerSchema = new mongoose.Schema(
       code: String,
       expiry: Date,
     },
+    passwordChangedAt: Date,
+    passwordResetToken: String,
+    passwordResetTokenExpires: Date,
   },
   {
     timestamps: true,
