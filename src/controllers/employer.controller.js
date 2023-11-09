@@ -24,6 +24,7 @@ class EmployerController {
       if (employerData) {
         return res.status(400).send("Employer already exist");
       } else {
+        
         bcrypt.hash(req.body.password, 10, async (err, hashedPassword) => {
           if (err) {
             res.status(500).json({ message: err });
@@ -61,7 +62,6 @@ class EmployerController {
           email_address: req.body.email_address,
           TIN_NIN: req.body.TIN_NIN,
           country: req.body.country,
-           
         },
         { new: true }
       );

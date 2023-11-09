@@ -1,5 +1,5 @@
 const { default: mongoose } = require("mongoose");
-
+const crypto = require("crypto");
 const freelancerSchema = new mongoose.Schema(
   {
     profile_pic: {
@@ -52,10 +52,25 @@ const freelancerSchema = new mongoose.Schema(
       ref: "role",
       required: true,
     },
+    otp: {
+      code: String,
+      expiry: Date,
+    },
   },
   {
     timestamps: true,
   }
 );
 
+freelancerSchema.methods.createResetPasswordToken = function () {
+  const resetToken = crypto.randomBytes(32).toString("hex");
+  this.passwordResetToken = crypto
+    .createHash("sha256")
+    .update(resetToken)
+    .digest("hex");
+  this.passwordResetTokenExpires = Date.now() + 10 * 60 * 1000;
+
+  console.log(resetToken, this.passwordResetToken);
+  return resetToken;
+};
 module.exports = mongoose.model("freelancer", freelancerSchema);

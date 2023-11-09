@@ -6,7 +6,6 @@ require("dotenv").config();
 //
 class AccountVerification {
   // function to verify email
-
   static async verifyEmail(req, res, next) {
     try {
       let email = req.body.email;
@@ -15,9 +14,7 @@ class AccountVerification {
         pass: process.env.PASSWORD,
       };
       console.log(auth);
-      //  first if the email provided exists in any of the user modules
-      //  if it does, then send an email to the user to verify the email
-      //  if it doesn't, then send an error message
+     
       const user = adminModel.findOne({ email_address: email });
       // const employer = employerModel.findOne({ email: email });
       if (!user) {
