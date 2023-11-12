@@ -30,7 +30,10 @@ class Password {
         return res.status(400).json({ message: `Wrong ${userType} email` });
       }
 
-      const resetToken = user.createResetPasswordToken();
+      const resetToken = crypto.randomBytes(20).toString("hex"); // Creates a 40-character hex string
+
+      // Setting the reset token and expiration
+      user.passwordResetToken = resetToken;
       user.passwordResetToken = resetToken;
       user.passwordResetTokenExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
 
@@ -81,53 +84,70 @@ class Password {
     try {
       const token = req.params.token;
 
-      let user, userType;
-
-      user = await EmployerModel.findOne({
+      const employer = await EmployerModel.findOne({
         passwordResetToken: token,
         passwordResetTokenExpires: { $gt: Date.now() },
       });
 
-      if (!user) {
-        user = await freelancerModel.findOne({
+      if (employer) {
+        const hashedPassword = await bcrypt.hash(req.body.password, 10);
+        employer.password = hashedPassword;
+        employer.confirmPassword = hashedPassword;
+        employer.passwordResetToken = undefined;
+        employer.passwordResetTokenExpires = undefined;
+        employer.passwordChangedAt = Date.now();
+
+        await employer.save();
+
+        let token = jwt.sign({ id: employer._id }, process.env.SECRET_KEY, {
+          expiresIn: "1h",
+        });
+        res.status(200).json({ token, userType: "Employer" });
+      } else {
+        const freelancer = await FreelancerModel.findOne({
           passwordResetToken: token,
           passwordResetTokenExpires: { $gt: Date.now() },
         });
 
-        if (user) {
-          userType = "Freelancer";
+        if (freelancer) {
+          const hashedPassword = await bcrypt.hash(req.body.password, 10);
+          freelancer.password = hashedPassword;
+          freelancer.confirmPassword = hashedPassword;
+          freelancer.passwordResetToken = undefined;
+          freelancer.passwordResetTokenExpires = undefined;
+          freelancer.passwordChangedAt = Date.now();
+
+          await freelancer.save();
+
+          let token = jwt.sign({ id: freelancer._id }, process.env.SECRET_KEY, {
+            expiresIn: "1h",
+          });
+          res.status(200).json({ token, userType: "Freelancer" });
         } else {
-          user = await SupplierModel.findOne({
+          const supplier = await SupplierModel.findOne({
             passwordResetToken: token,
             passwordResetTokenExpires: { $gt: Date.now() },
           });
 
-          if (user) {
-            userType = "Supplier";
+          if (supplier) {
+            const hashedPassword = await bcrypt.hash(req.body.password, 10);
+            supplier.password = hashedPassword;
+            supplier.confirmPassword = hashedPassword;
+            supplier.passwordResetToken = undefined;
+            supplier.passwordResetTokenExpires = undefined;
+            supplier.passwordChangedAt = Date.now();
+
+            await supplier.save();
+
+            let token = jwt.sign({ id: supplier._id }, process.env.SECRET_KEY, {
+              expiresIn: "1h",
+            });
+            res.status(200).json({ token, userType: "Supplier" });
+          } else {
+            return res.status(404).json("Invalid token or token has expired");
           }
         }
-      } else {
-        userType = "Employer";
       }
-
-      if (!user) {
-        return res.status(404).json("Invalid token or token has expired");
-      }
-
-      const hashedPassword = await bcrypt.hash(req.body.password, 10);
-
-      user.password = hashedPassword;
-      user.confirmPassword = hashedPassword;
-      user.passwordResetToken = undefined;
-      user.passwordResetTokenExpires = undefined;
-      user.passwordChangedAt = Date.now();
-
-      await user.save();
-
-      let tokenn = jwt.sign({ id: user._id }, process.env.SECRET_KEY, {
-        expiresIn: "1h",
-      });
-      res.status(200).json({ tokenn, userType });
     } catch (error) {
       console.log(error.message);
       res.status(500).json({ success: false, error: error.message });
