@@ -23,4 +23,7 @@ class VerifyToken {
         return res.status(402).json({success:false,message:"invalid token"});
     }
   }
+  static async restrict(req,res){
+     
+  }
 }

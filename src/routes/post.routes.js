@@ -2,6 +2,7 @@ const express = require("express");
 const AdminController = require("../controllers/admin.controller");
 const AdminLogin = require("../Auth/adminLogin");
 const FreelancerController = require("../controllers/freelancer.controller");
+const jobscontroller = require("../controllers/jobs.controller.js");
 const FreelancerLogin = require("../Auth/freelancerLogin");
 const imageUpload = require("../helpers/imageUpload");
 const AccountVerification = require("../Auth/emailVerification");
@@ -15,7 +16,6 @@ const OtpController = require("../controllers/otpController");
 const VerifyOtp = require("../Auth/verifyotp");
 const Password = require("../Auth/userpassword");
 const router = express.Router();
-
 // account verification
 router.post("/verifyEmail", AccountVerification.verifyEmail);
 //admin Routes4
@@ -44,5 +44,8 @@ router.post("/verifyotp", VerifyOtp.verify);
 
 //forgotpassword
 router.post("/forgotpassword", Password.forgotPassword);
+
+//
+router.post("/addjobs", jobscontroller.addJobs);
 
 module.exports = router;
