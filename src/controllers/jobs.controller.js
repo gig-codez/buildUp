@@ -1,17 +1,19 @@
-const jobsModel = require("../models/jobContract.model");
+const jobsModel = require("../models/jobPost.model");
+
 const employerModel = require("../models/Employer.model");
 
 class JobsController {
   static async addJobs(req, res) {
+    console.log(req.body);
     try {
-      if (!req.body.title || !req.body.description || !req.body.employer) {
+      if (!req.body.employer) {
+        req.body.employer = req.params.employerId;
+      }
+      if (!req.body.job_title || !req.body.job_description) {
         return res.status(400).json({
           success: false,
           message: "Title, description, and employer are required fields.",
         });
-      }
-      if (!req.body.employer) {
-        req.body.employer = req.employerId;
       }
 
       const newJob = new jobsModel(req.body);
@@ -39,7 +41,24 @@ class JobsController {
     }
   }
 
-  static async update(req, res) {}
+  static async getalljobs(req, res) {
+    try {
+      const jobs = await jobsModel.find();
+      res.status(200).json({
+        success: true,
+        data: jobs,
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: "An error occured while getting the jobs",
+        error: error.message,
+      });
+    }
+  }
+  // static async searchByTitle(req, res) {
+  //   const searchTerm = req.params.title;
+  // }
 }
 
 module.exports = JobsController;

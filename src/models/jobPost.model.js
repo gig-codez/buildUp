@@ -1,10 +1,6 @@
 const { default: mongoose } = require("mongoose");
 const jobPostSchema = new mongoose.Schema({
-  job_post_id: {
-    type: mongoose.Types.ObjectId,
-    required: true,
-  },
-  employer_id: {
+  employer: {
     type: mongoose.Types.ObjectId,
     required: true,
   },
@@ -13,19 +9,35 @@ const jobPostSchema = new mongoose.Schema({
     required: true,
   },
   job_description: {
-    type: Number,
+    type: String,
     required: true,
   },
   salary_type: {
     type: String,
-    required: true,
+    required: true
   },
-  salary_range_max: {
+  min_salary: {
     type: Number,
     required: true,
   },
-  salary_range_min: {
+  max_salary: {
     type: Number,
+    required: true,
+  },
+  experience: {
+    type: String,
+    required: true,
+  },
+  address: {
+    type: String,
+    required: true,
+  },
+  contact: {
+    type: String,
+    required: true,
+  },
+  application_deadline: {
+    type: Date,
     required: true,
   },
   job_duration: {
@@ -34,10 +46,6 @@ const jobPostSchema = new mongoose.Schema({
   },
   service_description: {
     type: String,
-    required: true,
-  },
-  payment_amount: {
-    type: Number,
     required: true,
   },
 });

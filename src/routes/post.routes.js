@@ -46,6 +46,6 @@ router.post("/verifyotp", VerifyOtp.verify);
 router.post("/forgotpassword", Password.forgotPassword);
 
 //
-router.post("/addjobs", jobscontroller.addJobs);
+router.post("/addjobs/:employerId", jobscontroller.addJobs);
 
 module.exports = router;
