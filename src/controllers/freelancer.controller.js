@@ -1,4 +1,5 @@
 const freelancerModel = require("../models/freelancer.model");
+const otpModel = require("../models/otp.model");
 const bcrypt = require("bcrypt");
 class FreelancerController {
   static async index(req, res) {

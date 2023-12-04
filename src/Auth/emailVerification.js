@@ -7,7 +7,6 @@ require("dotenv").config();
 //
 class AccountVerification {
   // function to verify email
-
   static async verifyEmail(req, res, next) {
     try {
       let email = req.body.email;

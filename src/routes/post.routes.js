@@ -2,6 +2,7 @@ const express = require("express");
 const AdminController = require("../controllers/admin.controller");
 const AdminLogin = require("../Auth/adminLogin");
 const FreelancerController = require("../controllers/freelancer.controller");
+const jobscontroller = require("../controllers/jobs.controller.js");
 const FreelancerLogin = require("../Auth/freelancerLogin");
 const imageUpload = require("../helpers/imageUpload");
 const AccountVerification = require("../Auth/emailVerification");
@@ -9,8 +10,12 @@ const RoleController = require("../controllers/role.controller");
 const EmployerController = require("../controllers/employer.controller");
 const BusinessController = require("../controllers/business.controller");
 const SupplierController = require("../controllers/supplier.controller");
+const employerlogin = require("../Auth/employerlogin");
+const SupplierLogin = require("../Auth/supplierlogin");
+const OtpController = require("../controllers/otpController");
+const VerifyOtp = require("../Auth/verifyotp");
+const Password = require("../Auth/userpassword");
 const router = express.Router();
-
 // account verification
 router.post("/verifyEmail", AccountVerification.verifyEmail);
 //admin Routes4
@@ -24,11 +29,23 @@ router.post(
   FreelancerController.store
 );
 router.post("/login/freelancer", FreelancerLogin.login);
-
 //employer account
+router.post("/login/employer", employerlogin.login);
 router.post("/create/employer", EmployerController.storeEmployer);
 //business of employer
 router.post("/create/business/:id", BusinessController.store);
 //supplier
 router.post("/create/supplier", SupplierController.store);
+router.post("/login/supplier", SupplierLogin.login);
+//otp
+router.post("/send-otp", OtpController.sendOTP);
+
+router.post("/verifyotp", VerifyOtp.verify);
+
+//forgotpassword
+router.post("/forgotpassword", Password.forgotPassword);
+
+//
+router.post("/addjobs/:employerId", jobscontroller.addJobs);
+
 module.exports = router;

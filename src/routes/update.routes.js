@@ -4,6 +4,7 @@ const AdminController = require("../controllers/admin.controller");
 const BusinessController = require("../controllers/business.controller");
 const SupplierController = require("../controllers/supplier.controller");
 const FreelancerController = require("../controllers/freelancer.controller");
+const Password = require("../Auth/userpassword");
 const router = express.Router();
 
 router.patch("/admin/:id", AdminController.update);
@@ -15,4 +16,7 @@ router.patch("/employer/:id", EmployerController.updateEmployer);
 router.patch("/business/:id", BusinessController.updateBusiness);
 //update supplier
 router.patch("/suppliers/:id", SupplierController.update);
+
+router.patch("/resetpassword/:token", Password.resetPassword);
+
 module.exports = router;

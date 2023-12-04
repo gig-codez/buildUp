@@ -1,6 +1,7 @@
 const SupplierModel = require("../models/Supplier.model");
 const supplierModel = require("../models/Supplier.model");
 const bcrypt = require("bcrypt");
+const otpModel = require("../models/otp.model");
 class SupplierController {
   static async getAll(req, res) {
     try {
@@ -27,7 +28,6 @@ class SupplierController {
               business_name: req.body.business_name,
               business_email_address: req.body.business_email_address,
               password: hashedPassword,
-              email_address: req.body.email_address,
               TIN: req.body.TIN,
               business_tel: req.body.business_tel,
 <<<<<<< HEAD
