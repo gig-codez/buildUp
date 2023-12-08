@@ -81,5 +81,17 @@ class EmployerController {
       res.status(500).json({ message: error.message });
     }
   }
+
+  static async show(req, res){
+
+  }
+
+  static async delete(req, res){
+
+  }
+
+  static async updateEmployer(req, res){
+
+  }
 }
 module.exports = EmployerController;
