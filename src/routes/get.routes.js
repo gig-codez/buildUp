@@ -16,7 +16,7 @@ router.get("/freelancers", FreelancerController.index);
 router.get("/freelancers/:id", FreelancerController.show);
 //employers
 router.get("/employers", EmployerController.getAll);
-// router.get("/employers/:id", EmployerController.showEmployer);
+router.get("/employers/:id", EmployerController.show);
 //business
 router.get("/business", BusinessController.getAll);
 router.get("/business/:id", BusinessController.getBusinessById);
