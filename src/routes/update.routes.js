@@ -11,7 +11,7 @@ router.patch("/admin/:id", AdminController.update);
 //freelancer update
 router.patch("/freelancer/:id", FreelancerController.update);
 //employer update
-router.patch("/employer/:id", EmployerController.updateEmployer);
+// router.patch("/employer/:id", EmployerController.updateEmployer);
 //update business
 router.patch("/business/:id", BusinessController.updateBusiness);
 //update supplier

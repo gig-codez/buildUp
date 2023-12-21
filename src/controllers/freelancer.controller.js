@@ -30,10 +30,6 @@ class FreelancerController {
           gender: req.body.gender,
           address: req.body.address,
           tel_num: req.body.tel_num,
-<<<<<<< HEAD
-          role: req.body.role,
-=======
->>>>>>> 3117a1b (added email otp verification)
         });
         const newfreelancer = await freelancerPayload.save();
         res
@@ -66,10 +62,7 @@ class FreelancerController {
                 address: req.body.address,
                 gender: req.body.gender,
                 tel_num: req.body.tel_num,
-<<<<<<< HEAD
                 role: req.body.role,
-=======
->>>>>>> 3117a1b (added email otp verification)
               },
               {
                 new: true,

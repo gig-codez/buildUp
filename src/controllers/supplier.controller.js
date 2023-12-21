@@ -30,10 +30,6 @@ class SupplierController {
               password: hashedPassword,
               TIN: req.body.TIN,
               business_tel: req.body.business_tel,
-<<<<<<< HEAD
-              role: req.body.role,
-=======
->>>>>>> 3117a1b (added email otp verification)
             });
             const newSupplier = await supplierPayload.save();
             res.status(200).json({

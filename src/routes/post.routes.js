@@ -40,12 +40,12 @@ router.post("/login/supplier", SupplierLogin.login);
 //otp
 router.post("/send-otp", OtpController.sendOTP);
 
-router.post("/verifyotp", VerifyOtp.verify);
+router.post("/verifyOtp", VerifyOtp.verify);
 
 //forgotpassword
-router.post("/forgotpassword", Password.forgotPassword);
+router.post("/forgotPassword", Password.forgotPassword);
 
 //
-router.post("/addjobs/:employerId", jobscontroller.addJobs);
+router.post("/addJob/:employerId", jobscontroller.addJobs);
 
 module.exports = router;
