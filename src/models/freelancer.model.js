@@ -14,6 +14,11 @@ const freelancerSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    category: {
+      type: String,
+      default: "",
+      required: false,
+    },
     first_name: {
       type: String,
       required: true,
