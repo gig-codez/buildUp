@@ -14,7 +14,7 @@ const jobPostSchema = new mongoose.Schema({
   },
   salary_type: {
     type: String,
-    required: true
+    required: true,
   },
   min_salary: {
     type: Number,
@@ -48,5 +48,6 @@ const jobPostSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  //TODO category
 });
 module.exports = mongoose.model("jobPost", jobPostSchema);
