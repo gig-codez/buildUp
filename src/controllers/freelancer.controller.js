@@ -4,7 +4,7 @@ const bcrypt = require("bcrypt");
 class FreelancerController {
   static async index(req, res) {
     try {
-      const freelancerPayload = await freelancerModel.find();
+      const freelancerPayload = await freelancerModel.find().sort({created_at:-1})
       res.status(200).json({ data: freelancerPayload });
     } catch (err) {
       res.status(500).json({ message: err.message });

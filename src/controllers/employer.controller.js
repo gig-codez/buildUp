@@ -1,4 +1,5 @@
 const employerModel = require("../models/Employer.model");
+const bcrypt = require("bcrypt");
 class EmployerController {
   static async getAll(req, res) {
     try {
