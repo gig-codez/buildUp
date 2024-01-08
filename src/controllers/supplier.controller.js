@@ -19,7 +19,7 @@ class SupplierController {
         business_email_address: req.body.business_email_address,
       });
       if (supplierData) {
-        return res.status(400).send("Supplier already exists");
+        return res.status(400).json({ message: "Supplier already exists"});
       } else {
         bcrypt.hash(req.body.password, 10, async (err, hashedPassword) => {
           if (err) {
