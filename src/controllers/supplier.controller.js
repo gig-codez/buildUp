@@ -35,7 +35,7 @@ class SupplierController {
               role: req.body.role,
             });
             const newSupplier = await supplierPayload.save();
-            req.body.email = req.body.email_address;
+            req.body.email = req.body.business_email_address;
             const auth = await SupplierLogin.loginHelper(req);
             res.status(200).json({
               message: "Supplier created successfully",
