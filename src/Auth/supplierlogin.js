@@ -6,7 +6,7 @@ require("dotenv").config();
 class SupplierLogin {
   static async loginHelper(req){
     const supplier = await supplierModel.findOne({
-      business_email_address: req.body.email_address,
+      business_email_address: req.body.email,
     });
     console.log(supplier);
     if (supplier) {
