@@ -1,6 +1,7 @@
 const freelancerModel = require("../models/freelancer.model");
 const otpModel = require("../models/otp.model");
 const bcrypt = require("bcrypt");
+const FreelancerLogin = require("../Auth/freelancerLogin");
 class FreelancerController {
   static async index(req, res) {
     try {
@@ -31,11 +32,14 @@ class FreelancerController {
           address: req.body.address,
           tel_num: req.body.tel_num,
           role: req.body.role,
+          profession: req.body.profession
         });
         const newfreelancer = await freelancerPayload.save();
+        const auth = await FreelancerLogin.loginHelper(req);
+        console.log({ message: "Account created", data: newfreelancer, auth });
         res
           .status(200)
-          .json({ message: "Account created", data: newfreelancer });
+          .json({ message: "Account created", data: newfreelancer, auth });
       }
     } catch (error) {
       res.status(500).json({ message: error.message });
@@ -101,9 +105,9 @@ class FreelancerController {
       if (freelancer) {
         res
           .status(200)
-          .json({ message: "single freelancer", data: freelancer });
+          .json({ message: "single contractor", data: freelancer });
       } else {
-        res.status(400).json({ message: "Freelancer not found" });
+        res.status(400).json({ message: "Contractor not found" });
       }
     } catch (err) {
       res.status(500).json({ message: err.message });

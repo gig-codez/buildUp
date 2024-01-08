@@ -12,9 +12,11 @@ const BusinessController = require("../controllers/business.controller");
 const SupplierController = require("../controllers/supplier.controller");
 const employerlogin = require("../Auth/employerlogin");
 const SupplierLogin = require("../Auth/supplierlogin");
+const ContractorProfessionController = require("../controllers/contractorProfession.controller");
 const OtpController = require("../controllers/otpController");
 const VerifyOtp = require("../Auth/verifyotp");
 const Password = require("../Auth/userpassword");
+const SupplierTypeController = require("../controllers/supplierType.controller");
 const router = express.Router();
 // account verification
 router.post("/verifyEmail", AccountVerification.verifyEmail);
@@ -28,6 +30,10 @@ router.post(
   imageUpload("uploads/images"),
   FreelancerController.store
 );
+
+router.post("/admin/profession", ContractorProfessionController.store)
+router.post("/admin/supplier-type", SupplierTypeController.store)
+
 router.post("/login/freelancer", FreelancerLogin.login);
 //employer account
 router.post("/login/employer", employerlogin.login);

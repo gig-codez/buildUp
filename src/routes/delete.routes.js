@@ -4,9 +4,11 @@ const EmployerController = require("../controllers/employer.controller");
 const BusinessController = require("../controllers/business.controller");
 const SupplierController = require("../controllers/supplier.controller");
 const FreelancerController = require("../controllers/freelancer.controller");
+const ContractorProfessionController = require("../controllers/contractorProfession.controller");
 const router = express.Router();
 
 router.delete("/admin/:id", AdminController.delete);
+router.delete("/admin/profession/:id", ContractorProfessionController.delete);
 
 //delete freelancer
 router.delete("/freelancer/:id", FreelancerController.delete);

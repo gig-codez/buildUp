@@ -1,5 +1,6 @@
 const employerModel = require("../models/Employer.model");
 const bcrypt = require("bcrypt");
+const EmployerLogin = require("../Auth/employerlogin");
 class EmployerController {
   static async getAll(req, res) {
     try {
@@ -36,12 +37,13 @@ class EmployerController {
               country: req.body.country,
               role: req.body.role,
             });
-            console.log(req.body);
             const newEmployee = await employerPayload.save();
-            console.log(newEmployee);
+            req.body.email = req.body.email_address;
+            const auth = await EmployerLogin.loginHelper(req);
             res.status(200).json({
               message: "Employer created successfully",
               data: newEmployee,
+              auth
             });
           }
         });
