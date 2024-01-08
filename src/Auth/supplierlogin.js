@@ -4,7 +4,7 @@ const jwt = require("jsonwebtoken");
 require("dotenv").config();
 
 class SupplierLogin {
-  static async loginHelper(req){
+  static async loginHelper(req) {
     const supplier = await supplierModel.findOne({
       business_email_address: req.body.email_address,
     });
@@ -15,12 +15,12 @@ class SupplierLogin {
         expiresIn: "1h",
       });
       if (isMatch) {
-        return{
+        return {
           token: token,
           userId: supplier._id,
           first_name: supplier.first_name,
           email: supplier.business_email_address,
-          role: "supplier"
+          role: "supplier",
         };
       } else {
         let error = new Error("Invalid email or password");
@@ -32,7 +32,6 @@ class SupplierLogin {
       error.code = 401;
       throw error;
     }
-
   }
 
   static async login(req, res) {
