@@ -39,7 +39,7 @@ class SupplierLogin {
       let respMessage = await SupplierLogin.loginHelper(req);
       res.status(200).json(respMessage);
     } catch (error) {
-      res.status(500).json({ message: error.message });
+      res.status(error.hasOwnProperty('code')?error.code:500).json({ message: error.message });
     }
   }
 }
