@@ -78,7 +78,7 @@ class JobsController {
     try {
       const jobs = await jobsModel
         .find({ employer: req.params.employerId })
-        .populate("profession");
+        .populate("profession","name");
 
       res.status(200).json({
         success: true,
