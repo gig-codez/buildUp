@@ -70,6 +70,22 @@ class JobsController {
       });
     }
   }
+
+  static async getJobsByEmployer(req, res){
+    try {
+      const jobs = await jobsModel.find({employer: req.params.employerId});
+      res.status(200).json({
+        success: true,
+        data: jobs,
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: "An error occured while getting the jobs",
+        error: error.message,
+      });
+    }
+  }
   // static async searchByTitle(req, res) {
   //   const searchTerm = req.params.title;
   // }

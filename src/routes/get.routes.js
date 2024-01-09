@@ -30,6 +30,7 @@ router.get("/deals", SupplierController.deals);
 router.get("/admin/profession", ContractorProfessionController.index)
 router.get("/admin/supplier-type", SupplierTypeController.index)
 router.get("/jobs", jobscontroller.getalljobs);
-router.get("/jobs/:professionId", jobscontroller.getJobsByProfession);
+router.get("/profession-jobs/:professionId", jobscontroller.getJobsByProfession);
+router.get("/employer-jobs/:employerId", jobscontroller.getJobsByEmployer);
 
 module.exports = router;
