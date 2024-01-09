@@ -60,7 +60,7 @@ class PaymentController {
     static async completePayment(req, res) {
         try {
             const { OrderTrackingId, OrderMerchantReference } = req.query;
-            const paymentReference = orderMerchantReference;
+            const paymentReference = OrderMerchantReference;
             //check the transaction status
             const result = PesaPal.transactionStatus(OrderTrackingId);
             //perform some logic to verify the payment and complete the payment
