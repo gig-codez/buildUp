@@ -54,7 +54,7 @@ class SupplierController {
     try {
       const supplierId = req.params.id;
       const updatedData = req.body;
-
+console.log(updatedData);
       const updatedSupplier = await SupplierModel.findByIdAndUpdate(
         supplierId,
         { $set: { updatedData } },

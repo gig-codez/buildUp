@@ -9,6 +9,7 @@ app.use(cors());
 app.use(express.urlencoded({ extended: true }));
 app.use("/image", express.static("./uploads"));
 app.use(express.json());
+
 //web socket server connection for chatrooms
 // const io = require("socket.io");
 // const users = {};
