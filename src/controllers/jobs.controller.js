@@ -11,7 +11,6 @@ class JobsController {
       }
       if (!req.body.job_title || !req.body.job_description) {
         return res.status(400).json({
-          success: false,
           message: "Title, description, and employer are required fields.",
         });
       }
@@ -20,39 +19,39 @@ class JobsController {
       console.log(newJob);
       // Save the new job
       const savedJob = await newJob.save();
-      // Update the employer with the new job reference
-      await employerModel.findByIdAndUpdate(req.body.employer, {
-        $push: { business: savedJob._id },
-      });
+      // // Update the employer with the new job reference
+      // await employerModel.findByIdAndUpdate(req.body.employer, {
+      //   $push: { business: savedJob._id },
+      // });
       // Send a success response
-      res.status(200).json({
-        success: true,
-        message: "Job created",
-        data: savedJob,
-      });
+      if (savedJob) {
+        res.status(200).json({
+          message: "Job added successfully.",
+          data: savedJob,
+        });
+      } else {
+        res.status(400).json({
+          message: "Error creating job.",
+        });
+      }
     } catch (error) {
       // Send an error response with a meaningful message
       console.error(error);
       res.status(500).json({
-        success: false,
-        message: "An error occurred while creating the job.",
-        error: error.message,
+        message: `Error ${error.message}.`,
       });
     }
   }
 
-  static async getalljobs(req, res) {
+  static async get_all_jobs(req, res) {
     try {
       const jobs = await jobsModel.find();
       res.status(200).json({
-        success: true,
-        data: jobs,
+        jobs,
       });
     } catch (error) {
       res.status(500).json({
-        success: false,
-        message: "An error occured while getting the jobs",
-        error: error.message,
+        message: `Error: ${error.message}`,
       });
     }
   }

@@ -2,6 +2,7 @@ const { default: mongoose } = require("mongoose");
 const jobPostSchema = new mongoose.Schema({
   employer: {
     type: mongoose.Types.ObjectId,
+    ref: "employer",
     required: true,
   },
   job_title: {
@@ -36,6 +37,7 @@ const jobPostSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+
   application_deadline: {
     type: Date,
     required: true,
