@@ -9,5 +9,6 @@ router.get("/cancelPayment", PaymentController.cancelPayment);
 router.get("/listIPNS", PaymentController.listIPNS);
 router.get("/completePayment", PaymentController.completePayment);
 router.post("/processOrder", PaymentController.processOrder);
+router.get("/checkStatus", PaymentController.checkTransactionStatus);
 
 module.exports = router;

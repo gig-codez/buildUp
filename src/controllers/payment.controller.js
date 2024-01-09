@@ -129,7 +129,7 @@ class PaymentController {
 
     static async checkTransactionStatus(req, res) {
         try {
-            const { order_tracking_id } = req.body;
+            const { order_tracking_id } = req.query;
             if (!order_tracking_id) {
                 return res.status(400).json({ success: false, message: 'Missing required parameters. Please provide order_tracking_id.' });
             }
