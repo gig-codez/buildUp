@@ -1,8 +1,8 @@
 const employerModel = require("../models/Employer.model");
 const bcrypt = require("bcrypt");
-
+const EmployerLogin = require("../Auth/employerlogin");
 class EmployerController {
-  static async getAllEmployers(req, res) {
+  static async getAll(req, res) {
     try {
       const employers = await employerModel.find({});
       if (!employers) {
@@ -24,7 +24,6 @@ class EmployerController {
       if (employerData) {
         return res.status(400).send("Employer already exist");
       } else {
-        
         bcrypt.hash(req.body.password, 10, async (err, hashedPassword) => {
           if (err) {
             res.status(500).json({ message: err });
@@ -38,12 +37,13 @@ class EmployerController {
               country: req.body.country,
               role: req.body.role,
             });
-            console.log(req.body);
             const newEmployee = await employerPayload.save();
-            console.log(newEmployee);
+            req.body.email = req.body.email_address;
+            const auth = await EmployerLogin.loginHelper(req);
             res.status(200).json({
               message: "Employer created successfully",
               data: newEmployee,
+              auth
             });
           }
         });
@@ -52,7 +52,7 @@ class EmployerController {
       res.status(500).json({ message: error.message });
     }
   }
-  static async updateEmployer(req, res) {
+  static async store(req, res) {
     try {
       const employer = await employerModel.findByIdAndUpdate(
         req.params.id,
@@ -80,40 +80,7 @@ class EmployerController {
         data: employer,
       });
     } catch (error) {
-      console.error(error);
-      return res.status(500).json({ message: error.message });
-    }
-  }
-  static async showEmployer(req, res) {
-    try {
-      const employerId = req.params.id;
-
-      const singleEmployer = await employerModel.findById(employerId);
-
-      if (!singleEmployer) {
-        return res.status(404).json({ message: "Employer not found" });
-      }
-
-      return res.status(200).json({ data: singleEmployer });
-    } catch (error) {
-      console.error(error);
-      return res.status(500).json({ message: error.message });
-    }
-  }
-  static async deleteEmployer(req, res) {
-    try {
-      const employerId = req.params.id;
-
-      const employer = await employerModel.findByIdAndDelete(employerId);
-
-      if (!employer) {
-        return res.status(404).json({ message: "Employer not found" });
-      }
-
-      return res.status(200).json({ message: "Employer deleted successfully" });
-    } catch (error) {
-      console.error(error);
-      return res.status(500).json({ message: error.message });
+      res.status(500).json({ message: error.message });
     }
   }
 }

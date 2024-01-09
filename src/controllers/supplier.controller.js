@@ -1,11 +1,12 @@
 const SupplierModel = require("../models/Supplier.model");
 const supplierModel = require("../models/Supplier.model");
 const bcrypt = require("bcrypt");
-const otpModel = require("../models/otp.model");
+// const otpModel = require("../models/otp.model");
+const SupplierLogin = require("../Auth/supplierlogin");
 class SupplierController {
   static async getAll(req, res) {
     try {
-      let Supplier = await SupplierModel.find({});
+      let Supplier = await SupplierModel.find();
       res.status(200).json({ data: Supplier });
     } catch (error) {
       res.status(500).json({ message: error.message });
@@ -18,7 +19,7 @@ class SupplierController {
         business_email_address: req.body.business_email_address,
       });
       if (supplierData) {
-        return res.status(400).send("Supplier already exists");
+        return res.status(400).json({ message: "Supplier already exists"});
       } else {
         bcrypt.hash(req.body.password, 10, async (err, hashedPassword) => {
           if (err) {
@@ -30,12 +31,16 @@ class SupplierController {
               password: hashedPassword,
               TIN: req.body.TIN,
               business_tel: req.body.business_tel,
+              supplier_type: req.body.supplier_type,
               role: req.body.role,
             });
             const newSupplier = await supplierPayload.save();
+            req.body.email = req.body.business_email_address;
+            const auth = await SupplierLogin.loginHelper(req);
             res.status(200).json({
               message: "Supplier created successfully",
               data: newSupplier,
+              auth
             });
           }
         });

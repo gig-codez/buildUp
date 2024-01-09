@@ -2,6 +2,7 @@ const express = require("express");
 const AdminController = require("../controllers/admin.controller");
 const AdminLogin = require("../Auth/adminLogin");
 const FreelancerController = require("../controllers/freelancer.controller");
+const jobscontroller = require("../controllers/jobs.controller.js");
 const FreelancerLogin = require("../Auth/freelancerLogin");
 const imageUpload = require("../helpers/imageUpload");
 const AccountVerification = require("../Auth/emailVerification");
@@ -11,11 +12,12 @@ const BusinessController = require("../controllers/business.controller");
 const SupplierController = require("../controllers/supplier.controller");
 const employerlogin = require("../Auth/employerlogin");
 const SupplierLogin = require("../Auth/supplierlogin");
+const ContractorProfessionController = require("../controllers/contractorProfession.controller");
 const OtpController = require("../controllers/otpController");
 const VerifyOtp = require("../Auth/verifyotp");
 const Password = require("../Auth/userpassword");
+const SupplierTypeController = require("../controllers/supplierType.controller");
 const router = express.Router();
-
 // account verification
 router.post("/verifyEmail", AccountVerification.verifyEmail);
 //admin Routes4
@@ -28,6 +30,10 @@ router.post(
   imageUpload("uploads/images"),
   FreelancerController.store
 );
+
+router.post("/admin/profession", ContractorProfessionController.store)
+router.post("/admin/supplier-type", SupplierTypeController.store)
+
 router.post("/login/freelancer", FreelancerLogin.login);
 //employer account
 router.post("/login/employer", employerlogin.login);
@@ -40,9 +46,12 @@ router.post("/login/supplier", SupplierLogin.login);
 //otp
 router.post("/send-otp", OtpController.sendOTP);
 
-router.post("/verifyotp", VerifyOtp.verify);
+router.post("/verifyOtp", VerifyOtp.verify);
 
 //forgotpassword
-router.post("/forgotpassword", Password.forgotPassword);
+router.post("/forgotPassword", Password.forgotPassword);
+
+//
+router.post("/addJob/:employerId", jobscontroller.addJobs);
 
 module.exports = router;
