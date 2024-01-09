@@ -54,9 +54,13 @@ class JobsController {
     }
   }
 
-  static async getJobsByProfession(req, res){
+  static async getJobsByProfession(req, res) {
     try {
-      const jobs = await jobsModel.find({profession: req.params.professionId});
+      const jobs = await jobsModel
+        .find({
+          profession: req.params.professionId,
+        })
+        .populate("profession", "name");
       res.status(200).json({
         success: true,
         data: jobs,
@@ -70,9 +74,12 @@ class JobsController {
     }
   }
 
-  static async getJobsByEmployer(req, res){
+  static async getJobsByEmployer(req, res) {
     try {
-      const jobs = await jobsModel.find({employer: req.params.employerId});
+      const jobs = await jobsModel
+        .find({ employer: req.params.employerId })
+        .populate("profession");
+
       res.status(200).json({
         success: true,
         data: jobs,
