@@ -8,8 +8,9 @@ const ContractorProfessionController = require("../controllers/contractorProfess
 const Password = require("../Auth/userpassword");
 const router = express.Router();
 
-router.patch("/admin/profession", ContractorProfessionController.update)
+router.patch("/admin/profession", ContractorProfessionController.update);
 router.patch("/admin/:id", AdminController.update);
+router.patch("/supplier_deals/:id", SupplierController.update_deals);
 //freelancer update
 router.patch("/freelancer/:id", FreelancerController.update);
 //employer update

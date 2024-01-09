@@ -1,14 +1,14 @@
 //express
 const express = require("express");
-
+const cors = require("cors");
 //database
 const { default: mongoose } = require("mongoose");
 require("dotenv").config();
 const app = express();
+app.use(cors());
 app.use(express.urlencoded({ extended: true }));
 app.use("/image", express.static("./uploads"));
 app.use(express.json());
-
 //web socket server connection for chatrooms
 // const io = require("socket.io");
 // const users = {};

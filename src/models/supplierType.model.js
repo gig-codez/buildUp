@@ -1,6 +1,6 @@
 const { default: mongoose } = require("mongoose");
 
-const supplierTypeModel = mongoose.Schema(
+const supplierTypeModel = new mongoose.Schema(
     {
       name: {
         type: String,
