@@ -31,8 +31,8 @@ router.post(
   FreelancerController.store
 );
 
-router.post("/admin/profession", ContractorProfessionController.store)
-router.post("/admin/supplier-type", SupplierTypeController.store)
+router.post("/admin/profession", ContractorProfessionController.store);
+router.post("/admin/supplier-type", SupplierTypeController.store);
 
 router.post("/login/freelancer", FreelancerLogin.login);
 //employer account
@@ -43,6 +43,8 @@ router.post("/create/business/:id", BusinessController.store);
 //supplier
 router.post("/create/supplier", SupplierController.store);
 router.post("/login/supplier", SupplierLogin.login);
+// supplier deals
+router.post("/deals/add", SupplierController.create_deals);
 //otp
 router.post("/send-otp", OtpController.sendOTP);
 
@@ -53,5 +55,5 @@ router.post("/forgotPassword", Password.forgotPassword);
 
 //
 router.post("/addJob/:employerId", jobscontroller.addJobs);
-
+//
 module.exports = router;

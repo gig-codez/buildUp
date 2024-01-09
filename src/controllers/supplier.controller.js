@@ -3,6 +3,7 @@ const supplierModel = require("../models/Supplier.model");
 const bcrypt = require("bcrypt");
 // const otpModel = require("../models/otp.model");
 const SupplierLogin = require("../Auth/supplierlogin");
+const supplierDealModel = require("../models/supplierDeal.model");
 class SupplierController {
   static async getAll(req, res) {
     try {
@@ -19,7 +20,7 @@ class SupplierController {
         business_email_address: req.body.business_email_address,
       });
       if (supplierData) {
-        return res.status(400).json({ message: "Supplier already exists"});
+        return res.status(400).json({ message: "Supplier already exists" });
       } else {
         bcrypt.hash(req.body.password, 10, async (err, hashedPassword) => {
           if (err) {
@@ -40,7 +41,7 @@ class SupplierController {
             res.status(200).json({
               message: "Supplier created successfully",
               data: newSupplier,
-              auth
+              auth,
             });
           }
         });
@@ -56,7 +57,7 @@ class SupplierController {
 
       const updatedSupplier = await SupplierModel.findByIdAndUpdate(
         supplierId,
-        updatedData,
+        { $set: { updatedData } },
         { new: true }
       );
 
@@ -70,6 +71,28 @@ class SupplierController {
       });
     } catch (error) {
       console.error(error);
+      res.status(500).json({ message: error.message });
+    }
+  }
+
+  static async update_deals(req, res) {
+    try {
+      const updatedData = req.body.deals;
+      const updatedDeals = await supplierModel.findByIdAndUpdate(
+        req.params.id,
+        { $set: { supplier_deals: updatedData.split(",") } },
+        { new: true }
+      );
+
+      if (!updatedDeals) {
+        return res.status(404).json({ message: "Deals not found" });
+      }
+
+      res.status(200).json({
+        message: "Deals updated successfully",
+        data: updatedDeals,
+      });
+    } catch (error) {
       res.status(500).json({ message: error.message });
     }
   }
@@ -100,6 +123,34 @@ class SupplierController {
       res.status(200).json({ data: singleSupplier });
     } catch (error) {
       console.error(error);
+      res.status(500).json({ message: error.message });
+    }
+  }
+
+  static async create_deals(req, res) {
+    try {
+      const deals = new supplierDealModel(req.body);
+      await deals.save();
+      if (deals) {
+        res
+          .status(200)
+          .json({ message: "deals created successfully", data: deals });
+      } else {
+        res.status(400).json({ message: "deals not created" });
+      }
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  }
+  static async deals(req, res) {
+    try {
+      const deals = await supplierDealModel.find().sort({ createdAt: -1 });
+      if (deals) {
+        res.status(200).json({ data: deals });
+      } else {
+        res.status(400).json({ message: "Error fetching deals.." });
+      }
+    } catch (error) {
       res.status(500).json({ message: error.message });
     }
   }
