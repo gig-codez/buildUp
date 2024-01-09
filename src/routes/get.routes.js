@@ -8,6 +8,7 @@ const SupplierController = require("../controllers/supplier.controller");
 const FreelancerController = require("../controllers/freelancer.controller");
 const ContractorProfessionController = require("../controllers/contractorProfession.controller");
 const SupplierTypeController = require("../controllers/supplierType.controller");
+const jobscontroller = require("../controllers/jobs.controller");
 const router = express.Router();
 
 router.get("/admin", AdminController.index);
@@ -26,7 +27,9 @@ router.get("/business/:id", BusinessController.getBusinessById);
 router.get("/suppliers", SupplierController.getAll);
 router.get("/suppliers/:id", SupplierController.show);
 router.get("/deals", SupplierController.deals);
-router.get("/admin/profession", ContractorProfessionController.index);
-router.get("/admin/supplier-type", SupplierTypeController.index);
+router.get("/admin/profession", ContractorProfessionController.index)
+router.get("/admin/supplier-type", SupplierTypeController.index)
+router.get("/jobs", jobscontroller.getalljobs);
+router.get("/jobs/:professionId", jobscontroller.getJobsByProfession);
 
 module.exports = router;
