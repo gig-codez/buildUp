@@ -4,39 +4,7 @@ const PesaPal = require("../services/payments/pesapal/pesapal");
 const { v4: uuidv4 } = require('uuid');
 
 class PaymentController {
-    static async finishPaymentAndSendEmailByView(transaction, customer) {
-        try {
-            // Your existing PHP code for finishPaymentAndSendEmailByView method
-            // ...
 
-            // Return the appropriate response or view
-            return 'payments.finish';
-        } catch (error) {
-            // Handle errors
-            console.error(error);
-            return 'payments.cancel'; // Or return an error view
-        }
-    }
-
-    static async finishPaymentAndSendEmailByJSON(transaction, customer) {
-        try {
-            // Your existing PHP code for finishPaymentAndSendEmailByJSON method
-            // ...
-
-            // Return the appropriate JSON response
-            return {
-                status: 200,
-                message: 'Transaction completed',
-            };
-        } catch (error) {
-            // Handle errors
-            console.error(error);
-            return {
-                status: 500,
-                message: 'Internal Server Error',
-            };
-        }
-    }
 
     static async finishPayment(req, res) {
         try {
@@ -91,8 +59,13 @@ class PaymentController {
 
     static async completePayment(req, res) {
         try {
+            const { OrderTrackingId, OrderMerchantReference } = req.query;
+            const paymentReference = orderMerchantReference;
+            //check the transaction status
+            const result = PesaPal.transactionStatus(OrderTrackingId);
+            //perform some logic to verify the payment and complete the payment
 
-            return res.json(responseData);
+            return res.json({ success: true, message: 'Success', response: result });
         } catch (error) {
             // Handle errors
             console.error(error);
