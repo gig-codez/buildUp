@@ -47,6 +47,11 @@ const supplierModel = new mongoose.Schema(
       ref: "role",
       required: true,
     },
+    supplier_type: {
+      type: mongoose.Types.ObjectId,
+      ref: "supplierType",
+      required: true,
+    },
     passwordChangedAt: Date,
     passwordResetToken: String,
     passwordResetTokenExpires: Date,
