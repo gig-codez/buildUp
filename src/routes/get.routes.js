@@ -25,8 +25,8 @@ router.get("/business/:id", BusinessController.getBusinessById);
 //suppliers
 router.get("/suppliers", SupplierController.getAll);
 router.get("/suppliers/:id", SupplierController.show);
-
-router.get("/admin/profession", ContractorProfessionController.index)
-router.get("/admin/supplier-type", SupplierTypeController.index)
+router.get("/deals", SupplierController.deals);
+router.get("/admin/profession", ContractorProfessionController.index);
+router.get("/admin/supplier-type", SupplierTypeController.index);
 
 module.exports = router;

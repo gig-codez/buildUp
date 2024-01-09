@@ -8,7 +8,6 @@ class SupplierLogin {
     const supplier = await supplierModel.findOne({
       business_email_address: req.body.email,
     });
-    console.log(supplier);
     if (supplier) {
       let isMatch = bcrypt.compareSync(req.body.password, supplier.password);
       let token = jwt.sign({ id: supplier._id }, process.env.SECRET_KEY, {
@@ -18,7 +17,7 @@ class SupplierLogin {
         return {
           token: token,
           userId: supplier._id,
-          first_name: supplier.first_name,
+          first_name: supplier.business_name,
           email: supplier.business_email_address,
           role: "supplier",
         };
@@ -39,7 +38,9 @@ class SupplierLogin {
       let respMessage = await SupplierLogin.loginHelper(req);
       res.status(200).json(respMessage);
     } catch (error) {
-      res.status(error.hasOwnProperty('code')?error.code:500).json({ message: error.message });
+      res
+        .status(error.hasOwnProperty("code") ? error.code : 500)
+        .json({ message: error.message });
     }
   }
 }
