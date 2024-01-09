@@ -4,6 +4,7 @@ const jobPostSchema = new mongoose.Schema({
     type: mongoose.Types.ObjectId,
     ref: "employer",
     required: true,
+    index: true
   },
   job_title: {
     type: String,
@@ -19,11 +20,11 @@ const jobPostSchema = new mongoose.Schema({
   },
   min_salary: {
     type: Number,
-    required: true,
+    required: false,
   },
   max_salary: {
     type: Number,
-    required: true,
+    required: false,
   },
   experience: {
     type: String,
@@ -50,6 +51,12 @@ const jobPostSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  //TODO category
+  profession: {
+    type: mongoose.Types.ObjectId,
+    ref: "contractorProfession",
+    required: true,
+    index: true
+  }
 });
+
 module.exports = mongoose.model("jobPost", jobPostSchema);
