@@ -1,4 +1,4 @@
-const EmployerModel = require("../models/Employer.model");
+const EmployerModel = require("../models/employer.model");
 const businessModel = require("../models/business.model");
 class BusinessController {
   static async getAll(req, res) {

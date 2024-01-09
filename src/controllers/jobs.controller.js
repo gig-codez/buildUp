@@ -1,6 +1,6 @@
 const jobsModel = require("../models/jobPost.model");
 
-const employerModel = require("../models/Employer.model");
+const employerModel = require("../models/employer.model");
 
 class JobsController {
   static async addJobs(req, res) {

@@ -34,6 +34,7 @@ app.use("/get", require("./src/routes/get.routes"));
 app.use("/post", require("./src/routes/post.routes"));
 app.use("/delete", require("./src/routes/delete.routes"));
 app.use("/update", require("./src/routes/update.routes"));
+app.use("/payment", require("./src/routes/payment_routes"));
 
 // db connection
 const dbOptions = {

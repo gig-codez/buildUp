@@ -1,4 +1,4 @@
-const employerModel = require("../models/Employer.model");
+const employerModel = require("../models/employer.model.js");
 const bcrypt = require("bcrypt");
 const EmployerLogin = require("../Auth/employerlogin");
 class EmployerController {

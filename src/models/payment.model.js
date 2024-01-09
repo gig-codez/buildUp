@@ -1,5 +1,6 @@
-const { default: mongoose } = require("mongoose");
-const paymentModel = new mongoose.Schema({
+const mongoose = require("mongoose");
+
+const paymentSchema = new mongoose.Schema({
     payment_id: {
         type: mongoose.Types.ObjectId,
         required: true,
@@ -32,5 +33,37 @@ const paymentModel = new mongoose.Schema({
         type: String,
         required: true,
     },
+    phone_number: {
+        type: String,
+        default: null,
+    },
+    payment_mode: {
+        type: String,
+        default: null,
+    },
+    payment_method: {
+        type: String,
+        default: null,
+    },
+    description: {
+        type: String,
+        default: null,
+    },
+    reference: {
+        type: String,
+        default: null,
+    },
+    status: {
+        type: String,
+        default: null,
+    },
+    order_tracking_id: {
+        type: String,
+        default: null,
+    },
+    OrderNotificationType: {
+        type: String,
+        default: null,
+    },
 });
-module.exports = mongoose.model("payment", paymentModel);
+module.exports = mongoose.model("payment", paymentSchema);
