@@ -60,11 +60,17 @@ class JobsController {
         .find({
           profession: req.params.professionId,
         })
+        .populate({
+          path: "employer",
+          select: "first_name last_name",
+          populate: {
+            path: "business",
+            select:
+              "business_name business_email business_tel address year_of_foundation",
+          },
+        })
         .populate("profession", "name");
-      res.status(200).json({
-        success: true,
-        data: jobs,
-      });
+      res.status(200).json(jobs);
     } catch (error) {
       res.status(500).json({
         success: false,
@@ -78,12 +84,18 @@ class JobsController {
     try {
       const jobs = await jobsModel
         .find({ employer: req.params.employerId })
-        .populate("profession","name");
+        .populate({
+          path: "employer",
+          select: "first_name last_name",
+          populate: {
+            path: "business",
+            select:
+              "business_name business_email business_tel address year_of_foundation",
+          },
+        })
+        .populate("profession", "name");
 
-      res.status(200).json({
-        success: true,
-        data: jobs,
-      });
+      res.status(200).json(jobs);
     } catch (error) {
       res.status(500).json({
         success: false,

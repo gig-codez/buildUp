@@ -4,7 +4,7 @@ const jobPostSchema = new mongoose.Schema({
     type: mongoose.Types.ObjectId,
     ref: "employer",
     required: true,
-    index: true
+    index: true,
   },
   job_title: {
     type: String,
@@ -51,12 +51,13 @@ const jobPostSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+
   profession: {
     type: mongoose.Types.ObjectId,
     ref: "contractorProfession",
     required: true,
-    index: true
-  }
+    index: true,
+  },
 });
 
 module.exports = mongoose.model("jobPost", jobPostSchema);

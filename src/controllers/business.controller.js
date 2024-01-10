@@ -27,7 +27,7 @@ class BusinessController {
           data: newBusines,
         });
         await EmployerModel.findByIdAndUpdate(req.body.employer, {
-          $push: { business: newBusines._id },
+          $set: { business: newBusines._id },
         });
       }
     } catch (error) {
