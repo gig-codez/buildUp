@@ -1,5 +1,5 @@
 const jobsModel = require("../models/jobPost.model");
-const employerModel = require("../models/Employer.model");
+const appliedJobs = require("../models/applied_jobs.model");
 
 class JobsController {
   static async addJobs(req, res) {
@@ -104,9 +104,73 @@ class JobsController {
       });
     }
   }
-  // static async searchByTitle(req, res) {
-  //   const searchTerm = req.params.title;
-  // }
+  static async contractor_applied_jobs(req, res) {
+    try {
+      const id = req.params.contractor_id;
+      const jobs = await appliedJobs
+        .find({ contractor: id })
+        .sort({ createdAt: -1 });
+      if (jobs) {
+        res.status(200).json(jobs);
+      } else {
+        res.status(400).json({ message: "Jobs not found" });
+      }
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  }
+  static async client_jobs(req, res) {
+    try {
+      const id = req.params.client_id;
+      const jobs = await appliedJobs
+        .find({ client: id })
+        .sort({ createdAt: -1 });
+      if (jobs) {
+        res.status(200).json(jobs);
+      } else {
+        res.status(400).json({ message: "Jobs not found" });
+      }
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  }
+  static async store_applied_jobs(req, res) {
+    try {
+      const jobs = new appliedJobs({
+        client: req.body.client,
+        contractor: req.body.contractor,
+        job: req.body.job,
+        document: `https://buildup-resources.s3.amazonaws.com/docs/${Date.now()}-${
+          req.file.originalname
+        }`,
+      });
+      await jobs.save();
+      if (jobs) {
+        res.status(200).json({ message: "New applied saved successfully" });
+      } else {
+        res.status(400).json({ message: "Failed to add a new application." });
+      }
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  }
+
+  // delete applied jobs
+  static async delete_applied_jobs(req, res) {
+    try {
+      const jobs = await appliedJobs.findByIdAndDelete(req.params.id);
+
+      if (jobs) {
+        res.status(200).json({ message: "Applied job deleted successfully" });
+      } else {
+        res
+          .status(400)
+          .json({ message: "Failed to delete a new application." });
+      }
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  }
 }
 
 module.exports = JobsController;
