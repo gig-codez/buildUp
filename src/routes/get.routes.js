@@ -28,6 +28,7 @@ router.get("/suppliers/:id", SupplierController.show);
 router.get("/deals", SupplierController.deals);
 router.get("/admin/profession", ContractorProfessionController.index);
 router.get("/admin/supplier-type", SupplierTypeController.index);
+router.get("/jobs", jobscontroller.get_all_jobs);
 router.get(
   "/profession-jobs/:professionId",
   jobscontroller.getJobsByProfession
