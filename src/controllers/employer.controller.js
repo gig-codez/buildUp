@@ -9,7 +9,7 @@ class EmployerController {
         return res.status(404).json({ message: "No employers found" });
       }
 
-      return res.status(200).json({ employers });
+      return res.status(200).json({ data: employers });
     } catch (error) {
       console.error(error);
       return res.status(500).json({ message: error.message });
@@ -43,7 +43,7 @@ class EmployerController {
             res.status(200).json({
               message: "Employer created successfully",
               data: newEmployee,
-              auth,
+              auth
             });
           }
         });
