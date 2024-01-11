@@ -2,17 +2,17 @@ const { default: mongoose } = require("mongoose");
 
 const appliedJobs = new mongoose.Schema(
   {
-    contractor: {
+    contractorId: {
       type: mongoose.Types.ObjectId,
       ref: "freelancer",
       required: true,
     },
-    client: {
+    clientId: {
       type: mongoose.Types.ObjectId,
       ref: "employer",
       required: true,
     },
-    job: {
+    jobId: {
       type: mongoose.Types.ObjectId,
       ref: "jobPost",
       required: true,

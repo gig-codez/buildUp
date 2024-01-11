@@ -19,6 +19,7 @@ class FreelancerLogin {
           token: token,
           userId: freelancer._id,
           profession: freelancer.profession,
+          image: freelancer.profile_pic,
           first_name: `${freelancer.first_name} ${freelancer.last_name}`,
           email: freelancer.email,
           role: "contractor",

@@ -2,10 +2,13 @@ const freelancerModel = require("../models/freelancer.model");
 const otpModel = require("../models/otp.model");
 const bcrypt = require("bcrypt");
 const FreelancerLogin = require("../Auth/freelancerLogin");
+const date = require("../global");
 class FreelancerController {
   static async index(req, res) {
     try {
-      const freelancerPayload = await freelancerModel.find().sort({created_at:-1})
+      const freelancerPayload = await freelancerModel
+        .find()
+        .sort({ created_at: -1 });
       res.status(200).json({ data: freelancerPayload });
     } catch (err) {
       res.status(500).json({ message: err.message });
@@ -32,7 +35,7 @@ class FreelancerController {
           address: req.body.address,
           tel_num: req.body.tel_num,
           role: req.body.role,
-          profession: req.body.profession
+          profession: req.body.profession,
         });
         const newfreelancer = await freelancerPayload.save();
         const auth = await FreelancerLogin.loginHelper(req);
@@ -56,17 +59,45 @@ class FreelancerController {
             const freelancer = await freelancerModel.findByIdAndUpdate(
               req.params.id,
               {
-                username: req.body.username,
-                first_name: req.body.first_name,
-                last_name: req.body.last_name,
-                NIN_NUM: req.body.NIN_NUM,
-                email: req.body.email,
-                country: req.body.country,
-                password: hashedPassword,
-                gender: req.body.gender,
-                address: req.body.address,
-                tel_num: req.body.tel_num,
-                role: req.body.role,
+                $set: {
+                  first_name:
+                    req.body.first_name == ""
+                      ? freelancerPayload.first_name
+                      : req.body.first_name,
+                  last_name:
+                    req.body.last_name == ""
+                      ? freelancerPayload.last_name
+                      : req.body.last_name,
+                  NIN_NUM:
+                    req.body.NIN_NUM == ""
+                      ? freelancerPayload.NIN_NUM
+                      : req.body.NIN_NUM,
+                  email:
+                    req.body.email == ""
+                      ? freelancerPayload.email
+                      : req.body.email,
+                  country:
+                    req.body.country == ""
+                      ? freelancerPayload.country
+                      : req.body.country,
+                  password:
+                    req.body.password == ""
+                      ? freelancerPayload.password
+                      : hashedPassword,
+                  gender:
+                    req.body.gender == ""
+                      ? freelancerPayload.gender
+                      : req.body.gender,
+                  address:
+                    req.body.address == ""
+                      ? freelancerPayload.address
+                      : req.body.address,
+                  tel_num:
+                    req.body.tel_num == ""
+                      ? freelancerPayload.tel_num
+                      : req.body.tel_num,
+                  role: freelancerPayload.role,
+                },
               },
               {
                 new: true,
@@ -78,6 +109,34 @@ class FreelancerController {
               data: updatedFreelancer,
             });
           }
+        });
+      } else {
+        res.status(400).json({ message: "Freelancer not found" });
+      }
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  }
+
+  static async update_contractor_profile(req, res) {
+    try {
+      const freelancerPayload = await freelancerModel.findById(req.params.id);
+      if (freelancerPayload) {
+        const freelancer = await freelancerModel.findByIdAndUpdate(
+          req.params.id,
+          {
+            $set: {
+              profile_pic: `https://buildup-resources.s3.amazonaws.com/images/${date}-${req.file.originalname}`,
+            },
+          },
+          {
+            new: true,
+          }
+        );
+        const updatedFreelancer = await freelancer.save();
+        res.status(200).json({
+          message: "freelancer updated successfully",
+          data: updatedFreelancer,
         });
       } else {
         res.status(400).json({ message: "Freelancer not found" });

@@ -1,5 +1,6 @@
 const jobsModel = require("../models/jobPost.model");
 const appliedJobs = require("../models/applied_jobs.model");
+const date = require("../global");
 
 class JobsController {
   static async addJobs(req, res) {
@@ -108,7 +109,10 @@ class JobsController {
     try {
       const id = req.params.contractor_id;
       const jobs = await appliedJobs
-        .find({ contractor: id })
+        .find({ contractorId: id })
+        .populate("clientId")
+        .populate("contractorId")
+        .populate("jobId")
         .sort({ createdAt: -1 });
       if (jobs) {
         res.status(200).json(jobs);
@@ -122,11 +126,35 @@ class JobsController {
   static async client_jobs(req, res) {
     try {
       const id = req.params.client_id;
+      // ADDING PAGINATION FUNCTIONALITY
+      const page = parseInt(req.query.page) || 1; // Default to page 1 if page query param is not provided
+      const pageSize = parseInt(req.query.pageSize) || 10; // Default page size to 10 if pageSize query param is not provided
+
+      const totalDocuments = await appliedJobs
+        .find({ clientId: id })
+        .countDocuments();
+      const totalPages = Math.ceil(totalDocuments / pageSize);
+
+      // Calculate the number of documents to skip
+      const skipDocuments = (page - 1) * pageSize;
+
       const jobs = await appliedJobs
-        .find({ client: id })
+        .find({ clientId: id })
+        .populate("clientId")
+        .populate("contractorId")
+        .populate("jobId")
+        .skip(skipDocuments)
+        .limit(pageSize)
         .sort({ createdAt: -1 });
       if (jobs) {
-        res.status(200).json(jobs);
+        res.status(200).json({
+          totalDocuments,
+          // schools,
+          totalPages,
+          currentPage: page,
+          pageSize,
+          jobs,
+        });
       } else {
         res.status(400).json({ message: "Jobs not found" });
       }
@@ -137,12 +165,10 @@ class JobsController {
   static async store_applied_jobs(req, res) {
     try {
       const jobs = new appliedJobs({
-        client: req.body.client,
-        contractor: req.body.contractor,
-        job: req.body.job,
-        document: `https://buildup-resources.s3.amazonaws.com/docs/${Date.now()}-${
-          req.file.originalname
-        }`,
+        clientId: req.body.client,
+        contractorId: req.body.contractor,
+        jobId: req.body.job,
+        document: `https://buildup-resources.s3.amazonaws.com/docs/${date}-${req.file.originalname}`,
       });
       await jobs.save();
       if (jobs) {
@@ -154,7 +180,20 @@ class JobsController {
       res.status(500).json({ message: error.message });
     }
   }
+  // delete jobs by prof
+  static async delete_prof_jobs(req, res) {
+    try {
+      const jobs = await jobsModel.findByIdAndDelete(req.params.id);
 
+      if (jobs) {
+        res.status(200).json({ message: "Job deleted successfully" });
+      } else {
+        res.status(400).json({ message: "Failed to delete a job." });
+      }
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  }
   // delete applied jobs
   static async delete_applied_jobs(req, res) {
     try {

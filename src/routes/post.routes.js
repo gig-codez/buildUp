@@ -18,6 +18,8 @@ const VerifyOtp = require("../Auth/verifyotp");
 const Password = require("../Auth/userpassword");
 const SupplierTypeController = require("../controllers/supplierType.controller");
 const docUploader = require("../helpers/documentUploader.js");
+const MeetingController = require("../controllers/meetings.controller");
+
 const router = express.Router();
 // account verification
 router.post("/verifyEmail", AccountVerification.verifyEmail);
@@ -62,4 +64,6 @@ router.post("/forgotPassword", Password.forgotPassword);
 
 router.post("/addJob/:employerId", jobscontroller.addJobs);
 router.post("/job/:employerId", jobscontroller.addJobs);
+// meetings
+router.post("/meetings/add", MeetingController.store);
 module.exports = router;

@@ -6,13 +6,20 @@ const SupplierController = require("../controllers/supplier.controller");
 const FreelancerController = require("../controllers/freelancer.controller");
 const ContractorProfessionController = require("../controllers/contractorProfession.controller");
 const Password = require("../Auth/userpassword");
+const docUploader = require("../helpers/documentUploader");
+const MeetingController = require("../controllers/meetings.controller");
 const router = express.Router();
 
 router.patch("/admin/profession", ContractorProfessionController.update);
 router.patch("/admin/:id", AdminController.update);
 router.patch("/supplier_deals/:id", SupplierController.update_deals);
 //freelancer update
-router.patch("/freelancer/:id", FreelancerController.update);
+router.patch("/contractor/:id", FreelancerController.update);
+router.patch(
+  "/contractor-profile/:id",
+  docUploader("image", "images"),
+  FreelancerController.update_contractor_profile
+);
 //employer update
 // router.patch("/employer/:id", EmployerController.updateEmployer);
 //update business
@@ -21,5 +28,6 @@ router.patch("/business/:id", BusinessController.updateBusiness);
 router.patch("/suppliers/:id", SupplierController.update);
 
 router.patch("/resetpassword/:token", Password.resetPassword);
-
+// meetings
+router.patch("/meetings/:id", MeetingController.update);
 module.exports = router;

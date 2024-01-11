@@ -2,6 +2,7 @@ const express = require("express");
 const multer = require("multer");
 const { S3Client } = require("@aws-sdk/client-s3");
 const multerS3 = require("multer-s3");
+const date = require("../global");
 
 const s3 = new S3Client();
 const docUploader = (field, folder) => {
@@ -13,7 +14,7 @@ const docUploader = (field, folder) => {
         cb(null, { fieldName: `${file.fieldname}` });
       },
       key: function (req, file, cb) {
-        cb(null, `${folder}/${Date.now()}-${file.originalname}`);
+        cb(null, `${folder}/${date}-${file.originalname}`);
       },
     }),
   }).single(field);

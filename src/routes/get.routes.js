@@ -10,6 +10,7 @@ const ContractorProfessionController = require("../controllers/contractorProfess
 const SupplierTypeController = require("../controllers/supplierType.controller");
 const jobscontroller = require("../controllers/jobs.controller");
 const JobsController = require("../controllers/jobs.controller");
+const MeetingController = require("../controllers/meetings.controller");
 const router = express.Router();
 
 router.get("/admin", AdminController.index);
@@ -41,5 +42,6 @@ router.get(
   jobscontroller.getJobsByProfession
 );
 router.get("/employer-jobs/:employerId", jobscontroller.getJobsByEmployer);
-
+// meetings
+router.get("/meetings/:id", MeetingController.get_meetings);
 module.exports = router;
