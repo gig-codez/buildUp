@@ -5,6 +5,8 @@ const BusinessController = require("../controllers/business.controller");
 const SupplierController = require("../controllers/supplier.controller");
 const FreelancerController = require("../controllers/freelancer.controller");
 const ContractorProfessionController = require("../controllers/contractorProfession.controller");
+const JobsController = require("../controllers/jobs.controller");
+const MeetingController = require("../controllers/meetings.controller");
 const router = express.Router();
 
 router.delete("/admin/:id", AdminController.delete);
@@ -18,4 +20,10 @@ router.delete("/freelancer/:id", FreelancerController.delete);
 router.delete("/business/:id", BusinessController.deleteBusiness);
 //delete supplier
 router.delete("/suppliers/:id", SupplierController.delete);
+
+// applied jobs
+router.delete("/delete-applied-jobs/:id", JobsController.delete_applied_jobs);
+router.delete("/delete-prof-jobs/:id", JobsController.delete_prof_jobs);
+// meetings
+router.delete("/meetings/:id", MeetingController.delete);
 module.exports = router;

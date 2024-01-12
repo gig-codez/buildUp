@@ -17,6 +17,9 @@ const OtpController = require("../controllers/otpController");
 const VerifyOtp = require("../Auth/verifyotp");
 const Password = require("../Auth/userpassword");
 const SupplierTypeController = require("../controllers/supplierType.controller");
+const docUploader = require("../helpers/documentUploader.js");
+const MeetingController = require("../controllers/meetings.controller");
+
 const router = express.Router();
 // account verification
 router.post("/verifyEmail", AccountVerification.verifyEmail);
@@ -35,6 +38,12 @@ router.post("/admin/profession", ContractorProfessionController.store);
 router.post("/admin/supplier-type", SupplierTypeController.store);
 
 router.post("/login/freelancer", FreelancerLogin.login);
+router.post(
+  "/applied-jobs/add",
+  docUploader("document", "docs"),
+  jobscontroller.store_applied_jobs
+);
+
 //employer account
 router.post("/login/employer", employerlogin.login);
 router.post("/create/employer", EmployerController.storeEmployer);
@@ -53,7 +62,8 @@ router.post("/verifyOtp", VerifyOtp.verify);
 //forgotpassword
 router.post("/forgotPassword", Password.forgotPassword);
 
-//
 router.post("/addJob/:employerId", jobscontroller.addJobs);
-//
+router.post("/job/:employerId", jobscontroller.addJobs);
+// meetings
+router.post("/meetings/add", MeetingController.store);
 module.exports = router;

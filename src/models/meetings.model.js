@@ -1,32 +1,31 @@
 const { default: mongoose } = require("mongoose");
-const meetingsSchema = new mongoose.Schema({
-  meeting_id: {
-    type: mongoose.Types.ObjectId,
-    required: true,
+const meetingsSchema = new mongoose.Schema(
+  {
+    employer_id: {
+      type: mongoose.Types.ObjectId,
+      ref: "employer",
+      required: true,
+    },
+
+    subject: {
+      type: String,
+      required: true,
+    },
+    body: {
+      type: String,
+      required: true,
+    },
+    time: {
+      type: String,
+      required: true,
+    },
+    date: {
+      type: String,
+      required: true,
+    },
   },
-  employer_id: {
-    type: mongoose.Types.ObjectId,
-    required: true,
-  },
-  job_seeker_id: {
-    type: mongoose.Types.ObjectId,
-    required: true,
-  },
-  meeting_subject: {
-    type: Number,
-    required: true,
-  },
-  meeting_link: {
-    type: String,
-    required: true,
-  },
-  time: {
-    type: String,
-    required: true,
-  },
-  date: {
-    type: String,
-    required: true,
-  },
-});
+  {
+    timestamps: true,
+  }
+);
 module.exports = mongoose.model("meetings", meetingsSchema);

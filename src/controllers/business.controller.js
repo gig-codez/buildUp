@@ -1,4 +1,4 @@
-const EmployerModel = require("../models/Employer.model");
+const EmployerModel = require("../models/employer.model");
 const businessModel = require("../models/business.model");
 class BusinessController {
   static async getAll(req, res) {
@@ -27,7 +27,7 @@ class BusinessController {
           data: newBusines,
         });
         await EmployerModel.findByIdAndUpdate(req.body.employer, {
-          $push: { business: newBusines._id },
+          $set: { business: newBusines._id },
         });
       }
     } catch (error) {

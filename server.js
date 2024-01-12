@@ -5,6 +5,14 @@ const cors = require("cors");
 const { default: mongoose } = require("mongoose");
 require("dotenv").config();
 const app = express();
+const AWS = require("aws-sdk");
+const upload = require("./src/helpers/documentUploader");
+// Configure AWS credentials (replace with your own)
+AWS.config.update({
+  accessKeyId: process.env.AWS_ACCESS_KEY,
+  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  region: process.env.AWS_REGION,
+});
 app.use(cors());
 app.use(express.urlencoded({ extended: true }));
 app.use("/image", express.static("./uploads"));
@@ -35,14 +43,17 @@ app.use("/get", require("./src/routes/get.routes"));
 app.use("/post", require("./src/routes/post.routes"));
 app.use("/delete", require("./src/routes/delete.routes"));
 app.use("/update", require("./src/routes/update.routes"));
+app.use("/payment", require("./src/routes/payment.routes"));
+
+app.post("/upload", upload("photos", "docs"), function (req, res, next) {
+  res.send("Successfully uploaded  ");
+});
 
 // db connection
 const dbOptions = {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 };
-
-console.log("All good");
 
 // connecting to the database
 mongoose.set("strictQuery", false);

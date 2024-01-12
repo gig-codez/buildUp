@@ -1,10 +1,10 @@
-const employerModel = require("../models/Employer.model");
+const employerModel = require("../models/employer.model.js");
 const bcrypt = require("bcrypt");
 const EmployerLogin = require("../Auth/employerlogin");
 class EmployerController {
   static async getAll(req, res) {
     try {
-      const employers = await employerModel.find({});
+      const employers = await employerModel.find().sort({ createdAt: -1 });
       if (!employers) {
         return res.status(404).json({ message: "No employers found" });
       }

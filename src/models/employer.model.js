@@ -35,7 +35,7 @@ const employerModel = new mongoose.Schema(
       ref: "role",
       required: false,
     },
-    business: [{ type: mongoose.Types.ObjectId, ref: "business" }],
+    business: { type: mongoose.Types.ObjectId, ref: "business" },
 
     passwordChangedAt: Date,
     passwordResetToken: String,

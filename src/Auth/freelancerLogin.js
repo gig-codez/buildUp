@@ -4,16 +4,13 @@ const jwt = require("jsonwebtoken");
 require("dotenv").config();
 
 class FreelancerLogin {
-  static async loginHelper(req){
+  static async loginHelper(req) {
     const freelancer = await freelancerModel.findOne({
       email: req.body.email,
     });
     console.log(freelancer);
     if (freelancer) {
-      let isMatch = bcrypt.compareSync(
-          req.body.password,
-          freelancer.password
-      );
+      let isMatch = bcrypt.compareSync(req.body.password, freelancer.password);
       let token = jwt.sign({ id: freelancer._id }, process.env.SECRET_KEY, {
         expiresIn: "1h",
       });
@@ -21,9 +18,11 @@ class FreelancerLogin {
         return {
           token: token,
           userId: freelancer._id,
-          first_name: freelancer.first_name,
+          profession: freelancer.profession,
+          image: freelancer.profile_pic,
+          first_name: `${freelancer.first_name} ${freelancer.last_name}`,
           email: freelancer.email,
-          role: "contractor"
+          role: "contractor",
         };
       } else {
         let error = new Error("Invalid email or password");
@@ -38,11 +37,13 @@ class FreelancerLogin {
   }
 
   static async login(req, res) {
-    try{
+    try {
       let respMessage = await FreelancerLogin.loginHelper(req);
       res.status(200).json(respMessage);
     } catch (error) {
-      res.status(error.hasOwnProperty('code')?error.code:500).json({ message: error.message });
+      res
+        .status(error.hasOwnProperty("code") ? error.code : 500)
+        .json({ message: error.message });
     }
   }
 }
