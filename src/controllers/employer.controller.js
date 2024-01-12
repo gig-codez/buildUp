@@ -1,6 +1,7 @@
 const employerModel = require("../models/employer.model.js");
 const bcrypt = require("bcrypt");
 const EmployerLogin = require("../Auth/employerlogin");
+
 class EmployerController {
   static async getAll(req, res) {
     try {
@@ -43,7 +44,7 @@ class EmployerController {
             res.status(200).json({
               message: "Employer created successfully",
               data: newEmployee,
-              auth
+              auth,
             });
           }
         });

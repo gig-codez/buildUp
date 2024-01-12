@@ -1,4 +1,5 @@
 const express = require("express");
+const router = express.Router();
 const AdminController = require("../controllers/admin.controller");
 const AccountVerification = require("../Auth/emailVerification");
 const EmployerController = require("../controllers/employer.controller");
@@ -11,7 +12,7 @@ const SupplierTypeController = require("../controllers/supplierType.controller")
 const jobscontroller = require("../controllers/jobs.controller");
 const JobsController = require("../controllers/jobs.controller");
 const MeetingController = require("../controllers/meetings.controller");
-const router = express.Router();
+const ShortListedController = require("../controllers/shortlisted.controller");
 
 router.get("/admin", AdminController.index);
 router.get("/verifyToken/:id", AccountVerification.verifyToken);
@@ -44,4 +45,9 @@ router.get(
 router.get("/employer-jobs/:employerId", jobscontroller.getJobsByEmployer);
 // meetings
 router.get("/meetings/:id", MeetingController.get_meetings);
+// shortlisted
+router.get(
+  "/shortlisted/:id",
+  ShortListedController.fetch_short_listed_contractors
+);
 module.exports = router;

@@ -19,6 +19,7 @@ const Password = require("../Auth/userpassword");
 const SupplierTypeController = require("../controllers/supplierType.controller");
 const docUploader = require("../helpers/documentUploader.js");
 const MeetingController = require("../controllers/meetings.controller");
+const MailController = require("../controllers/mail.controller.js");
 
 const router = express.Router();
 // account verification
@@ -66,4 +67,6 @@ router.post("/addJob/:employerId", jobscontroller.addJobs);
 router.post("/job/:employerId", jobscontroller.addJobs);
 // meetings
 router.post("/meetings/add", MeetingController.store);
+// send mail
+router.post("/send-mail", MailController.send_mail);
 module.exports = router;
