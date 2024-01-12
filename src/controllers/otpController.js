@@ -3,7 +3,7 @@ const otpGenerator = require("otp-generator");
 const otpModel = require("../models/otp.model");
 const freelancerModel = require("../models/freelancer.model");
 const SupplierModel = require("../models/Supplier.model");
-const EmployerModel = require("../models/Employer.model");
+const EmployerModel = require("../models/employer.model");
 
 class OtpController {
   static async sendOTP(req, res) {

@@ -1,6 +1,6 @@
 const freelancerModel = require("../models/freelancer.model");
 const SupplierModel = require("../models/Supplier.model");
-const EmployerModel = require("../models/Employer.model");
+const EmployerModel = require("../models/employer.model");
 const mailSender = require("../utils/mailSender.js");
 const crypto = require("crypto");
 const jwt = require("jsonwebtoken");

@@ -43,6 +43,7 @@ app.use("/get", require("./src/routes/get.routes"));
 app.use("/post", require("./src/routes/post.routes"));
 app.use("/delete", require("./src/routes/delete.routes"));
 app.use("/update", require("./src/routes/update.routes"));
+app.use("/payment", require("./src/routes/payment.routes"));
 
 app.post("/upload", upload("photos", "docs"), function (req, res, next) {
   res.send("Successfully uploaded  ");
@@ -53,8 +54,6 @@ const dbOptions = {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 };
-
-console.log("All good");
 
 // connecting to the database
 mongoose.set("strictQuery", false);
