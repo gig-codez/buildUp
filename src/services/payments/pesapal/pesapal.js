@@ -139,8 +139,8 @@ class Pesapal {
                 'description': description,
                 'redirect_mode': 'PARENT_WINDOW',
                 'callback_url': callback,
-                'call_back_url': cancel_url,
-                'notification_id': '1b2215ca-1f2f-49de-a063-ddba8d110018',
+                'cancel_url': cancel_url,
+                'notification_id': "4d24b549-854a-4b37-8d09-ddb707ee31ae",
                 'billing_address': {
                     'phone_number': phone,
                     'first_name': customer_names,
