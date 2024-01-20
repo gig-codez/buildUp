@@ -6,7 +6,7 @@ const { default: mongoose } = require("mongoose");
 require("dotenv").config();
 const app = express();
 const AWS = require("aws-sdk");
-const upload = require("./src/helpers/documentUploader");
+// const upload = require("./src/helpers/uploadManager");
 // Configure AWS credentials (replace with your own)
 AWS.config.update({
   accessKeyId: process.env.AWS_ACCESS_KEY,
@@ -44,10 +44,10 @@ app.use("/post", require("./src/routes/post.routes"));
 app.use("/delete", require("./src/routes/delete.routes"));
 app.use("/update", require("./src/routes/update.routes"));
 app.use("/payments", require("./src/routes/payment.routes"));
-
-app.post("/upload", upload("photos", "docs"), function (req, res, next) {
-  res.send("Successfully uploaded  ");
-});
+app.use("/portfolio", require("./src/routes/portfolio.routes"));
+// app.post("/upload/:id", upload("photos", "docs"), function (req, res, next) {
+//   res.send("Successfully uploaded  ");
+// });
 
 // db connection
 const dbOptions = {
@@ -69,6 +69,8 @@ mongoose
 
 // end of db connection
 app.listen(4000, () => {
-  console.log(`Server running on port => http://127.0.0.1:${process.env.PORT}`);
+  console.log(
+    `Server running on port => http://${process.env.APP_HOST}:${process.env.PORT}`
+  );
   console.table("\nWaiting for database connection");
 });

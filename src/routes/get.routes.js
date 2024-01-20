@@ -13,6 +13,7 @@ const jobscontroller = require("../controllers/jobs.controller");
 const JobsController = require("../controllers/jobs.controller");
 const MeetingController = require("../controllers/meetings.controller");
 const ShortListedController = require("../controllers/shortlisted.controller");
+const PortfolioController = require("../controllers/portfolio.controller");
 
 router.get("/admin", AdminController.index);
 router.get("/verifyToken/:id", AccountVerification.verifyToken);
@@ -35,13 +36,17 @@ router.get("/business/:id", BusinessController.getBusinessById);
 router.get("/suppliers", SupplierController.getAll);
 router.get("/suppliers/:id", SupplierController.show);
 router.get("/deals", SupplierController.deals);
+// deals by category
+router.get("/deals/:id", SupplierController.deals_by_category);
 router.get("/admin/profession", ContractorProfessionController.index);
+router.get("/profession/:id", ContractorProfessionController.findProfById);
 router.get("/admin/supplier-type", SupplierTypeController.index);
 router.get("/jobs", jobscontroller.get_all_jobs);
 router.get(
   "/profession-jobs/:professionId",
   jobscontroller.getJobsByProfession
 );
+
 router.get("/employer-jobs/:employerId", jobscontroller.getJobsByEmployer);
 // meetings
 router.get("/meetings/:id", MeetingController.get_meetings);
