@@ -7,7 +7,7 @@ require("dotenv").config();
 const app = express();
 const WebSocketServer = require("websocket").server;
 const AWS = require("aws-sdk");
-const upload = require("./src/helpers/documentUploader");
+// const upload = require("./src/helpers/documentUploader");
 const wssRoutes = require("./src/routes/websocket.routes");
 const {
   connWaitingArea,
