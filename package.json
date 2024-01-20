@@ -32,6 +32,7 @@
     "nodemon": "^3.0.1",
     "otp-generator": "^4.0.1",
     "socket.io": "^4.7.2",
+    "websocket": "^1.0.34",
     "uuid": "^9.0.1"
   }
 }
