@@ -18,7 +18,7 @@ class BusinessController {
       });
 
       if (businessData) {
-        return res.status(400).send("Business already exists");
+        return res.status(400).json({message:"Business already exists"});
       } else {
         const businessPayload = new businessModel(req.body);
         const newBusines = await businessPayload.save();

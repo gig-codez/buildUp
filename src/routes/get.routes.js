@@ -13,6 +13,8 @@ const jobscontroller = require("../controllers/jobs.controller");
 const JobsController = require("../controllers/jobs.controller");
 const MeetingController = require("../controllers/meetings.controller");
 const ShortListedController = require("../controllers/shortlisted.controller");
+const MessageController = require("../controllers/message.controller")
+const UserController = require("../controllers/user.controller");
 
 router.get("/admin", AdminController.index);
 router.get("/verifyToken/:id", AccountVerification.verifyToken);
@@ -50,4 +52,8 @@ router.get(
   "/shortlisted/:id",
   ShortListedController.fetch_short_listed_contractors
 );
+router.get("/messages", MessageController.getAll);
+router.get("/messages/:role_user_id/:page/:limitPerPage", MessageController.getUserMessages)
+router.get("/messages/:role_user_id/:id", MessageController.getUserMsgGreaterByIdReq)
 module.exports = router;
+

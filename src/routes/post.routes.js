@@ -20,6 +20,8 @@ const SupplierTypeController = require("../controllers/supplierType.controller")
 const docUploader = require("../helpers/documentUploader.js");
 const MeetingController = require("../controllers/meetings.controller");
 const MailController = require("../controllers/mail.controller.js");
+const MessageController = require("../controllers/message.controller");
+const UserController = require("../controllers/user.controller");
 
 const router = express.Router();
 // account verification
@@ -69,4 +71,6 @@ router.post("/job/:employerId", jobscontroller.addJobs);
 router.post("/meetings/add", MeetingController.store);
 // send mail
 router.post("/send-mail", MailController.send_mail);
+router.post("/message", MessageController.storeMessage)
+router.post("/search-users", UserController.searchUsersByRolesRequest)
 module.exports = router;

@@ -13,6 +13,7 @@ const supplierModel = new mongoose.Schema(
     business_email_address: {
       type: String,
       required: true,
+      unique: true
     },
     about_business: {
       type: String,

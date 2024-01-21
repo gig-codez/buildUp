@@ -19,6 +19,7 @@ class EmployerLogin {
           userId: employer._id,
           first_name: employer.first_name,
           email: employer.email_address,
+          userData: employer,
           role: "client"
         };
       } else {

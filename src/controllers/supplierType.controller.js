@@ -5,7 +5,7 @@ class SupplierTypeController {
     //  first check if profession exists
     let supplierTypeData = await supplierTypeSchema.findOne({ name: req.body.name });
     if (supplierTypeData) {
-      return res.status(400).send("Supplier Type already exists");
+      return res.status(400).json({message:"Supplier Type already exists"});
     } else {
       const supplierTypePayload = new supplierTypeSchema({
         name: req.body.name,

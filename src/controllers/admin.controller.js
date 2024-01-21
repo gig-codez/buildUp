@@ -6,7 +6,7 @@ class AdminController {
     //  first check if admin exists
     let adminData = await adminSchema.findOne({ email: req.body.email });
     if (adminData) {
-      return res.status(400).send("Admin already exists");
+      return res.status(400).json({message:"Admin already exists"});
     } else {
       bcrypt.hash(req.body.password, 10, async (err, hashedPassword) => {
         if (err) {

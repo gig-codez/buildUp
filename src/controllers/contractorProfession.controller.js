@@ -5,7 +5,7 @@ class ContractorProfessionController {
     //  first check if profession exists
     let contractorProfessionData = await contractorProfessionSchema.findOne({ name: req.body.name });
     if (contractorProfessionData) {
-      return res.status(400).send("Profession already exists");
+      return res.status(400).json({message:"Profession already exists"});
     } else {
       const contractorProfessionPayload = new contractorProfessionSchema({
         name: req.body.name,

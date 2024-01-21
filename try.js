@@ -1,1 +1,2 @@
-console.log(Object.values({"lo":"poi"}))
+let r = null
+console.log(r??900)
