@@ -1,6 +1,9 @@
 const employerModel = require("../models/employer.model.js");
 const bcrypt = require("bcrypt");
 const EmployerLogin = require("../Auth/employerlogin");
+const S3Folder = require("../utils/s3_folder.js");
+const date = require("../global/index.js");
+
 class EmployerController {
   static async getAll(req, res) {
     try {
@@ -22,7 +25,7 @@ class EmployerController {
         email_address: req.body.email_address,
       });
       if (employerData) {
-        return res.status(400).send("Employer already exist");
+        res.status(400).json({message: "Employer already exists"});
       } else {
         bcrypt.hash(req.body.password, 10, async (err, hashedPassword) => {
           if (err) {
@@ -40,10 +43,14 @@ class EmployerController {
             const newEmployee = await employerPayload.save();
             req.body.email = req.body.email_address;
             const auth = await EmployerLogin.loginHelper(req);
+            // create respective folders
+            S3Folder.execute(
+              `${date}_${req.body.first_name}_${req.body.last_name}`
+            );
             res.status(200).json({
               message: "Employer created successfully",
               data: newEmployee,
-              auth
+              auth,
             });
           }
         });

@@ -1,69 +1,47 @@
 const mongoose = require("mongoose");
 
-const paymentSchema = new mongoose.Schema({
-    payment_id: {
-        type: mongoose.Types.ObjectId,
-        required: true,
+const paymentSchema = new mongoose.Schema(
+  {
+    employer_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "employer",
+      required: true,
     },
-    contractee_user_id: {
-        type: mongoose.Types.ObjectId,
-        required: true,
+    recipeint: {
+      type: String,
+      default: "",
     },
-    contractor_user_id: {
-        type: mongoose.Types.ObjectId,
-        required: true,
-    },
-    job_contract_id: {
-        type: mongoose.Types.ObjectId,
-        required: true,
-    },
-    payment_amount: {
-        type: Number,
-        required: true,
-    },
-    service_description: {
-        type: String,
-        required: true,
-    },
-    time: {
-        type: String,
-        required: true,
-    },
-    date: {
-        type: String,
-        required: true,
+    amount: {
+      type: Number,
+      required: true,
     },
     phone_number: {
-        type: String,
-        default: null,
-    },
-    payment_mode: {
-        type: String,
-        default: null,
+      type: String,
+      default: null,
     },
     payment_method: {
-        type: String,
-        default: null,
+      type: String,
+      default: "",
     },
     description: {
-        type: String,
-        default: null,
+      type: String,
+      default: "",
     },
     reference: {
-        type: String,
-        default: null,
+      type: String,
+      default: "",
     },
     status: {
-        type: String,
-        default: null,
+      type: String,
+      default: "",
     },
-    order_tracking_id: {
-        type: String,
-        default: null,
+    order: {
+      type: Object,
+      default: {},
     },
-    OrderNotificationType: {
-        type: String,
-        default: null,
-    },
-});
+  },
+  {
+    timestamps: true,
+  }
+);
 module.exports = mongoose.model("payment", paymentSchema);

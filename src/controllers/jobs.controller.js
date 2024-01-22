@@ -44,8 +44,22 @@ class JobsController {
 
   static async get_all_jobs(req, res) {
     try {
-      const jobs = await jobsModel.find();
+      // ADDING PAGINATION FUNCTIONALITY
+      const page = parseInt(req.query.page) || 1; // Default to page 1 if page query param is not provided
+      const pageSize = parseInt(req.query.pageSize) || 10; // Default page size to 10 if pageSize query param is not provided
+
+      const totalDocuments = await jobsModel.find().countDocuments();
+      const totalPages = Math.ceil(totalDocuments / pageSize);
+
+      // Calculate the number of documents to skip
+      const skipDocuments = (page - 1) * pageSize;
+      const jobs = await jobsModel.find().skip(skipDocuments).limit(pageSize);
       res.status(200).json({
+        totalDocuments,
+
+        totalPages,
+        currentPage: page,
+        pageSize,
         jobs,
       });
     } catch (error) {
@@ -83,6 +97,17 @@ class JobsController {
 
   static async getJobsByEmployer(req, res) {
     try {
+      // ADDING PAGINATION FUNCTIONALITY
+      const page = parseInt(req.query.page) || 1; // Default to page 1 if page query param is not provided
+      const pageSize = parseInt(req.query.pageSize) || 10; // Default page size to 10 if pageSize query param is not provided
+
+      const totalDocuments = await jobsModel
+        .find({ employer: req.params.employerId })
+        .countDocuments();
+      const totalPages = Math.ceil(totalDocuments / pageSize);
+
+      // Calculate the number of documents to skip
+      const skipDocuments = (page - 1) * pageSize;
       const jobs = await jobsModel
         .find({ employer: req.params.employerId })
         .populate({
@@ -94,12 +119,19 @@ class JobsController {
               "business_name business_email business_tel address year_of_foundation",
           },
         })
+        .skip(skipDocuments)
+        .limit(pageSize)
         .populate("profession", "name");
 
-      res.status(200).json(jobs);
+      res.status(200).json({
+        totalDocuments,
+        totalPages,
+        currentPage: page,
+        pageSize,
+        jobs,
+      });
     } catch (error) {
       res.status(500).json({
-        success: false,
         message: "An error occured while getting the jobs",
         error: error.message,
       });
@@ -163,12 +195,13 @@ class JobsController {
     }
   }
   static async store_applied_jobs(req, res) {
+    console.log(req.body)
     try {
       const jobs = new appliedJobs({
         clientId: req.body.client,
         contractorId: req.body.contractor,
         jobId: req.body.job,
-        document: `https://buildup-resources.s3.amazonaws.com/docs/${date}-${req.file.originalname}`,
+        document: `https://buildup-resources.s3.amazonaws.com/buildUp-${req.params.name}/docs/${date}-${req.file.originalname}`,
       });
       await jobs.save();
       if (jobs) {

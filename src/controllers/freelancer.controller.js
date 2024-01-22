@@ -126,7 +126,7 @@ class FreelancerController {
           req.params.id,
           {
             $set: {
-              profile_pic: `https://buildup-resources.s3.amazonaws.com/images/${date}-${req.file.originalname}`,
+              profile_pic: `https://buildup-resources.s3.amazonaws.com/buildUp-${req.params.name}/photos/${date}-${req.file.originalname}`,
             },
           },
           {

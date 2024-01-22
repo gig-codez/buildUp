@@ -4,7 +4,7 @@ const jwt = require("jsonwebtoken");
 require("dotenv").config();
 
 class EmployerLogin {
-  static async loginHelper(req){
+  static async loginHelper(req) {
     const employer = await employerModel.findOne({
       email_address: req.body.email,
     });
@@ -19,6 +19,7 @@ class EmployerLogin {
           userId: employer._id,
           first_name: employer.first_name,
           email: employer.email_address,
+          userData: employer,
           role: "client"
         };
       } else {
@@ -26,16 +27,21 @@ class EmployerLogin {
         error.code = 401;
         throw error;
       }
+    } else {
+      let error = new Error("Email does not exist");
+      error.code = 401;
+      throw error;
     }
   }
-
 
   static async login(req, res) {
     try {
       let respMessage = await EmployerLogin.loginHelper(req);
       res.status(200).json(respMessage);
     } catch (error) {
-      res.status(error.hasOwnProperty('code')?error.code:500).json({ message: error.message });
+      res
+        .status(error.hasOwnProperty("code") ? error.code : 500)
+        .json({ message: error.message });
     }
   }
 }

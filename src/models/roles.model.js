@@ -5,7 +5,7 @@ const roleSchema = new mongoose.Schema(
     name: {
       type: String,
       required: false,
-      enum: ["freelancer", "employer", "supplier", "admin"],
+      enum: ["freelancer", "employer", "supplier", "admin", "consultants"],
     },
   },
   {
@@ -13,4 +13,4 @@ const roleSchema = new mongoose.Schema(
   }
 );
 
-module.exports = mongoose.model('role', roleSchema);
+module.exports = mongoose.model("role", roleSchema);

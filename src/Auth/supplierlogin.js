@@ -19,6 +19,7 @@ class SupplierLogin {
           userId: supplier._id,
           first_name: supplier.business_name,
           email: supplier.business_email_address,
+          userData: supplier,
           role: "supplier",
         };
       } else {
@@ -27,7 +28,7 @@ class SupplierLogin {
         throw error;
       }
     } else {
-      let error = new Error("invalid details");
+      let error = new Error("Invalid details");
       error.code = 401;
       throw error;
     }

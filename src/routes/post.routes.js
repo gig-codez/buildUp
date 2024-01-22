@@ -17,8 +17,11 @@ const OtpController = require("../controllers/otpController");
 const VerifyOtp = require("../Auth/verifyotp");
 const Password = require("../Auth/userpassword");
 const SupplierTypeController = require("../controllers/supplierType.controller");
-const docUploader = require("../helpers/documentUploader.js");
+const uploadManager = require("../helpers/uploadManager.js");
 const MeetingController = require("../controllers/meetings.controller");
+const MailController = require("../controllers/mail.controller.js");
+const MessageController = require("../controllers/message.controller");
+const UserController = require("../controllers/user.controller");
 
 const router = express.Router();
 // account verification
@@ -29,8 +32,8 @@ router.post("/login/admin", AdminLogin.login);
 router.post("/add/role", RoleController.store);
 // freelancer routes
 router.post(
-  "/create/freelancer",
-  imageUpload("uploads/images"),
+  "/create/freelancer/:name",
+  uploadManager("images", "photos"),
   FreelancerController.store
 );
 
@@ -39,8 +42,8 @@ router.post("/admin/supplier-type", SupplierTypeController.store);
 
 router.post("/login/freelancer", FreelancerLogin.login);
 router.post(
-  "/applied-jobs/add",
-  docUploader("document", "docs"),
+  "/applied-jobs/add/:name",
+  uploadManager("document", "docs"),
   jobscontroller.store_applied_jobs
 );
 
@@ -66,4 +69,8 @@ router.post("/addJob/:employerId", jobscontroller.addJobs);
 router.post("/job/:employerId", jobscontroller.addJobs);
 // meetings
 router.post("/meetings/add", MeetingController.store);
+// send mail
+router.post("/send-mail", MailController.send_mail);
+router.post("/message", MessageController.storeMessage)
+router.post("/search-users", UserController.searchUsersByRolesRequest)
 module.exports = router;

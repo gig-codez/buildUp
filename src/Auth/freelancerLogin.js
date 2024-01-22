@@ -22,6 +22,7 @@ class FreelancerLogin {
           image: freelancer.profile_pic,
           first_name: `${freelancer.first_name} ${freelancer.last_name}`,
           email: freelancer.email,
+          userData: freelancer,
           role: "contractor",
         };
       } else {
@@ -30,7 +31,7 @@ class FreelancerLogin {
         throw error;
       }
     } else {
-      let error = new Error("invalid details");
+      let error = new Error("Invalid details");
       error.code = 401;
       throw error;
     }
