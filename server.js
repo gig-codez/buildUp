@@ -53,6 +53,7 @@ app.use("/delete", require("./src/routes/delete.routes"));
 app.use("/update", require("./src/routes/update.routes"));
 app.use("/payments", require("./src/routes/payment.routes"));
 app.use("/portfolio", require("./src/routes/portfolio.routes"));
+app.use("/search", require("./src/routes/search.routes"));
 // app.post("/upload/:id", upload("photos", "docs"), function (req, res, next) {
 //   res.send("Successfully uploaded  ");
 // });
