@@ -19,6 +19,7 @@ class SupplierLogin {
           userId: supplier._id,
           first_name: supplier.business_name,
           email: supplier.business_email_address,
+          userData: supplier,
           role: "supplier",
         };
       } else {

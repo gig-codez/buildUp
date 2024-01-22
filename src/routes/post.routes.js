@@ -20,7 +20,6 @@ const SupplierTypeController = require("../controllers/supplierType.controller")
 const uploadManager = require("../helpers/uploadManager.js");
 const MeetingController = require("../controllers/meetings.controller");
 const MailController = require("../controllers/mail.controller.js");
-const PortfolioController = require("../controllers/portfolio.controller.js");
 
 const router = express.Router();
 // account verification
@@ -70,5 +69,4 @@ router.post("/job/:employerId", jobscontroller.addJobs);
 router.post("/meetings/add", MeetingController.store);
 // send mail
 router.post("/send-mail", MailController.send_mail);
-// save user portfolio
 module.exports = router;

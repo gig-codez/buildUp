@@ -7,7 +7,7 @@ class ContractorProfessionController {
       name: req.body.name,
     });
     if (contractorProfessionData) {
-      return res.status(400).json({ message: "Profession already exists" });
+      return res.status(400).json({message:"Profession already exists"});
     } else {
       const contractorProfessionPayload = new contractorProfessionSchema({
         name: req.body.name,

@@ -19,8 +19,8 @@ class EmployerLogin {
           userId: employer._id,
           first_name: employer.first_name,
           email: employer.email_address,
-          role: "client",
-          roleId: employer.role,
+          userData: employer,
+          role: "client"
         };
       } else {
         let error = new Error("Invalid email or password");
