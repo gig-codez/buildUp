@@ -11,4 +11,5 @@ router.post("/processOrder", PaymentController.processOrder);
 router.get("/checkStatus", PaymentController.checkTransactionStatus);
 router.get("/transactions/:id", PaymentController.transactions);
 router.delete("/deleteTransaction/:id", PaymentController.deleteTransaction);
+router.patch("/updateTransaction/:id",PaymentController.updateTransaction);
 module.exports = router;

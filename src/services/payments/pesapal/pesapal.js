@@ -176,6 +176,7 @@ class Pesapal {
      * @return {object} The status of the transaction.
      */
     static async transactionStatus(orderTrackingId) {
+        // let response = null;
         try {
             if (!orderTrackingId || orderTrackingId.trim() === '') {
                 throw new Error('Missing Transaction ID');
@@ -193,16 +194,14 @@ class Pesapal {
                 'Authorization': `Bearer ${res.token}`,
             };
 
-            const response = await axios.get(url, { headers });
-            const data = response.data;
-
+            let response = await axios.get(url, { headers });
+            let data = response.data;
             return data;
         } catch (error) {
+            console.log(error)
             return { success: false, message: error.message };
         }
     }
-
-
 }
 
 

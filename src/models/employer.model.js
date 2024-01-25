@@ -35,6 +35,11 @@ const employerModel = new mongoose.Schema(
       ref: "role",
       required: false,
     },
+    balance:{
+      type:String,
+      required:false,
+      default:0,
+    },
     business: { type: mongoose.Types.ObjectId, ref: "business" },
 
     passwordChangedAt: Date,

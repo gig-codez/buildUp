@@ -6,6 +6,16 @@ const paymentSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "employer",
       required: true,
+    }, 
+    contractor_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "freelancer",
+      required: false,
+    },
+    supplier_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "supplier",
+      required: false,
     },
     recipeint: {
       type: String,
