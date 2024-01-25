@@ -178,19 +178,19 @@ static async updateTransaction(req,res){
   static async processOrder(req, res) {
     try {
       // Extract required parameters from the request body
-      const { recipient, amount, phone_number, employer, reason } = req.body;
+      const { recipient, customer_name, customer_email, amount, phone_number, employer, reason } = req.body;
       const payment_reference = uuidv4();
       const call_back_url = "http://165.232.121.139:4000/payments/finishPayment";
       const cancel_url = "http://165.232.121.139:4000/payments/cancel-payment";
-      const customer_names = "John Doe"; /// TODO add customer names
-      const customer_email = "pYk2K@example.com"; // TODO add customer email
+      // const customer_names = "John Doe"; /// TODO add customer names
+      // const customer_email = "pYk2K@example.com"; // TODO add customer email
       const data = await PesaPal.orderProcess(
         payment_reference,
         amount,
         phone_number,
         reason,
         call_back_url,
-        customer_names,
+        customer_name,
         customer_email,
         cancel_url
       );
