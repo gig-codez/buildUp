@@ -17,13 +17,13 @@ class VerifyToken {
       req.role = decoded.role;
       next();
     } catch (error) {
-        if(error.name==="TokenExpiredError"){
-            return res.status(401).json({message:"Token expired"})
-        }
-        return res.status(402).json({success:false,message:"invalid token"});
+      if (error.name === "TokenExpiredError") {
+        return res.status(401).json({ message: "Token expired" });
+      }
+      return res.status(402).json({ success: false, message: "invalid token" });
     }
   }
-  static async restrict(req,res){
-     
-  }
+  static async restrict(req, res) {}
 }
+
+module.exports = VerifyToken;

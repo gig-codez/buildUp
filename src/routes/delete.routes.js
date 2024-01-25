@@ -29,4 +29,6 @@ router.delete("/delete-prof-jobs/:id", JobsController.delete_prof_jobs);
 router.delete("/meetings/:id", MeetingController.delete);
 // shorlisted
 router.delete("/shortlisted/:id", ShortListedController.delete);
+// deeals
+router.delete("/deals/:id", SupplierController.delete_deals);
 module.exports = router;

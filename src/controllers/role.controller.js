@@ -3,7 +3,7 @@ class RoleController {
   static async index(req, res) {
     try {
       const rolePayload = await roleSchema.find();
-      res.status(200).json({ data: rolePayload });
+      res.status(200).json(rolePayload);
     } catch (error) {
       res.status(500).json({ message: error.message });
     }

@@ -146,9 +146,37 @@ class SupplierController {
     try {
       const deals = await supplierDealModel.find().sort({ createdAt: -1 });
       if (deals) {
-        res.status(200).json({ data: deals });
+        res.status(200).json(deals);
       } else {
         res.status(400).json({ message: "Error fetching deals.." });
+      }
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  }
+  static async deals_by_category(req, res) {
+    try {
+      const deals = await supplierDealModel
+        .find({ supplierType: req.params.id })
+        .sort({ createdAt: -1 });
+      if (deals) {
+        res.status(200).json(deals);
+      } else {
+        res.status(400).json({ message: "Error fetching deals.." });
+      }
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  }
+  static async delete_deals(req, res) {
+    try {
+      const deletedDeals = await supplierDealModel.findByIdAndDelete(
+        req.params.id
+      );
+      if (deletedDeals) {
+        res.status(200).json({ message: "Deals deleted successfully" });
+      } else {
+        res.status(400).json({ message: "deals not found" });
       }
     } catch (error) {
       res.status(500).json({ message: error.message });

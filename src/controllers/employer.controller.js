@@ -1,6 +1,8 @@
 const employerModel = require("../models/employer.model.js");
 const bcrypt = require("bcrypt");
 const EmployerLogin = require("../Auth/employerlogin");
+const S3Folder = require("../utils/s3_folder.js");
+const date = require("../global/index.js");
 
 class EmployerController {
   static async getAll(req, res) {
@@ -41,6 +43,10 @@ class EmployerController {
             const newEmployee = await employerPayload.save();
             req.body.email = req.body.email_address;
             const auth = await EmployerLogin.loginHelper(req);
+            // create respective folders
+            S3Folder.execute(
+              `${date}_${req.body.first_name}_${req.body.last_name}`
+            );
             res.status(200).json({
               message: "Employer created successfully",
               data: newEmployee,
