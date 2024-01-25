@@ -1,4 +1,4 @@
-const {connWaitingArea, addressUserIdMapping, connAcceptedArea, _sendMessage, _sendSuccess} = require("../../src/global");
+const {connWaitingArea, addressUserIdMapping, connAcceptedArea, _sendSuccessUsingId, _sendSuccess} = require("../../src/global");
 const userController = require("../controllers/user.controller")
 const MessageController = require("../controllers/message.controller");
 function init(jsonData, connection) {
@@ -24,6 +24,15 @@ function searchUserByEmail(jsonData, connection){
   });
 }
 
+
+function seenIncomingMessages(jsonData, connection){
+  const sender = jsonData.data["senderId"];
+  MessageController.updateSeen(jsonData.data["messageIds"], sender).then(()=>{
+    _sendSuccess(jsonData, connection, "");
+    _sendSuccessUsingId({...jsonData, referrer:"seenOutgoingMessages"}, sender, "");
+  });
+}
+
 module.exports = {
-  init, searchUserByEmail
+  init, searchUserByEmail, seenIncomingMessages
 }
