@@ -21,6 +21,11 @@ const messageModel = new mongoose.Schema({
     enum: ["text", "image", "file", "video", "audio"],
     required: true
   },
+  seen:{
+    type: Boolean,
+    required: true,
+    default: false
+  },
   time: {
     type: Date,
     required: true,
