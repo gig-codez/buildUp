@@ -1,3 +1,4 @@
+const employerModel = require("../models/employer.model");
 const paymentModel = require("../models/payment.model");
 const PaymentModel = require("../models/payment.model");
 const PesaPal = require("../services/payments/pesapal/pesapal");
@@ -95,34 +96,94 @@ class PaymentController {
       return res.render("payments.cancel"); // Or return an error view
     }
   }
-
+static async updateTransaction(req,res){
+  try {
+    const {id} = req.params;
+    if(!id){
+      return res.status(400).json({message:"Missing required parameters."});
+    }
+    const transaction = await paymentModel.findByIdAndUpdate(id,{
+      $set:req.body
+    });
+    transaction.save();
+    return res.status(200).json({message:"Transaction updated successfully."});
+  } catch (error) {
+    return res.status(500).json({message:error.message});
+  }
+}
   static async completePayment(req, res) {
     try {
-      const { OrderTrackingId, OrderMerchantReference } = req.query;
+      const { OrderTrackingId,OrderMerchantReference } = req.query;
+      // console.log(req.param)
       const paymentReference = OrderMerchantReference;
       //check the transaction status
-      const result = PesaPal.transactionStatus(OrderTrackingId);
+      const result = await PesaPal.transactionStatus(OrderTrackingId);
       //perform some logic to verify the payment and complete the payment
+      if(result.payment_status_description == 'Completed'){
+        // console.log("payment completed")
+       let customer_transaction = await paymentModel.findOne({reference:paymentReference});
+        if(customer_transaction){
 
-      return res.json({ success: true, message: "Success", response: result });
+          if(customer_transaction.status == 'PENDING'){
+
+            const paymentTransaction = await paymentModel.findByIdAndUpdate(customer_transaction._id,{status:'COMPLETED'});
+            paymentTransaction.save();
+            // update client balance
+          const client = await employerModel.findOne({_id:customer_transaction.employer_id});
+          if(client){
+            let old_balance =  parseInt(`${client.balance}`);
+            let new_balance = parseInt(`${result.amount}`);
+          let total = old_balance + new_balance;
+          console.log(`Total balance ${total}`);
+            //  update client balance
+          const updatedAccount = await employerModel.findByIdAndUpdate(customer_transaction.employer_id,{
+             $set: {
+               balance:total,
+             }
+           });
+           updatedAccount.save();
+           return res.status(200).json({ message: "Payment completed successfully..", });
+          } else {
+           return res.status(400).json({ message: "User not found." });
+          }
+            } else {
+              return res.status(400).json({message:"Transaction already executed."})
+            }
+        } else {
+          return res.status(400).json({message:"Payment record not found."})
+        }
+      }
+    
     } catch (error) {
-      // Handle errors
-      console.error(error);
-      return res
-        .status(500)
-        .json({ success: false, message: "Internal Server Error" });
+      return res.status(500).json({ message: error.message });
     }
   }
+   static async processTransaction(req,res) {
+      try {
+        const { amount , contact , reason, recipient_id } = req.body;
+        if(recipient_id ){
+          supplierModel.findOne({_id:recipient_id});
+          // TODO transact money
+        }
+        const payment_reference = uuidv4();
+        // const data = await PesaPal.orderProcess(payment_reference,amount,contact,reason);
+        if(data){
+          res.status(200).json({message:data});
+        }
 
+      } catch (error) {
+        res.status(500).json({message:error.message});
+      }
+    }
   static async processOrder(req, res) {
     try {
       // Extract required parameters from the request body
       const { recipient, amount, phone_number, employer, reason } = req.body;
       const payment_reference = uuidv4();
-      const call_back_url = "http://127.0.0.1:4000/payments/finishPayment";
-      const cancel_url = "http://127.0.0.1:4000/payments/cancel-payment";
-      const customer_names = "John Doe";
-      const customer_email = "pYk2K@example.com";
+      const call_back_url = "http://165.232.121.139:4000/payments/finishPayment";
+      const cancel_url = "http://165.232.121.139:4000/payments/cancel-payment";
+      const customer_names = "John Doe"; /// TODO add customer names
+      const customer_email = "pYk2K@example.com"; // TODO add customer email
       const data = await PesaPal.orderProcess(
         payment_reference,
         amount,

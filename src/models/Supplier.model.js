@@ -48,6 +48,11 @@ const supplierModel = new mongoose.Schema(
       ref: "role",
       required: true,
     },
+    balance:{
+      type:String,
+      required:false,
+      default:0,
+    },
     supplier_deals: [
       {
         type: mongoose.Types.ObjectId,

@@ -44,6 +44,11 @@ const freelancerSchema = new mongoose.Schema(
         ref: "contractorProfession",
         required: true,
       },
+      balance:{
+        type:Number,
+        required:false,
+        default:0,
+      },
       address: {
         type: String,
         required: true,

@@ -140,7 +140,7 @@ class Pesapal {
                 'redirect_mode': 'PARENT_WINDOW',
                 'callback_url': callback,
                 'cancel_url': cancel_url,
-                'notification_id': "4d24b549-854a-4b37-8d09-ddb707ee31ae",
+                'notification_id': "1e2e14ac-a538-4400-9063-ddaa61771253",
                 'billing_address': {
                     'phone_number': phone,
                     'first_name': customer_names,
@@ -176,6 +176,7 @@ class Pesapal {
      * @return {object} The status of the transaction.
      */
     static async transactionStatus(orderTrackingId) {
+        // let response = null;
         try {
             if (!orderTrackingId || orderTrackingId.trim() === '') {
                 throw new Error('Missing Transaction ID');
@@ -193,16 +194,14 @@ class Pesapal {
                 'Authorization': `Bearer ${res.token}`,
             };
 
-            const response = await axios.get(url, { headers });
-            const data = response.data;
-
+            let response = await axios.get(url, { headers });
+            let data = response.data;
             return data;
         } catch (error) {
+            console.log(error)
             return { success: false, message: error.message };
         }
     }
-
-
 }
 
 

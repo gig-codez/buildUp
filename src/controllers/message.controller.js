@@ -10,18 +10,20 @@ class MessageController {
     }
   }
 
+  static columns = {sender_id: 1, receiver_id: 1, message: 1, message_type:1, time: 1, seen: 1};
+
   static paginateMessages(roleUserId, page, limitPerPage){
     return messageModel.find({$or:[{sender_id: roleUserId}, {receiver_id: roleUserId}]},
-        {sender_id: 1, receiver_id: 1, message: 1, message_type:1, time: 1}).limit(limitPerPage).skip(((page-1)*limitPerPage))
+        MessageController.columns).limit(limitPerPage).skip(((page-1)*limitPerPage))
   }
 
   static getUserMsgGreaterById(roleUserId, messageId){
     if(messageId.length===0){
       return messageModel.find({$or:[{sender_id: roleUserId}, {receiver_id: roleUserId}]},
-          {sender_id: 1, receiver_id: 1, message: 1, message_type:1, time: 1});
+          MessageController.columns);
     }
       return messageModel.find({$and: [{_id: {$gt: messageId}}, {$or: [{sender_id: roleUserId}, {receiver_id: roleUserId}]}]},
-          {sender_id: 1, receiver_id: 1, message: 1, message_type:1, time: 1});
+          MessageController.columns);
   }
 
   static async getUserMsgGreaterByIdReq(req, res){
@@ -43,11 +45,19 @@ class MessageController {
       const roleUserId = req.params.role_user_id;
 
       const messages = await MessageController.paginateMessages(roleUserId, page, limitPerPage);
+      // for(let msg of messages){
+      //   await MessageController.updateSeen([msg["_id"].toString()],"");
+        // await messageModel.deleteOne({_id: msg["_id"]})
+      // }
 
       res.status(200).json({ data: messages, paginationDetails:  {limitPerPage, page, roleUserId}});
     } catch (error) {
       res.status(500).json({ message: error.message });
     }
+  }
+
+  static async updateSeen(messageIds){
+    await messageModel.updateMany({_id: {$in: messageIds}}, {$set:{seen:true}});
   }
 
   static async storeMessage(req, res){

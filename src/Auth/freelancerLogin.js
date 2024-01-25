@@ -22,7 +22,7 @@ class FreelancerLogin {
           image: freelancer.profile_pic,
           first_name: `${freelancer.first_name} ${freelancer.last_name}`,
           email: freelancer.email,
-          userData: freelancer,
+          // userData: freelancer,
           role: "contractor",
         };
       } else {
