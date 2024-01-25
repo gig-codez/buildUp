@@ -36,7 +36,7 @@ const employerModel = new mongoose.Schema(
       required: false,
     },
     balance:{
-      type:String,
+      type:Number,
       required:false,
       default:0,
     },

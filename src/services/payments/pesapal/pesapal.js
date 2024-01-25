@@ -140,7 +140,7 @@ class Pesapal {
                 'redirect_mode': 'PARENT_WINDOW',
                 'callback_url': callback,
                 'cancel_url': cancel_url,
-                'notification_id': "4d24b549-854a-4b37-8d09-ddb707ee31ae",
+                'notification_id': "1e2e14ac-a538-4400-9063-ddaa61771253",
                 'billing_address': {
                     'phone_number': phone,
                     'first_name': customer_names,

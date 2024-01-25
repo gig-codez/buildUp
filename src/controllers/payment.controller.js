@@ -131,10 +131,14 @@ static async updateTransaction(req,res){
             // update client balance
           const client = await employerModel.findOne({_id:customer_transaction.employer_id});
           if(client){
+            let old_balance =  parseInt(`${client.balance}`);
+            let new_balance = parseInt(`${result.amount}`);
+          let total = old_balance + new_balance;
+          console.log(`Total balance ${total}`);
             //  update client balance
           const updatedAccount = await employerModel.findByIdAndUpdate(customer_transaction.employer_id,{
              $set: {
-               balance: client.amount += result.amount,
+               balance:total,
              }
            });
            updatedAccount.save();
@@ -142,6 +146,8 @@ static async updateTransaction(req,res){
           } else {
            return res.status(400).json({ message: "User not found." });
           }
+            } else {
+              return res.status(400).json({message:"Transaction already executed."})
             }
         } else {
           return res.status(400).json({message:"Payment record not found."})

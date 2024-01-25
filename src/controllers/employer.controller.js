@@ -90,5 +90,24 @@ class EmployerController {
       res.status(500).json({ message: error.message });
     }
   }
+// update employer model
+static async update(req,res) {
+  try {
+    const employer = await employerModel.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true }
+    );
+    if (!employer) {
+      return res.status(404).json({ message: "Employer not found" });
+    }
+    return res.status(200).json({
+      message: "Employer updated successfully",
+      data: employer,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+}
 }
 module.exports = EmployerController;

@@ -45,7 +45,7 @@ const freelancerSchema = new mongoose.Schema(
         required: true,
       },
       balance:{
-        type:String,
+        type:Number,
         required:false,
         default:0,
       },

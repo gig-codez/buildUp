@@ -1,5 +1,5 @@
 const express = require("express");
-// const EmployerController = require("../controllers/employer.controller");
+const EmployerController = require("../controllers/employer.controller");
 const AdminController = require("../controllers/admin.controller");
 const BusinessController = require("../controllers/business.controller");
 const SupplierController = require("../controllers/supplier.controller");
@@ -21,7 +21,7 @@ router.patch(
   FreelancerController.update_contractor_profile
 );
 //employer update
-// router.patch("/employer/:id", EmployerController.updateEmployer);
+router.patch("/employer/:id", EmployerController.update);
 //update business
 router.patch("/business/:id", BusinessController.updateBusiness);
 //update supplier
