@@ -1,5 +1,6 @@
 const date = require("../global");
 const portfolioModel = require("../models/portifolio.model");
+const fileStoreMiddleware = require("../helpers/file_helper");
 class PortfolioController {
   static async get(req, res) {
     try {
@@ -16,15 +17,17 @@ class PortfolioController {
   // store portfolio in model
   static async store(req, res) {
     try {
+      let snaps = [];
+      if(req.file || req.files){
+        const imagePath = await fileStoreMiddleware(req, "portfolio");
+        snaps = imagePath;
+      }
       const portfolio = new portfolioModel({
         ownerId: req.body.ownerId,
         clientName: req.body.clientName,
         description: req.body.description,
         projectName: req.body.projectName,
-        snaps: req.files.map(
-          (file) =>
-            `https://buildup-resources.s3.amazonaws.com/buildUp-${req.params.name}/photos/${date}-${file.originalname}`
-        ),
+        snaps: snaps,
       });
 
       await portfolio.save();
@@ -48,6 +51,11 @@ class PortfolioController {
   //   update portfolio
   static async update(req, res) {
     try {
+       let snaps = [];
+      if(req.file || req.files){
+        const imagePath = await fileStoreMiddleware(req, "portfolio");
+        snaps = imagePath;
+      }
       const portfolio = await portfolioModel.findOne(req.params.id);
       if (portfolio) {
         const updatedPortfolio = await portfolioModel.findByIdAndUpdate(
@@ -69,10 +77,7 @@ class PortfolioController {
               snaps:
                 req.files == null
                   ? portfolio.snaps
-                  : req.files.map(
-                      (file) =>
-                        `https://buildup-resources.s3.amazonaws.com/buildUp-${req.params.name}/photos/${date}-${file.originalname}`
-                    ),
+                  : snaps,
             },
           },
           {

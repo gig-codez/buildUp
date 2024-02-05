@@ -1,6 +1,7 @@
 const jobsModel = require("../models/jobPost.model");
 const appliedJobs = require("../models/applied_jobs.model");
 const date = require("../global");
+const { default: fileStorageMiddleware } = require("../helpers/file_helper");
 
 class JobsController {
   static async addJobs(req, res) {
@@ -195,13 +196,17 @@ class JobsController {
     }
   }
   static async store_applied_jobs(req, res) {
-    console.log(req.body)
+    let docUrl = "";
+    if(req.file){
+     docUrl = await fileStorageMiddleware(req, "docs");
+    }
     try {
       const jobs = new appliedJobs({
         clientId: req.body.client,
         contractorId: req.body.contractor,
         jobId: req.body.job,
-        document: `https://buildup-resources.s3.amazonaws.com/buildUp-${req.params.name}/docs/${date}-${req.file.originalname}`,
+        document: docUrl,
+        // `https://buildup-resources.s3.amazonaws.com/buildUp-${req.params.name}/docs/${date}-${req.file.originalname}`,
       });
       await jobs.save();
       if (jobs) {

@@ -51,7 +51,7 @@ const freelancerSchema = new mongoose.Schema(
       },
       address: {
         type: String,
-        required: true,
+        required:false,
       },
       gender: { type: String, enum: ["Male", "Female"], required: true },
       cv_document: {

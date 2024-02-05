@@ -1,7 +1,8 @@
 const freelancerModel = require("../models/freelancer.model");
-const otpModel = require("../models/otp.model");
+// const otpModel = require("../models/otp.model");
 const bcrypt = require("bcrypt");
 const FreelancerLogin = require("../Auth/freelancerLogin");
+const fileStorageMiddleware = require("../helpers/file_helper");
 const date = require("../global");
 class FreelancerController {
   static async index(req, res) {
@@ -39,7 +40,7 @@ class FreelancerController {
         });
         const newfreelancer = await freelancerPayload.save();
         const auth = await FreelancerLogin.loginHelper(req);
-        console.log({ message: "Account created", data: newfreelancer, auth });
+        // console.log({ message: "Account created", data: newfreelancer, auth });
         res
           .status(200)
           .json({ message: "Account created", data: newfreelancer, auth });
@@ -119,14 +120,18 @@ class FreelancerController {
   }
 
   static async update_contractor_profile(req, res) {
+    let imageUrl = "";
     try {
+      if (req.file) {
+       imageUrl = await fileStorageMiddleware(req, "photos");
+      }
       const freelancerPayload = await freelancerModel.findById(req.params.id);
       if (freelancerPayload) {
         const freelancer = await freelancerModel.findByIdAndUpdate(
           req.params.id,
           {
             $set: {
-              profile_pic: `https://buildup-resources.s3.amazonaws.com/buildUp-${req.params.name}/photos/${date}-${req.file.originalname}`,
+              profile_pic: imageUrl || freelancerPayload.profile_pic,
             },
           },
           {

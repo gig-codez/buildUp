@@ -8,11 +8,11 @@ class FreelancerLogin {
     const freelancer = await freelancerModel.findOne({
       email: req.body.email,
     });
-    console.log(freelancer);
+    // console.log(freelancer);
     if (freelancer) {
       let isMatch = bcrypt.compareSync(req.body.password, freelancer.password);
       let token = jwt.sign({ id: freelancer._id }, process.env.SECRET_KEY, {
-        expiresIn: "1h",
+        expiresIn: "10h",
       });
       if (isMatch) {
         return {
