@@ -43,4 +43,4 @@ const fileStorageMiddleware = async (req,folder) => {
    
 
 };
-export default fileStorageMiddleware;
+module.exports = fileStorageMiddleware;
