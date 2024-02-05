@@ -25,27 +25,6 @@ app.use(cors());
 app.use(express.urlencoded({ extended: true }));
 app.use("/image", express.static("./uploads"));
 app.use(express.json());
-
-//web socket server connection for chatrooms
-// const io = require("socket.io");
-// const users = {};
-// io().on("connection", (socket) => {
-//   socket.on("new-user", (name) => {
-//     users[socket.id] = name;
-//     socket.broadcast.emit("user-connected", name);
-//   });
-//   socket.on("send-chat-message", (message) => {
-//     socket.broadcast.emit("chat-message", {
-//       message: message,
-//       name: users[socket.id],
-//     });
-//   });
-//   socket.on("disconnect", () => {
-//     socket.broadcast.emit("user-disconnected", user[socket.id]);
-//     delete users[socket.id];
-//   });
-// });
-
 // register routes
 app.use("/get", require("./src/routes/get.routes"));
 app.use("/post", require("./src/routes/post.routes"));
@@ -54,9 +33,6 @@ app.use("/update", require("./src/routes/update.routes"));
 app.use("/payments", require("./src/routes/payment.routes"));
 app.use("/portfolio", require("./src/routes/portfolio.routes"));
 app.use("/search", require("./src/routes/search.routes"));
-// app.post("/upload/:id", upload("photos", "docs"), function (req, res, next) {
-//   res.send("Successfully uploaded  ");
-// });
 
 // db connection
 const dbOptions = {
