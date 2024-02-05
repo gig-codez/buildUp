@@ -17,7 +17,7 @@ router.patch("/supplier_deals/:id", SupplierController.update_deals);
 router.patch("/contractor/:id", FreelancerController.update);
 router.patch(
   "/contractor-profile/:id/:name",
-  docUploader("image", "photos"),
+  docUploader("image"),
   FreelancerController.update_contractor_profile
 );
 //employer update

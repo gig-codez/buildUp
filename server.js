@@ -6,8 +6,6 @@ const { default: mongoose } = require("mongoose");
 require("dotenv").config();
 const app = express();
 const WebSocketServer = require("websocket").server;
-const AWS = require("aws-sdk");
-// const upload = require("./src/helpers/documentUploader");
 const wssRoutes = require("./src/routes/websocket.routes");
 const {
   connWaitingArea,
@@ -15,36 +13,10 @@ const {
   connAcceptedArea,
 } = require("./src/global");
 
-// Configure AWS credentials (replace with your own)
-AWS.config.update({
-  accessKeyId: process.env.AWS_ACCESS_KEY,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  region: process.env.AWS_REGION,
-});
+
 app.use(cors());
 app.use(express.urlencoded({ extended: true }));
-app.use("/image", express.static("./uploads"));
 app.use(express.json());
-
-//web socket server connection for chatrooms
-// const io = require("socket.io");
-// const users = {};
-// io().on("connection", (socket) => {
-//   socket.on("new-user", (name) => {
-//     users[socket.id] = name;
-//     socket.broadcast.emit("user-connected", name);
-//   });
-//   socket.on("send-chat-message", (message) => {
-//     socket.broadcast.emit("chat-message", {
-//       message: message,
-//       name: users[socket.id],
-//     });
-//   });
-//   socket.on("disconnect", () => {
-//     socket.broadcast.emit("user-disconnected", user[socket.id]);
-//     delete users[socket.id];
-//   });
-// });
 
 // register routes
 app.use("/get", require("./src/routes/get.routes"));
@@ -54,9 +26,7 @@ app.use("/update", require("./src/routes/update.routes"));
 app.use("/payments", require("./src/routes/payment.routes"));
 app.use("/portfolio", require("./src/routes/portfolio.routes"));
 app.use("/search", require("./src/routes/search.routes"));
-// app.post("/upload/:id", upload("photos", "docs"), function (req, res, next) {
-//   res.send("Successfully uploaded  ");
-// });
+
 
 // db connection
 const dbOptions = {
@@ -69,6 +39,7 @@ mongoose.set("strictQuery", false);
 mongoose
   .connect(process.env.DB_URL, dbOptions)
   .then(() => {
+    console.clear();
     console.log("Connected to database successfully\n");
   })
   .catch((err) => {

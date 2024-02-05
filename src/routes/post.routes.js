@@ -4,7 +4,6 @@ const AdminLogin = require("../Auth/adminLogin");
 const FreelancerController = require("../controllers/freelancer.controller");
 const jobscontroller = require("../controllers/jobs.controller.js");
 const FreelancerLogin = require("../Auth/freelancerLogin");
-const imageUpload = require("../helpers/imageUpload");
 const AccountVerification = require("../Auth/emailVerification");
 const RoleController = require("../controllers/role.controller");
 const EmployerController = require("../controllers/employer.controller");
@@ -33,7 +32,7 @@ router.post("/add/role", RoleController.store);
 // freelancer routes
 router.post(
   "/create/freelancer/:name",
-  uploadManager("images", "photos"),
+  uploadManager("images"),
   FreelancerController.store
 );
 
