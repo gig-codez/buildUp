@@ -1,13 +1,13 @@
-const SupplierModel = require("../models/Supplier.model");
 const supplierModel = require("../models/Supplier.model");
 const bcrypt = require("bcrypt");
 // const otpModel = require("../models/otp.model");
 const SupplierLogin = require("../Auth/supplierlogin");
-const supplierDealModel = require("../models/supplierDeal.model");
+const dealModel = require("../models/deal.model");
+const SupplierDealModel = require("../models/supplierDeal.model");
 class SupplierController {
   static async getAll(req, res) {
     try {
-      let Supplier = await SupplierModel.find();
+      let Supplier = await supplierModel.find();
       res.status(200).json({ data: Supplier });
     } catch (error) {
       res.status(500).json({ message: error.message });
@@ -26,7 +26,7 @@ class SupplierController {
           if (err) {
             res.status(500).json({ message: err });
           } else {
-            const supplierPayload = new SupplierModel({
+            const supplierPayload = new supplierModel({
               business_name: req.body.business_name,
               business_email_address: req.body.business_email_address,
               password: hashedPassword,
@@ -55,7 +55,7 @@ class SupplierController {
       const supplierId = req.params.id;
       const updatedData = req.body;
       console.log(updatedData);
-      const updatedSupplier = await SupplierModel.findByIdAndUpdate(
+      const updatedSupplier = await supplierModel.findByIdAndUpdate(
         supplierId,
         updatedData,
         { new: true }
@@ -77,20 +77,19 @@ class SupplierController {
 
   static async update_deals(req, res) {
     try {
-      const updatedData = req.body.deals;
-      const updatedDeals = await supplierModel.findByIdAndUpdate(
-        req.params.id,
-        { $set: { supplier_deals: updatedData.split(",") } },
-        { new: true }
-      );
+      const supplierId = req.params.id;
+      const deals = req.body.deals.split(",");
 
-      if (!updatedDeals) {
-        return res.status(404).json({ message: "Deals not found" });
-      }
+      const docs = [];
+      deals.forEach((deal)=>{
+        docs.push({"supplier":supplierId, "deal":deal});
+      });
+
+      await SupplierDealModel.insertMany(docs, { ordered: true });
 
       res.status(200).json({
-        message: "Deals updated successfully",
-        data: updatedDeals,
+        message: "Deals added successfully",
+        data: deals,
       });
     } catch (error) {
       res.status(500).json({ message: error.message });
@@ -99,7 +98,7 @@ class SupplierController {
   static async delete(req, res) {
     try {
       const supplierId = req.params.id;
-      const deletedSupplier = await SupplierModel.findByIdAndDelete(supplierId);
+      const deletedSupplier = await supplierModel.findByIdAndDelete(supplierId);
 
       if (!deletedSupplier) {
         return res.status(404).json({ message: "Supplier not found" });
@@ -114,7 +113,7 @@ class SupplierController {
   static async show(req, res) {
     try {
       const supplierId = req.params.id;
-      const singleSupplier = await SupplierModel.findById(supplierId);
+      const singleSupplier = await supplierModel.findById(supplierId);
 
       if (!singleSupplier) {
         return res.status(404).json({ message: "Supplier not found" });
@@ -129,7 +128,7 @@ class SupplierController {
 
   static async create_deals(req, res) {
     try {
-      const deals = new supplierDealModel(req.body);
+      const deals = new dealModel(req.body);
       await deals.save();
       if (deals) {
         res
@@ -144,9 +143,9 @@ class SupplierController {
   }
   static async deals(req, res) {
     try {
-      const deals = await supplierDealModel.find().sort({ createdAt: -1 });
+      const deals = await dealModel.find().sort({ _id: -1 });
       if (deals) {
-        res.status(200).json(deals);
+        res.status(200).json({"data": deals});
       } else {
         res.status(400).json({ message: "Error fetching deals.." });
       }
@@ -156,11 +155,13 @@ class SupplierController {
   }
   static async deals_by_category(req, res) {
     try {
-      const deals = await supplierDealModel
-        .find({ supplierType: req.params.id })
-        .sort({ createdAt: -1 });
+      console.log(req.params.id);
+      const deals = await dealModel
+        .find({ supplier_type: req.params.id })
+        .sort({ _id: -1 });
+
       if (deals) {
-        res.status(200).json(deals);
+        res.status(200).json({data: deals});
       } else {
         res.status(400).json({ message: "Error fetching deals.." });
       }
@@ -170,13 +171,54 @@ class SupplierController {
   }
   static async delete_deals(req, res) {
     try {
-      const deletedDeals = await supplierDealModel.findByIdAndDelete(
+      const deletedDeals = await dealModel.findByIdAndDelete(
         req.params.id
       );
       if (deletedDeals) {
         res.status(200).json({ message: "Deals deleted successfully" });
       } else {
         res.status(400).json({ message: "deals not found" });
+      }
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  }
+
+  static async supplier_deals(req, res){
+    try {
+      const supplierDeals = await SupplierDealModel.find().sort({_id:-1});
+      res.status(200).json({data: supplierDeals});
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  }
+
+  static async supplier_deals_by_supplierId(req, res){
+    try {
+      const deals = await SupplierDealModel.find({supplier: req.supplierId}).sort({_id:-1}).populate({
+        path: "deal"
+      });
+      res.status(200).json({data: deals});
+      if (deals) {
+        res.status(200).json({data: deals});
+      } else {
+        res.status(400).json({ message: "Error fetching deals.." });
+      }
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  }
+
+  static async supplier_deals_by_dealId(req, res){
+    try {
+      const deals = await SupplierDealModel.find({deal: req.dealId}).sort({_id:-1}).populate({
+        path: "supplier"
+      });
+      res.status(200).json({data: deals});
+      if (deals) {
+        res.status(200).json({data: deals});
+      } else {
+        res.status(400).json({ message: "Error fetching deals.." });
       }
     } catch (error) {
       res.status(500).json({ message: error.message });

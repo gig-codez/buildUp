@@ -35,10 +35,6 @@ const supplierModel = new mongoose.Schema(
       type: String,
       required: true,
     },
-    business_ver_document: {
-      type: String,
-      required: false,
-    },
     business_tel: {
       type: String,
       required: true,
@@ -53,13 +49,6 @@ const supplierModel = new mongoose.Schema(
       required:false,
       default:0,
     },
-    supplier_deals: [
-      {
-        type: mongoose.Types.ObjectId,
-        ref: "supplierDeal",
-        required: true,
-      },
-    ],
     supplier_type: {
       type: mongoose.Types.ObjectId,
       ref: "supplierType",

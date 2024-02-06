@@ -2,13 +2,17 @@ const { default: mongoose } = require("mongoose");
 
 const supplierDealModel = new mongoose.Schema(
   {
-    supplierType: {
+    supplier: {
       type: mongoose.Types.ObjectId,
+      ref: "supplier",
       required: true,
+      index: true
     },
-    name: {
-      type: String,
+    deal: {
+      type: mongoose.Types.ObjectId,
+      ref: "deal",
       required: true,
+      index: true
     },
   },
   {

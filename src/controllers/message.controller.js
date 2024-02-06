@@ -14,16 +14,16 @@ class MessageController {
 
   static paginateMessages(roleUserId, page, limitPerPage){
     return messageModel.find({$or:[{sender_id: roleUserId}, {receiver_id: roleUserId}]},
-        MessageController.columns).limit(limitPerPage).skip(((page-1)*limitPerPage))
+        MessageController.columns).limit(limitPerPage).skip(((page-1)*limitPerPage)).sort({_id:1});
   }
 
   static getUserMsgGreaterById(roleUserId, messageId){
     if(messageId.length===0){
       return messageModel.find({$or:[{sender_id: roleUserId}, {receiver_id: roleUserId}]},
-          MessageController.columns);
+          MessageController.columns).sort({_id:1});
     }
       return messageModel.find({$and: [{_id: {$gt: messageId}}, {$or: [{sender_id: roleUserId}, {receiver_id: roleUserId}]}]},
-          MessageController.columns);
+          MessageController.columns).sort({_id:1});
   }
 
   static async getUserMsgGreaterByIdReq(req, res){
