@@ -31,8 +31,7 @@ router.post("/login/admin", AdminLogin.login);
 router.post("/add/role", RoleController.store);
 // freelancer routes
 router.post(
-  "/create/freelancer/:name",
-  uploadManager("images"),
+  "/create/freelancer",
   FreelancerController.store
 );
 
@@ -41,7 +40,7 @@ router.post("/admin/supplier-type", SupplierTypeController.store);
 
 router.post("/login/freelancer", FreelancerLogin.login);
 router.post(
-  "/applied-jobs/add/:name",
+  "/applied-jobs/add",
   uploadManager("document"),
   jobscontroller.store_applied_jobs
 );

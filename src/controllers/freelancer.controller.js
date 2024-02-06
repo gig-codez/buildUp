@@ -22,7 +22,7 @@ class FreelancerController {
         email: req.body.email,
       });
       if (oldAccount) {
-        res.status(400).json({ message: "Account already exists" });
+       return res.status(400).json({ message: "Account already exists" });
       } else {
         let hashedPassword = bcrypt.hashSync(req.body.password, 10);
         const freelancerPayload = new freelancerModel({
@@ -41,7 +41,7 @@ class FreelancerController {
         const newfreelancer = await freelancerPayload.save();
         const auth = await FreelancerLogin.loginHelper(req);
         // console.log({ message: "Account created", data: newfreelancer, auth });
-        res
+       return res
           .status(200)
           .json({ message: "Account created", data: newfreelancer, auth });
       }
