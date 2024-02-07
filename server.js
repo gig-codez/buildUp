@@ -18,7 +18,7 @@ app.use(cors());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-// register routes
+// register routes 
 app.use("/get", require("./src/routes/get.routes"));
 app.use("/post", require("./src/routes/post.routes"));
 app.use("/delete", require("./src/routes/delete.routes"));

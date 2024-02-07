@@ -14,17 +14,11 @@ const jobPostSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  salary_type: {
-    type: String,
-    required: true,
-  },
-  min_salary: {
+
+  project_fees: {
     type: Number,
     required: false,
-  },
-  max_salary: {
-    type: Number,
-    required: false,
+    default:0,
   },
   experience: {
     type: String,
@@ -32,7 +26,7 @@ const jobPostSchema = new mongoose.Schema({
   },
   address: {
     type: String,
-    required: true,
+    required: false,
   },
   contact: {
     type: String,
@@ -44,10 +38,6 @@ const jobPostSchema = new mongoose.Schema({
     required: true,
   },
   job_duration: {
-    type: String,
-    required: true,
-  },
-  service_description: {
     type: String,
     required: true,
   },

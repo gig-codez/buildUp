@@ -19,8 +19,8 @@ class PortfolioController {
     try {
       let snaps = [];
       if( req.files){
-        console.log(req.files)
-        const imagePath = await fileStoreMiddleware(req, "portfolio");
+      
+        const imagePath = await fileStoreMiddleware(req, `${req.body.ownerId}_portifolio`);
         snaps = imagePath;
       }
       const portfolio = new portfolioModel({

@@ -2,12 +2,20 @@ const jobsModel = require("../models/jobPost.model");
 const appliedJobs = require("../models/applied_jobs.model");
 const date = require("../global");
 const { default: fileStorageMiddleware } = require("../helpers/file_helper");
+const employerModel = require("../models/employer.model");
 
 class JobsController {
   static async addJobs(req, res) {
     try {
       if (!req.body.employer) {
         req.body.employer = req.params.employerId;
+        // add contact and address details from employer model
+        const employer = await employerModel.findOne({
+          _id: req.body.employer,
+        }).populate("business");
+        // attach contact
+        req.body.contact = employer.business.business_tel;
+        req.body.address = employer.business.address;
       }
       if (!req.body.job_title || !req.body.job_description) {
         return res.status(400).json({
@@ -16,13 +24,9 @@ class JobsController {
       }
 
       const newJob = new jobsModel(req.body);
-      console.log(newJob);
       // Save the new job
       const savedJob = await newJob.save();
-      // // Update the employer with the new job reference
-      // await employerModel.findByIdAndUpdate(req.body.employer, {
-      //   $push: { business: savedJob._id },
-      // });
+
       // Send a success response
       if (savedJob) {
         res.status(200).json({
@@ -36,7 +40,6 @@ class JobsController {
       }
     } catch (error) {
       // Send an error response with a meaningful message
-      console.error(error);
       res.status(500).json({
         message: `Error ${error.message}.`,
       });

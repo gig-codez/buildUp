@@ -12,7 +12,6 @@ class ContractorProfessionController {
       const contractorProfessionPayload = new contractorProfessionSchema({
         name: req.body.name,
         roleId: req.body.role,
-        // description: req.body.description,
       });
 
       await contractorProfessionPayload.save();

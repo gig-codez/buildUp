@@ -124,8 +124,8 @@ class FreelancerController {
     try {
       if (req.file) {
         // Upload the image to Firebase Storage
-        let x = req.file.originalname.split('.')
-       console.log(x[x.length-1])
+      //   let x = req.file.originalname.split('.')
+      //  console.log(x[x.length-1])
        imageUrl = await fileStorageMiddleware(req, "photos");
       }
  

@@ -16,6 +16,20 @@ class EmployerController {
       console.error(error);
       return res.status(500).json({ message: error.message });
     }
+  } static async getEmployerById(req, res) {
+    try {
+      const employer = await employerModel.findOne({ _id: req.params.id}).populate("business");
+      
+      if(employer){
+        return res.status(200).json(employer);
+      } else {
+        return res.status(404).json({ message: "No employer found" });
+      }
+   
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ message: error.message });
+    }
   }
   static async storeEmployer(req, res) {
     console.log(req.body);

@@ -3,10 +3,7 @@ const firebase = require("firebase-admin");
  * 
  */
 const fileStorageMiddleware = async (req,folder) => {
-        let images = [];
-
     if(req.file){
-    
     // Upload the image to Firebase Storage
         const bucket = firebase.storage().bucket();
         const file = bucket.file(`buildUp/${folder}/${req.file.originalname}`);
@@ -29,11 +26,11 @@ const fileStorageMiddleware = async (req,folder) => {
         console.log("files")
         // handle uploading multiple files
    const files = await Promise.all(
-        req.files.map(async (file) => {
-          const bucket = await multiFileBucket(file, folder);
+        req.files.map( async (file) => {
+          const bucket =  multiFileBucket(file, folder);
           const signedUrl = await bucket.getSignedUrl({
             action: 'read',
-            expires: '03-09-3024',
+            expires: '03-09-3000',
           });
           return signedUrl[0];
         })
@@ -43,17 +40,18 @@ const fileStorageMiddleware = async (req,folder) => {
     }
 
 };
-   const multiFileBucket = async function(file,folder){
+   const multiFileBucket =  function(file,folder){
      // Upload the image to Firebase Storage
         const bucket = firebase.storage().bucket();
             const bucketFile = bucket.file(`buildUp/${folder}/${file.originalname}`);
+             let x = file.originalname.split('.')
             const metadata = {
-                contentType: file.mimetype,
+             contentType: `image/${x[x.length-1]}`,
             };
-           await bucketFile.save(file.buffer, {
+            bucketFile.save(file.buffer, {
                 metadata: metadata,
             });
-            return bucket;
+            return bucketFile;
    }
 
 module.exports = fileStorageMiddleware;

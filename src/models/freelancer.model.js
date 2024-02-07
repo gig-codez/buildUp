@@ -38,7 +38,7 @@ const freelancerSchema = new mongoose.Schema(
       },
       NIN_NUM: {
         type: String,
-        required: true,
+        required: false,
       },
       profession: {
         type: mongoose.Types.ObjectId,
@@ -55,10 +55,6 @@ const freelancerSchema = new mongoose.Schema(
         required:false,
       },
       gender: { type: String, enum: ["Male", "Female"], required: true },
-      cv_document: {
-        type: String,
-        required: false,
-      },
       role: {
         type: mongoose.Types.ObjectId,
         ref: "role",
