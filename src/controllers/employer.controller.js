@@ -6,7 +6,7 @@ const date = require("../global/index.js");
 class EmployerController {
   static async getAll(req, res) {
     try {
-      const employers = await employerModel.find().sort({ createdAt: -1 });
+      const employers = await employerModel.find().sort({ _id: -1 });
       if (!employers) {
         return res.status(404).json({ message: "No employers found" });
       }

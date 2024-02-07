@@ -12,7 +12,7 @@ class FreelancerLogin {
     if (freelancer) {
       let isMatch = bcrypt.compareSync(req.body.password, freelancer.password);
       let token = jwt.sign({ id: freelancer._id }, process.env.SECRET_KEY, {
-        expiresIn: "10h",
+        expiresIn: "1h",
       });
       if (isMatch) {
         return {
@@ -22,7 +22,7 @@ class FreelancerLogin {
           image: freelancer.profile_pic,
           first_name: `${freelancer.first_name} ${freelancer.last_name}`,
           email: freelancer.email,
-          // userData: freelancer,
+          userData: freelancer,
           role: "contractor",
         };
       } else {

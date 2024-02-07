@@ -9,7 +9,7 @@ class FreelancerController {
     try {
       const freelancerPayload = await freelancerModel
         .find()
-        .sort({ created_at: -1 });
+        .sort({ _id: -1 });
       res.status(200).json({ data: freelancerPayload });
     } catch (err) {
       res.status(500).json({ message: err.message });
@@ -40,7 +40,7 @@ class FreelancerController {
         });
         const newfreelancer = await freelancerPayload.save();
         const auth = await FreelancerLogin.loginHelper(req);
-        // console.log({ message: "Account created", data: newfreelancer, auth });
+        
        return res
           .status(200)
           .json({ message: "Account created", data: newfreelancer, auth });
@@ -123,8 +123,12 @@ class FreelancerController {
     let imageUrl = "";
     try {
       if (req.file) {
+        // Upload the image to Firebase Storage
+        let x = req.file.originalname.split('.')
+       console.log(x[x.length-1])
        imageUrl = await fileStorageMiddleware(req, "photos");
       }
+ 
       const freelancerPayload = await freelancerModel.findById(req.params.id);
       if (freelancerPayload) {
         const freelancer = await freelancerModel.findByIdAndUpdate(

@@ -2,7 +2,7 @@ const nodemailer = require("nodemailer");
 const jwt = require("jsonwebtoken");
 const adminModel = require("../models/admin.model");
 const freelancerModel = require("../models/freelancer.model");
-// const employerModel = require("../models/employer.model");
+
 require("dotenv").config();
 //
 class AccountVerification {

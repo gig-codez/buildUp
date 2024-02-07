@@ -4,7 +4,7 @@ const fileStoreMiddleware = require("../helpers/file_helper");
 class PortfolioController {
   static async get(req, res) {
     try {
-      const portfolio = await portfolioModel.find({ ownerId: req.params.id });
+      const portfolio = await portfolioModel.find({ ownerId: req.params.id }).sort({ _id: -1 });
       if (portfolio) {
         res.status(200).json(portfolio);
       } else {
@@ -18,7 +18,8 @@ class PortfolioController {
   static async store(req, res) {
     try {
       let snaps = [];
-      if(req.file || req.files){
+      if( req.files){
+        console.log(req.files)
         const imagePath = await fileStoreMiddleware(req, "portfolio");
         snaps = imagePath;
       }
@@ -39,6 +40,17 @@ class PortfolioController {
   static async delete(req, res) {
     try {
       const deleted = await portfolioModel.findByIdAndDelete(req.params.id);
+      if (deleted) {
+        res.status(200).json({ message: "portfolio deleted successfully" });
+      } else {
+        res.status(404).json({ message: "portfolio not found" });
+      }
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }  static async delete_many(req, res) {
+    try {
+      const deleted = await portfolioModel.deleteMany({ownerId: req.params.id});
       if (deleted) {
         res.status(200).json({ message: "portfolio deleted successfully" });
       } else {

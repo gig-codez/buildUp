@@ -41,7 +41,7 @@ router.post("/admin/supplier-type", SupplierTypeController.store);
 router.post("/login/freelancer", FreelancerLogin.login);
 router.post(
   "/applied-jobs/add",
-  uploadManager("document"),
+  uploadManager().single("document"),
   jobscontroller.store_applied_jobs
 );
 

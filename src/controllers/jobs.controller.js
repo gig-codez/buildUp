@@ -234,12 +234,14 @@ class JobsController {
   }
   // delete applied jobs
   static async delete_applied_jobs(req, res) {
+
     try {
       const jobs = await appliedJobs.findByIdAndDelete(req.params.id);
 
       if (jobs) {
         res.status(200).json({ message: "Applied job deleted successfully" });
       } else {
+   ''
         res
           .status(400)
           .json({ message: "Failed to delete a new application." });

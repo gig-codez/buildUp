@@ -4,6 +4,7 @@ const freelancerSchema = new mongoose.Schema(
     {
       profile_pic: {
         type: String,
+        default:"",
         required: false,
       },
       email: {

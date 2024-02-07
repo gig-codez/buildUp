@@ -1,0 +1,10 @@
+const express = require("express");
+router = express.Router();
+const AdminController = require("../controllers/admin.controller");
+const AdminLogin = require("../Auth/adminLogin");
+router.get("/", AdminController.index);
+router.get("/admin/login", AdminLogin.login);
+router.post("/create/admin", AdminController.store);
+router.patch("/:id", AdminController.update);
+router.delete("/:id", AdminController.delete);
+module.exports = router;

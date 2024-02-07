@@ -7,14 +7,10 @@ firebase.initializeApp({
   databaseURL: "https://samba-stats-default-rtdb.firebaseio.com",
   storageBucket: "samba-stats.appspot.com",
 });
-const uploaderManager = (field, multiple) => {
-  return multiple === false
-    ? multer({
+const uploaderManager = () => {
+  return  multer({
         storage: multer.memoryStorage(),
-      }).single(field)
-    : multer({
-         storage: multer.memoryStorage(),
-      }).array(field);
+      })
 };
 
 module.exports = uploaderManager;
