@@ -1,9 +1,8 @@
 const supplierModel = require("../models/Supplier.model");
 const bcrypt = require("bcrypt");
-// const otpModel = require("../models/otp.model");
 const SupplierLogin = require("../Auth/supplierlogin");
 const dealModel = require("../models/deal.model");
-const SupplierDealModel = require("../models/supplierDeal.model");
+const supplierDealModel = require("../models/supplierDeal.model");
 class SupplierController {
   static async getAll(req, res) {
     try {
@@ -85,7 +84,7 @@ class SupplierController {
         docs.push({"supplier":supplierId, "deal":deal});
       });
 
-      await SupplierDealModel.insertMany(docs, { ordered: true });
+      await supplierDealModel.insertMany(docs, { ordered: true });
 
       res.status(200).json({
         message: "Deals added successfully",
@@ -186,7 +185,7 @@ class SupplierController {
 
   static async supplier_deals(req, res){
     try {
-      const supplierDeals = await SupplierDealModel.find().sort({_id:-1});
+      const supplierDeals = await supplierDealModel.find().sort({_id:-1});
       res.status(200).json({data: supplierDeals});
     } catch (error) {
       res.status(500).json({ message: error.message });
@@ -195,7 +194,7 @@ class SupplierController {
 
   static async supplier_deals_by_supplierId(req, res){
     try {
-      const deals = await SupplierDealModel.find({supplier: req.supplierId}).sort({_id:-1}).populate({
+      const deals = await supplierDealModel.find({supplier: req.params.supplierId}).sort({_id:-1}).populate({
         path: "deal"
       });
       res.status(200).json({data: deals});
@@ -211,10 +210,9 @@ class SupplierController {
 
   static async supplier_deals_by_dealId(req, res){
     try {
-      const deals = await SupplierDealModel.find({deal: req.dealId}).sort({_id:-1}).populate({
+      const deals = await supplierDealModel.find({deal: req.params.dealId}).sort({_id:-1}).populate({
         path: "supplier"
       });
-      res.status(200).json({data: deals});
       if (deals) {
         res.status(200).json({data: deals});
       } else {
