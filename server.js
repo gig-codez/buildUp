@@ -5,6 +5,8 @@ const cors = require("cors");
 const { default: mongoose } = require("mongoose");
 require("dotenv").config();
 const app = express();
+app.use(cors());
+
 const WebSocketServer = require("websocket").server;
 const wssRoutes = require("./src/routes/websocket.routes");
 const {
@@ -14,7 +16,7 @@ const {
 } = require("./src/global");
 
 
-app.use(cors());
+
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 

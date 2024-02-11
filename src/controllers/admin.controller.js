@@ -72,6 +72,17 @@ class AdminController {
       res.status(500).json({ message: err.message });
     }
   }
+  // user data info
+  static async userData(req,res){
+    try {
+      const userPayload = await adminSchema.findOne({
+        _id: req.params.id
+      }).select('name email');
+      res.status(200).json(userPayload);
+    } catch (err) {
+      res.status(500).json({ message: err.message });
+    }
+  }
 }
 
 module.exports = AdminController;

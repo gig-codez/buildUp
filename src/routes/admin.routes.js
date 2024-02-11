@@ -14,7 +14,8 @@ router.delete("/:id", AdminController.delete);
 router.post("/add/role",RoleController.store);
 router.get("/roles",RoleController.index);
 // add professionals
-
 router.post("/profession", ContractorProfessionController.store);
 router.post("/supplier-type", SupplierTypeController.store);
+// get user data
+router.get("/userData", AdminController.userData);
 module.exports = router;
