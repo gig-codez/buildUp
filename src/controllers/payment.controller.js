@@ -180,7 +180,7 @@ static async updateTransaction(req,res){
       // Extract required parameters from the request body
       const { recipient, customer_name, customer_email, amount, phone_number, employer, reason } = req.body;
       const payment_reference = uuidv4();
-      const call_back_url = "http://165.232.121.139:4000/payments/finishPayment";
+      const call_back_url = "http://165.232.121.139:4000/payments/completePayment";
       const cancel_url = "http://165.232.121.139:4000/payments/cancel-payment";
       // const customer_names = "John Doe"; /// TODO add customer names
       // const customer_email = "pYk2K@example.com"; // TODO add customer email

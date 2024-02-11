@@ -167,13 +167,13 @@ class FreelancerController {
       res.status(500).json({ message: err.message });
     }
   }
-  static async show(req, res, next) {
+  static async show(req, res) {
     try {
       const freelancer = await freelancerModel.findById(req.params.id);
       if (freelancer) {
         res
           .status(200)
-          .json({ message: "single contractor", data: freelancer });
+          .json(freelancer );
       } else {
         res.status(400).json({ message: "Contractor not found" });
       }
