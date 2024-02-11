@@ -116,16 +116,16 @@ class SupplierController {
   static async show(req, res) {
     try {
       const supplierId = req.params.id;
-      const singleSupplier = await SupplierModel.findById(supplierId);
+      const singleSupplier = await SupplierModel.findOne({ _id: supplierId });
 
       if (!singleSupplier) {
         return res.status(404).json({ message: "Supplier not found" });
       }
 
-      res.status(200).json({ data: singleSupplier });
+      return res.status(200).json(singleSupplier);
     } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: error.message });
+      // console.error(error);
+      return res.status(500).json({ message: error.message });
     }
   }
 
@@ -188,8 +188,11 @@ class SupplierController {
   // create stock
   static async create_stock(req, res) {
     try {
-       if( req.file){
-        const imagePath = await fileStoreMiddleware(req, `${req.body.supplier}_stock`);
+      if (req.file) {
+        const imagePath = await fileStoreMiddleware(
+          req,
+          `${req.body.supplier}_stock`
+        );
         req.body.product_image = imagePath;
       }
       const stock = new supplierStockModel({
@@ -201,9 +204,7 @@ class SupplierController {
       });
       await stock.save();
       if (stock) {
-        res
-          .status(200)
-          .json({ message: "stock created successfully" });
+        res.status(200).json({ message: "stock created successfully" });
       } else {
         res.status(400).json({ message: "stock not created" });
       }
@@ -231,15 +232,13 @@ class SupplierController {
         .skip(skipDocuments)
         .limit(pageSize);
       if (stock) {
-        res
-          .status(200)
-          .json({
-            totalDocuments,
-            totalPages,
-            currentPage: page,
-            pageSize,
-            stock,
-          });
+        res.status(200).json({
+          totalDocuments,
+          totalPages,
+          currentPage: page,
+          pageSize,
+          stock,
+        });
       } else {
         res.status(400).json({ message: "Error fetching stock.." });
       }
@@ -265,21 +264,24 @@ class SupplierController {
 
   static async update_stock(req, res) {
     try {
-      if( req.file){
-        const imagePath = await fileStoreMiddleware(req, `${req.body.supplier}_stock`);
+      if (req.file) {
+        const imagePath = await fileStoreMiddleware(
+          req,
+          `${req.body.supplier}_stock`
+        );
         req.body.product_image = imagePath;
       } else {
-        const oldStock = await supplierStockModel.findOne({_id:req.params.id});
-        req.body.product_image = oldStock.product_image
+        const oldStock = await supplierStockModel.findOne({
+          _id: req.params.id,
+        });
+        req.body.product_image = oldStock.product_image;
       }
       const stock = await supplierStockModel.findByIdAndUpdate(
         req.params.id,
         req.body
       );
       if (stock) {
-        res
-          .status(200)
-          .json({ message: "stock updated successfully" });
+        res.status(200).json({ message: "stock updated successfully" });
       } else {
         res.status(400).json({ message: "stock not updated" });
       }
@@ -287,6 +289,5 @@ class SupplierController {
       res.status(500).json({ message: error.message });
     }
   }
-
 }
 module.exports = SupplierController;
