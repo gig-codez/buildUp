@@ -188,6 +188,7 @@ class SupplierController {
   // create stock
   static async create_stock(req, res) {
     try {
+      // console.log(req.body)
       if (req.file) {
         const imagePath = await fileStoreMiddleware(
           req,
