@@ -4,6 +4,8 @@ const bcrypt = require("bcrypt");
 // const otpModel = require("../models/otp.model");
 const SupplierLogin = require("../Auth/supplierlogin");
 const supplierDealModel = require("../models/supplierDeal.model");
+const supplierStockModel = require("../models/supplier_stock.model");
+const fileStoreMiddleware = require("../helpers/file_helper");
 class SupplierController {
   static async getAll(req, res) {
     try {
@@ -182,5 +184,85 @@ class SupplierController {
       res.status(500).json({ message: error.message });
     }
   }
+
+  // create stock
+  static async create_stock(req, res) {
+    try {
+       if( req.file){
+        const imagePath = await fileStoreMiddleware(req, `${req.body.supplier}_stock`);
+        req.body.product_image = imagePath;
+      }
+      const stock = new supplierStockModel({
+        product_name: req.body.product_name,
+        product_quantity: req.body.product_quantity,
+        status: req.body.status,
+        product_image: req.body.product_image,
+      });
+      await stock.save();
+      if (stock) {
+        res
+          .status(200)
+          .json({ message: "stock created successfully" });
+      } else {
+        res.status(400).json({ message: "stock not created" });
+      }
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  }
+
+  static async stock(req, res) {
+    try {
+      const stock = await supplierStockModel.find({supplier_id:req.params.id}).sort({ _id: -1 });
+      if (stock) {
+        res.status(200).json(stock);
+      } else {
+        res.status(400).json({ message: "Error fetching stock.." });
+      }
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  }
+
+  static async delete_stock(req, res) {
+    try {
+      const deletedStock = await supplierStockModel.findByIdAndDelete(
+        req.params.id
+      );
+      if (deletedStock) {
+        res.status(200).json({ message: "stock deleted successfully" });
+      } else {
+        res.status(400).json({ message: "stock not found" });
+      }
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  }
+
+  static async update_stock(req, res) {
+    try {
+      if( req.file){
+        const imagePath = await fileStoreMiddleware(req, `${req.body.supplier}_stock`);
+        req.body.product_image = imagePath;
+      } else {
+        const oldStock = await supplierStockModel.findOne({_id:req.params.id});
+        req.body.product_image = oldStock.product_image
+      }
+      const stock = await supplierStockModel.findByIdAndUpdate(
+        req.params.id,
+        req.body
+      );
+      if (stock) {
+        res
+          .status(200)
+          .json({ message: "stock updated successfully" });
+      } else {
+        res.status(400).json({ message: "stock not updated" });
+      }
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  }
+
 }
 module.exports = SupplierController;

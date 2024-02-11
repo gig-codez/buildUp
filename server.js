@@ -29,7 +29,7 @@ app.use("/payments", require("./src/routes/payment.routes"));
 app.use("/portfolio", require("./src/routes/portfolio.routes"));
 app.use("/admin", require("./src/routes/admin.routes"));
 app.use("/search", require("./src/routes/search.routes"));
-
+app.use("/stock",require("./src/routes/stock.routes"));
 
 // db connection
 const dbOptions = {
