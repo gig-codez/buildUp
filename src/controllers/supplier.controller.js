@@ -193,6 +193,7 @@ class SupplierController {
         req.body.product_image = imagePath;
       }
       const stock = new supplierStockModel({
+        supplier_id: req.body.supplier,
         product_name: req.body.product_name,
         product_quantity: req.body.product_quantity,
         status: req.body.status,
