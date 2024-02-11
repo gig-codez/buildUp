@@ -214,9 +214,32 @@ class SupplierController {
 
   static async stock(req, res) {
     try {
-      const stock = await supplierStockModel.find({supplier_id:req.params.id}).sort({ _id: -1 });
+      // ADDING PAGINATION FUNCTIONALITY
+      const page = parseInt(req.query.page) || 1; // Default to page 1 if page query param is not provided
+      const pageSize = parseInt(req.query.pageSize) || 10; // Default page size to 10 if pageSize query param is not provided
+
+      const totalDocuments = await supplierStockModel
+        .find({ employer: req.params.employerId })
+        .countDocuments();
+      const totalPages = Math.ceil(totalDocuments / pageSize);
+
+      // Calculate the number of documents to skip
+      const skipDocuments = (page - 1) * pageSize;
+      const stock = await supplierStockModel
+        .find({ supplier_id: req.params.id })
+        .sort({ _id: -1 })
+        .skip(skipDocuments)
+        .limit(pageSize);
       if (stock) {
-        res.status(200).json(stock);
+        res
+          .status(200)
+          .json({
+            totalDocuments,
+            totalPages,
+            currentPage: page,
+            pageSize,
+            stock,
+          });
       } else {
         res.status(400).json({ message: "Error fetching stock.." });
       }
