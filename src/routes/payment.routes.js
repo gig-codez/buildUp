@@ -4,6 +4,9 @@ const PaymentController = require("../controllers/payment.controller");
 
 router.post("/registerIPN", PaymentController.registerIPN);
 router.get("/cancelPayment", PaymentController.cancelPayment);
+// process payment route
+router.post("/processTransaction",PaymentController.processTransaction);
+// 
 router.get("/listIPNS", PaymentController.listIPNS);
 router.get("/completePayment", PaymentController.completePayment);
 router.post("/processOrder", PaymentController.processOrder);

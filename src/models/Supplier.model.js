@@ -19,10 +19,6 @@ const supplierModel = new mongoose.Schema(
       type: String,
       required: false,
     },
-    type_of_product: {
-      type: String,
-      required: false,
-    },
     password: {
       type: String,
       required: true,
@@ -34,10 +30,6 @@ const supplierModel = new mongoose.Schema(
     TIN: {
       type: String,
       required: true,
-    },
-    business_ver_document: {
-      type: String,
-      required: false,
     },
     business_tel: {
       type: String,

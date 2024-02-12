@@ -148,7 +148,7 @@ class PaymentController {
               let old_balance = parseInt(`${client.balance}`);
               let new_balance = parseInt(`${result.amount}`);
               let total = old_balance + new_balance;
-              console.log(`Total balance ${total}`);
+              // console.log(`Total balance ${total}`);
               //  update client balance
               const updatedAccount = await employerModel.findByIdAndUpdate(
                 customer_transaction.employer_id,
@@ -159,6 +159,12 @@ class PaymentController {
                 }
               );
               updatedAccount.save();
+              // sender mail for successful top up
+              await mailSender(
+                client.email_address,
+                "Account TopUp!",
+                `<h4>You have topped <b>${new_balance}.</b> Your new account balance is UGX <b>${total}.</b></h4>`
+              );
               return res
                 .status(200)
                 .json({ message: "Payment completed successfully.." });
@@ -183,88 +189,140 @@ class PaymentController {
       const { amount, contact, reason, recipient_id, sender } = req.body;
       const payment_reference = uuidv4();
       const phone_number = contact;
-      /**
-       *
-       * Supplier transaction process.
-       *  if it's a supplier being paid
-       */
-      const supplierData = await supplierModel.findOne({ _id: recipient_id });
-      if (supplierData) {
-        // TODO transact money to supplier
-        // top up money on the supplier's current balance
-        let new_balance =
-          parseInt(`${supplierData.balance}`) + parseInt(`${amount}`);
-        const updatedAccount = await supplierModel.findByIdAndUpdate(
-          supplier._id,
-          {
-            $set: {
-              balance: new_balance,
-            },
-          }
-        );
-        await updatedAccount.save();
-        if (updatedAccount) {
-          // save transaction in payments model
-          new paymentModel({
-            supplier_id: recipient_id,
-            payment_reference: payment_reference,
-            amount: amount,
-            phone_number: phone_number,
-            description: reason,
-            status: "COMPLETED",
-          }).save();
-          return res
-            .status(200)
-            .json({ message: "Transaction  successfully completed" });
-        } else {
-          return res.status(400).json({ message: "User not found." });
-        }
-      }
       /***
-       * Contractor or Consultant payment
-       * if it's an contractor/consultant being paid
-       *
-       *
+       * Check client's account if it has sufficient funds
        */
-      const contractor = await freelancerModel.findOne({ _id: recipient_id });
-      if (contractor) {
-        // TODO transact money
-        let new_balance =
-          parseInt(`${contractor.balance}`) + parseInt(`${amount}`);
-        const updatedAccount = await freelancerModel.findByIdAndUpdate(
-          contractor._id,
-          {
-            $set: {
-              balance: new_balance,
-            },
+      const employer = await employerModel.findOne({ _id: sender });
+      if (employer) {
+        if (parseInt(`${employer.balance}`) > parseInt(`${amount}`)) {
+          /*
+           * Supplier transaction process.
+           *  if it's a supplier being paid
+           */
+          const supplierData = await supplierModel.findOne({
+            _id: recipient_id,
+          });
+          if (supplierData) {
+            // TODO transact money to supplier
+            // top up money on the supplier's current balance
+            let new_balance =
+              parseInt(`${supplierData.balance}`) + parseInt(`${amount}`);
+            const updatedAccount = await supplierModel.findByIdAndUpdate(
+              supplier._id,
+              {
+                $set: {
+                  balance: new_balance,
+                },
+              }
+            );
+            await updatedAccount.save();
+            if (updatedAccount) {
+              // save transaction in payments model
+              new paymentModel({
+                supplier_id: recipient_id,
+                payment_reference: payment_reference,
+                amount: amount,
+                phone_number: phone_number,
+                description: reason,
+                status: "COMPLETED",
+              }).save();
+              // send mail to recipient.
+              await mailSender(
+                supplierData.business_email_address,
+                "Payments",
+                `You have received ${amount} for ${reason}. But you can only withdraw these fees after completion of work.`
+              );
+              // update employer's account
+              const updated = await employerModel.findByIdAndUpdate(sender, {
+                $set: {
+                  balance:
+                    parseInt(`${employer.balance}`) - parseInt(`${amount}`),
+                },
+              });
+              await updated.save();
+              //  -------------- done updating employer's account balance. ----------------
+              return res
+                .status(200)
+                .json({ message: "Transaction  successfully completed" });
+            } else {
+              return res.status(400).json({ message: "User not found." });
+            }
+          } else {
+            res.status(400).json({ message: "Supplier not found." });
           }
-        );
-        const result = await updatedAccount.save();
-        if (result) {
-          // send mail to recipient
-          await mailSender(
-            contractor.email,
-            "Payments",
-            `You have received ${amount} for ${reason}. But you can only withdraw these fees after completion of work.`
-          );
-          // save transcation
-          new paymentModel({
-            employer_id: sender,
-            payment_reference: payment_reference,
-            amount: amount,
-            phone_number: phone_number,
-            description: reason,
-            contractor_id: recipient_id,
-            status: "COMPLETED",
-          }).save();
 
-          res.status(200).json({ message: "Payment completed successfully.." });
+          /***
+           * Contractor or Consultant payment
+           * if it's an contractor/consultant being paid
+           *
+           *
+           */
+          const contractor = await freelancerModel.findOne({
+            _id: recipient_id,
+          });
+          if (contractor) {
+            // TODO transact money
+            let new_balance =
+              parseInt(`${contractor.balance}`) + parseInt(`${amount}`);
+            const updatedAccount = await freelancerModel.findByIdAndUpdate(
+              contractor._id,
+              {
+                $set: {
+                  balance: new_balance,
+                },
+              }
+            );
+            const result = await updatedAccount.save();
+            if (result) {
+              // send mail to recipient
+              await mailSender(
+                contractor.email,
+                "Payments",
+                `You have received ${amount} for ${reason}. But you can only withdraw these fees after completion of work.`
+              );
+              // save transaction
+              new paymentModel({
+                employer_id: sender,
+                payment_reference: payment_reference,
+                amount: amount,
+                phone_number: phone_number,
+                description: reason,
+                contractor_id: recipient_id,
+                status: "COMPLETED",
+              }).save();
+              // update employer's account
+              const updated = await employerModel.findByIdAndUpdate(sender, {
+                $set: {
+                  balance:
+                    parseInt(`${employer.balance}`) - parseInt(`${amount}`),
+                },
+              });
+              await updated.save();
+              //  -------------- done updating employer's account balance. ----------------
+              return res
+                .status(200)
+                .json({ message: "Payment completed successfully.." });
+            } else {
+              res.status(400).json({ message: "Transaction failed." });
+            }
+          } else {
+            return res.status(400).json({ message: "User not found" });
+          }
         } else {
-          res.status(400).json({ message: "Transaction failed." });
+          await mailSender(
+            employer.email_address,
+            "Transaction Failed!",
+            `<p>Your current balance is <b>${employer.balance}.</b>  </p> <i>Please top up your account to complete your transaction.</i><br/> <h3>Thank You.</h3>`
+          );
+          return res
+            .status(400)
+            .json({ message: "Your account balance is low, please top up." });
         }
+      } else {
+        return res.status(400).json({ message: "Employer data not found." });
       }
     } catch (error) {
-      res.status(500).json({ message: error.message });
+      return res.status(500).json({ message: error.message });
     }
   }
   static async processOrder(req, res) {
