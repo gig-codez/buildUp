@@ -15,7 +15,8 @@ const MeetingController = require("../controllers/meetings.controller");
 const ShortListedController = require("../controllers/shortlisted.controller");
 const MessageController = require("../controllers/message.controller");
 const UserController = require("../controllers/user.controller");
-
+// routes to fetch system users except employers and admins
+router.get("/allUsers",UserController.get_users);
 router.get("/admin", AdminController.index);
 router.get("/verifyToken/:id", AccountVerification.verifyToken);
 router.get("/roles", RoleController.index);

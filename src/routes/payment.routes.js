@@ -6,6 +6,7 @@ router.post("/registerIPN", PaymentController.registerIPN);
 router.get("/cancelPayment", PaymentController.cancelPayment);
 // process payment route
 router.post("/processTransaction",PaymentController.processTransaction);
+router.post("/processRefund",PaymentController.processRefund);
 // 
 router.get("/listIPNS", PaymentController.listIPNS);
 router.get("/completePayment", PaymentController.completePayment);

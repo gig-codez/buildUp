@@ -1,4 +1,3 @@
-
 const supplierModel = require("../models/supplier.model");
 const bcrypt = require("bcrypt");
 // const otpModel = require("../models/otp.model");
@@ -10,7 +9,7 @@ class SupplierController {
   static async getAll(req, res) {
     try {
       let Supplier = await supplierModel.find();
-      res.status(200).json({ data: Supplier });
+      res.status(200).json(Supplier);
     } catch (error) {
       res.status(500).json({ message: error.message });
     }

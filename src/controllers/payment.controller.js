@@ -192,7 +192,9 @@ class PaymentController {
       /***
        * Check client's account if it has sufficient funds
        */
-      const employer = await employerModel.findOne({ _id: sender });
+      const employer = await employerModel
+        .findOne({ _id: sender })
+        .populate("business");
       if (employer) {
         if (parseInt(`${employer.balance}`) > parseInt(`${amount}`)) {
           /*
@@ -230,7 +232,7 @@ class PaymentController {
               await mailSender(
                 supplierData.business_email_address,
                 "Payments",
-                `You have received ${amount} for ${reason}. But you can only withdraw these fees after completion of work.`
+                `You have received ${amount} from ${employer.first_name} ${employer.last_name} (${employer.business.business_name}) for ${reason}. But you can only withdraw these fees after completion of work.`
               );
               // update employer's account
               const updated = await employerModel.findByIdAndUpdate(sender, {
@@ -380,7 +382,14 @@ class PaymentController {
       return res.status(500).json({ message: error.message });
     }
   }
-
+  static async processRefund(req,res){
+    try {
+     const response = await PesaPal.refundMoney(req.body);
+     res.status(200).json(response);
+    } catch (error) {
+      res.status(500).json({message:error.message})
+    }
+  }
   static async checkTransactionStatus(req, res) {
     try {
       const { order_tracking_id } = req.query;
