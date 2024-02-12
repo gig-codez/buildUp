@@ -1,6 +1,6 @@
 const freelancerModel = require("../models/freelancer.model");
 const employerModel = require("../models/employer.model");
-const supplierModel = require("../models/Supplier.model");
+const supplierModel = require("../models/supplier.model");
 const {ObjectId} = require("mongodb");
 class UserController {
   static async searchUsersByRolesRequest(req, res) {

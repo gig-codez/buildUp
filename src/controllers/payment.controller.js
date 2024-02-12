@@ -1,8 +1,10 @@
 const employerModel = require("../models/employer.model");
+const freelancerModel = require("../models/freelancer.model");
 const paymentModel = require("../models/payment.model");
-const PaymentModel = require("../models/payment.model");
+const supplierModel = require("../models/supplier.model");
 const PesaPal = require("../services/payments/pesapal/pesapal");
 const { v4: uuidv4 } = require("uuid");
+const mailSender = require("../utils/mailSender");
 
 class PaymentController {
   // fetch all transactions
@@ -12,16 +14,19 @@ class PaymentController {
       const page = parseInt(req.query.page) || 1; // Default to page 1 if page query param is not provided
       const pageSize = parseInt(req.query.pageSize) || 10; // Default page size to 10 if pageSize query param is not provided
 
-      const totalDocuments = await PaymentModel.find({
-        employer_id: req.params.id,
-      }).countDocuments();
+      const totalDocuments = await paymentModel
+        .find({
+          employer_id: req.params.id,
+        })
+        .countDocuments();
       const totalPages = Math.ceil(totalDocuments / pageSize);
 
       // Calculate the number of documents to skip
       const skipDocuments = (page - 1) * pageSize;
-      const transactions = await PaymentModel.find({
-        employer_id: req.params.id,
-      })
+      const transactions = await paymentModel
+        .find({
+          employer_id: req.params.id,
+        })
         .skip(skipDocuments)
         .limit(pageSize)
         .sort({ createdAt: -1 });
@@ -96,91 +101,187 @@ class PaymentController {
       return res.render("payments.cancel"); // Or return an error view
     }
   }
-static async updateTransaction(req,res){
-  try {
-    const {id} = req.params;
-    if(!id){
-      return res.status(400).json({message:"Missing required parameters."});
+  static async updateTransaction(req, res) {
+    try {
+      const { id } = req.params;
+      if (!id) {
+        return res
+          .status(400)
+          .json({ message: "Missing required parameters." });
+      }
+      const transaction = await paymentModel.findByIdAndUpdate(id, {
+        $set: req.body,
+      });
+      transaction.save();
+      return res
+        .status(200)
+        .json({ message: "Transaction updated successfully." });
+    } catch (error) {
+      return res.status(500).json({ message: error.message });
     }
-    const transaction = await paymentModel.findByIdAndUpdate(id,{
-      $set:req.body
-    });
-    transaction.save();
-    return res.status(200).json({message:"Transaction updated successfully."});
-  } catch (error) {
-    return res.status(500).json({message:error.message});
   }
-}
   static async completePayment(req, res) {
     try {
-      const { OrderTrackingId,OrderMerchantReference } = req.query;
+      const { OrderTrackingId, OrderMerchantReference } = req.query;
       // console.log(req.param)
       const paymentReference = OrderMerchantReference;
       //check the transaction status
       const result = await PesaPal.transactionStatus(OrderTrackingId);
       //perform some logic to verify the payment and complete the payment
-      if(result.payment_status_description == 'Completed'){
+      if (result.payment_status_description == "Completed") {
         // console.log("payment completed")
-       let customer_transaction = await paymentModel.findOne({reference:paymentReference});
-        if(customer_transaction){
-
-          if(customer_transaction.status == 'PENDING'){
-
-            const paymentTransaction = await paymentModel.findByIdAndUpdate(customer_transaction._id,{status:'COMPLETED'});
+        let customer_transaction = await paymentModel.findOne({
+          reference: paymentReference,
+        });
+        if (customer_transaction) {
+          if (customer_transaction.status == "PENDING") {
+            const paymentTransaction = await paymentModel.findByIdAndUpdate(
+              customer_transaction._id,
+              { status: "COMPLETED" }
+            );
             paymentTransaction.save();
             // update client balance
-          const client = await employerModel.findOne({_id:customer_transaction.employer_id});
-          if(client){
-            let old_balance =  parseInt(`${client.balance}`);
-            let new_balance = parseInt(`${result.amount}`);
-          let total = old_balance + new_balance;
-          console.log(`Total balance ${total}`);
-            //  update client balance
-          const updatedAccount = await employerModel.findByIdAndUpdate(customer_transaction.employer_id,{
-             $set: {
-               balance:total,
-             }
-           });
-           updatedAccount.save();
-           return res.status(200).json({ message: "Payment completed successfully..", });
-          } else {
-           return res.status(400).json({ message: "User not found." });
-          }
+            const client = await employerModel.findOne({
+              _id: customer_transaction.employer_id,
+            });
+            if (client) {
+              let old_balance = parseInt(`${client.balance}`);
+              let new_balance = parseInt(`${result.amount}`);
+              let total = old_balance + new_balance;
+              console.log(`Total balance ${total}`);
+              //  update client balance
+              const updatedAccount = await employerModel.findByIdAndUpdate(
+                customer_transaction.employer_id,
+                {
+                  $set: {
+                    balance: total,
+                  },
+                }
+              );
+              updatedAccount.save();
+              return res
+                .status(200)
+                .json({ message: "Payment completed successfully.." });
             } else {
-              return res.status(400).json({message:"Transaction already executed."})
+              return res.status(400).json({ message: "User not found." });
             }
+          } else {
+            return res
+              .status(400)
+              .json({ message: "Transaction already executed." });
+          }
         } else {
-          return res.status(400).json({message:"Payment record not found."})
+          return res.status(400).json({ message: "Payment record not found." });
         }
       }
-    
     } catch (error) {
       return res.status(500).json({ message: error.message });
     }
   }
-   static async processTransaction(req,res) {
-      try {
-        const { amount , contact , reason, recipient_id } = req.body;
-        if(recipient_id ){
-          supplierModel.findOne({_id:recipient_id});
-          // TODO transact money
+  static async processTransaction(req, res) {
+    try {
+      const { amount, contact, reason, recipient_id, sender } = req.body;
+      const payment_reference = uuidv4();
+      const phone_number = contact;
+      /**
+       *
+       * Supplier transaction process.
+       *  if it's a supplier being paid
+       */
+      const supplierData = await supplierModel.findOne({ _id: recipient_id });
+      if (supplierData) {
+        // TODO transact money to supplier
+        // top up money on the supplier's current balance
+        let new_balance =
+          parseInt(`${supplierData.balance}`) + parseInt(`${amount}`);
+        const updatedAccount = await supplierModel.findByIdAndUpdate(
+          supplier._id,
+          {
+            $set: {
+              balance: new_balance,
+            },
+          }
+        );
+        await updatedAccount.save();
+        if (updatedAccount) {
+          // save transaction in payments model
+          new paymentModel({
+            supplier_id: recipient_id,
+            payment_reference: payment_reference,
+            amount: amount,
+            phone_number: phone_number,
+            description: reason,
+            status: "COMPLETED",
+          }).save();
+          return res
+            .status(200)
+            .json({ message: "Transaction  successfully completed" });
+        } else {
+          return res.status(400).json({ message: "User not found." });
         }
-        const payment_reference = uuidv4();
-        // const data = await PesaPal.orderProcess(payment_reference,amount,contact,reason);
-        if(data){
-          res.status(200).json({message:data});
-        }
-
-      } catch (error) {
-        res.status(500).json({message:error.message});
       }
+      /***
+       * Contractor or Consultant payment
+       * if it's an contractor/consultant being paid
+       *
+       *
+       */
+      const contractor = await freelancerModel.findOne({ _id: recipient_id });
+      if (contractor) {
+        // TODO transact money
+        let new_balance =
+          parseInt(`${contractor.balance}`) + parseInt(`${amount}`);
+        const updatedAccount = await freelancerModel.findByIdAndUpdate(
+          contractor._id,
+          {
+            $set: {
+              balance: new_balance,
+            },
+          }
+        );
+        const result = await updatedAccount.save();
+        if (result) {
+          // send mail to recipient
+          await mailSender(
+            contractor.email,
+            "Payments",
+            `You have received ${amount} for ${reason}. But you can only withdraw these fees after completion of work.`
+          );
+          // save transcation
+          new paymentModel({
+            employer_id: sender,
+            payment_reference: payment_reference,
+            amount: amount,
+            phone_number: phone_number,
+            description: reason,
+            contractor_id: recipient_id,
+            status: "COMPLETED",
+          }).save();
+
+          res.status(200).json({ message: "Payment completed successfully.." });
+        } else {
+          res.status(400).json({ message: "Transaction failed." });
+        }
+      }
+    } catch (error) {
+      res.status(500).json({ message: error.message });
     }
+  }
   static async processOrder(req, res) {
     try {
       // Extract required parameters from the request body
-      const { recipient, customer_name, customer_email, amount, phone_number, employer, reason } = req.body;
+      const {
+        recipient,
+        customer_name,
+        customer_email,
+        amount,
+        phone_number,
+        employer,
+        reason,
+      } = req.body;
       const payment_reference = uuidv4();
-      const call_back_url = "http://165.232.121.139:4000/payments/completePayment";
+      const call_back_url =
+        "http://165.232.121.139:4000/payments/completePayment";
       const cancel_url = "http://165.232.121.139:4000/payments/cancel-payment";
       // const customer_names = "John Doe"; /// TODO add customer names
       // const customer_email = "pYk2K@example.com"; // TODO add customer email
@@ -248,7 +349,7 @@ static async updateTransaction(req,res){
           message: "Missing required parameters. Please provide id.",
         });
       }
-      const data = await PaymentModel.findByIdAndDelete(id);
+      const data = await paymentModel.findByIdAndDelete(id);
       if (data) {
         return res.status(200).json({ response: data });
       } else {

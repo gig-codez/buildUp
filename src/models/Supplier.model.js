@@ -13,7 +13,7 @@ const supplierModel = new mongoose.Schema(
     business_email_address: {
       type: String,
       required: true,
-      unique: true
+      unique: true,
     },
     about_business: {
       type: String,
@@ -48,10 +48,10 @@ const supplierModel = new mongoose.Schema(
       ref: "role",
       required: true,
     },
-    balance:{
-      type:String,
-      required:false,
-      default:0,
+    balance: {
+      type: String,
+      required: false,
+      default: 0,
     },
     supplier_deals: [
       {
@@ -81,7 +81,12 @@ supplierModel.methods.createResetPasswordToken = function () {
     .digest("hex");
   this.passwordResetTokenExpires = Date.now() + 10 * 60 * 1000;
 
-  console.log(resetToken, this.passwordResetToken);
   return resetToken;
 };
-module.exports = mongoose.model("supplier", supplierModel);
+let supplierSchema;
+try {
+  supplierSchema = mongoose.model("supplier");
+} catch (error) {
+  supplierSchema = mongoose.model("supplier", supplierModel);
+}
+module.exports = supplierSchema;
