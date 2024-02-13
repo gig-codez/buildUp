@@ -330,15 +330,14 @@ class PaymentController {
   static async processOrder(req, res) {
     try {
       // Extract required parameters from the request body
-      const {
-        recipient,
-        customer_name,
-        customer_email,
-        amount,
-        phone_number,
-        employer,
-        reason,
-      } = req.body;
+      const { amount, phone_number, employer, reason } = req.body;
+      const client = await employerModel.findOne({ _id: employer });
+      if (!client) {
+        return res.status(400).json({ message: "Client not found" });
+      }
+      const customer_name = `${client.first_name} ${client.last_name}`; // TODO add customer names
+      const customer_email = client.email_address; // TODO add customer email
+      const recipient = "John Doe";
       const payment_reference = uuidv4();
       const call_back_url =
         "http://165.232.121.139:4000/payments/completePayment";
@@ -362,13 +361,13 @@ class PaymentController {
           amount: amount,
           phone_number: phone_number,
           description: reason,
-          recipient: recipient,
+          recipient: customer_name,
           status: "PENDING",
           order: data,
         }).save();
 
         res.status(200).json({
-          message: "Payment processed.",
+          message: "Payment being processed.",
           data: data,
         });
       } else {
