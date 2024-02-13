@@ -16,12 +16,12 @@ const ShortListedController = require("../controllers/shortlisted.controller");
 const MessageController = require("../controllers/message.controller");
 const UserController = require("../controllers/user.controller");
 // routes to fetch system users except employers and admins
-router.get("/allUsers",UserController.get_users);
+router.get("/allUsers", UserController.get_users);
 router.get("/admin", AdminController.index);
 router.get("/verifyToken/:id", AccountVerification.verifyToken);
 router.get("/roles", RoleController.index);
 //freelancers
-router.get("/freelancers", FreelancerController.index);
+router.get("/contractors", FreelancerController.index);
 router.get("/contractor/:id", FreelancerController.show);
 router.get(
   "/contractor-applied-jobs/:contractor_id",

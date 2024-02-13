@@ -2,7 +2,7 @@ const employerModel = require("../models/employer.model");
 const freelancerModel = require("../models/freelancer.model");
 const paymentModel = require("../models/payment.model");
 const supplierModel = require("../models/supplier.model");
-const PesaPal = require("../services/payments/pesapal/pesapal");
+const PesaPal = require("../services/payments/pesapal");
 const { v4: uuidv4 } = require("uuid");
 const mailSender = require("../utils/mailSender");
 
@@ -186,9 +186,9 @@ class PaymentController {
   }
   static async processTransaction(req, res) {
     try {
-      const { amount, contact, reason, recipient_id, sender } = req.body;
+      const { amount, reason, recipient_id, sender } = req.body;
       const payment_reference = uuidv4();
-      const phone_number = contact;
+
       /***
        * Check client's account if it has sufficient funds
        */
@@ -224,7 +224,7 @@ class PaymentController {
                 supplier_id: recipient_id,
                 payment_reference: payment_reference,
                 amount: amount,
-                phone_number: phone_number,
+                phone_number: supplierData.business_tel,
                 description: reason,
                 status: "COMPLETED",
               }).save();
@@ -287,7 +287,7 @@ class PaymentController {
                 employer_id: sender,
                 payment_reference: payment_reference,
                 amount: amount,
-                phone_number: phone_number,
+                phone_number: contractor.tel_num,
                 description: reason,
                 contractor_id: recipient_id,
                 status: "COMPLETED",
@@ -362,7 +362,7 @@ class PaymentController {
           amount: amount,
           phone_number: phone_number,
           description: reason,
-          recipeint: recipient,
+          recipient: recipient,
           status: "PENDING",
           order: data,
         }).save();
@@ -382,12 +382,12 @@ class PaymentController {
       return res.status(500).json({ message: error.message });
     }
   }
-  static async processRefund(req,res){
+  static async processRefund(req, res) {
     try {
-     const response = await PesaPal.refundMoney(req.body);
-     res.status(200).json(response);
+      const response = await PesaPal.refundMoney(req.body);
+      res.status(200).json(response);
     } catch (error) {
-      res.status(500).json({message:error.message})
+      res.status(500).json({ message: error.message });
     }
   }
   static async checkTransactionStatus(req, res) {
