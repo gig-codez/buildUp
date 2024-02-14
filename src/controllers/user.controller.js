@@ -1,12 +1,14 @@
 const freelancerModel = require("../models/freelancer.model");
 const employerModel = require("../models/employer.model");
 const supplierModel = require("../models/supplier.model");
-const { ObjectId } = require("mongodb");
+
 class UserController {
   static async get_users(req, res) {
     try {
       const suppliers = await supplierModel.find();
-      const contractorsAndConsultants = await freelancerModel.find().select("first_name last_name");
+      const contractorsAndConsultants = await freelancerModel
+        .find()
+        .select("first_name last_name");
       res.status(200).json([suppliers, contractorsAndConsultants].flat());
     } catch (e) {
       res.status(500).json({ message: e.message });
