@@ -2,7 +2,7 @@
 const otpGenerator = require("otp-generator");
 const otpModel = require("../models/otp.model");
 const freelancerModel = require("../models/freelancer.model");
-const SupplierModel = require("../models/Supplier.model");
+const SupplierModel = require("../models/supplier.model");
 const EmployerModel = require("../models/employer.model");
 
 class OtpController {
