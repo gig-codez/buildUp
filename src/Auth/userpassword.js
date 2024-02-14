@@ -1,5 +1,5 @@
 const freelancerModel = require("../models/freelancer.model");
-const SupplierModel = require("../models/Supplier.model");
+const SupplierModel = require("../models/supplier.model");
 const EmployerModel = require("../models/employer.model");
 const mailSender = require("../utils/mailSender.js");
 const crypto = require("crypto");
