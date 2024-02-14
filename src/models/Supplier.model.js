@@ -81,4 +81,4 @@ try {
 } catch (error) {
   supplierSchema = mongoose.model("supplier", supplierModel);
 }
-module.exports = supplierSchema;
+module.exports = mongoose.model("supplier", supplierModel);
