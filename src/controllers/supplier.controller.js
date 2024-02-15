@@ -1,4 +1,4 @@
-const supplierModel = require("../models/Supplier.model");
+const supplierModel = require("../models/supplier.model");
 const bcrypt = require("bcrypt");
 const SupplierLogin = require("../Auth/supplierlogin");
 const dealModel = require("../models/deal.model");
