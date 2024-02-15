@@ -1,4 +1,4 @@
-const SupplierModel = require("../models/Supplier.model");
+const SupplierModel = require("../models/supplier.model");
 const freelancerModel = require("../models/freelancer.model");
 const supplierDealModel = require("../models/supplierDeal.model");
 

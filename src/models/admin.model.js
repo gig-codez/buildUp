@@ -1,19 +1,16 @@
 const mongoose = require("mongoose");
 
 const adminSchema = new mongoose.Schema({
-    user_id: {
-        type: mongoose.Types.ObjectId,
-        required: true
-    },
-    admin_id: {
-        type: String,
-        required: true
-    },
     profile_pic: {
         type: String,
         required: false,
+        default:'',
       },
-    email_address: {
+      name:{
+        type: String,
+        required: true
+      },
+    email: {
         type: String,
         required: true
     },

@@ -5,9 +5,9 @@ const cors = require("cors");
 const { default: mongoose } = require("mongoose");
 require("dotenv").config();
 const app = express();
+app.use(cors());
+
 const WebSocketServer = require("websocket").server;
-const AWS = require("aws-sdk");
-// const upload = require("./src/helpers/documentUploader");
 const wssRoutes = require("./src/routes/websocket.routes");
 const {
   connWaitingArea,
@@ -15,16 +15,11 @@ const {
   connAcceptedArea,
 } = require("./src/global");
 
-// Configure AWS credentials (replace with your own)
-AWS.config.update({
-  accessKeyId: process.env.AWS_ACCESS_KEY,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  region: process.env.AWS_REGION,
-});
-app.use(cors());
+
+
 app.use(express.urlencoded({ extended: true }));
-app.use("/image", express.static("./uploads"));
 app.use(express.json());
+
 // register routes
 app.use("/get", require("./src/routes/get.routes"));
 app.use("/post", require("./src/routes/post.routes"));
@@ -32,7 +27,9 @@ app.use("/delete", require("./src/routes/delete.routes"));
 app.use("/update", require("./src/routes/update.routes"));
 app.use("/payments", require("./src/routes/payment.routes"));
 app.use("/portfolio", require("./src/routes/portfolio.routes"));
+app.use("/admin", require("./src/routes/admin.routes"));
 app.use("/search", require("./src/routes/search.routes"));
+app.use("/stock",require("./src/routes/stock.routes"));
 
 // db connection
 const dbOptions = {
@@ -45,6 +42,7 @@ mongoose.set("strictQuery", false);
 mongoose
   .connect(process.env.DB_URL, dbOptions)
   .then(() => {
+    console.clear();
     console.log("Connected to database successfully\n");
   })
   .catch((err) => {

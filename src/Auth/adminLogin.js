@@ -3,7 +3,7 @@ const adminModel = require("./../models/admin.model");
 require("dotenv").config();
 const bcrypt = require("bcrypt");
 class AdminLogin {
-  static async login(req, res, next) {
+  static async login(req, res) {
     try {
       const userAccount = await adminModel.findOne({ email: req.body.email });
       if (userAccount) {
@@ -22,13 +22,13 @@ class AdminLogin {
             email: userAccount.email,
           });
         } else {
-          res.status(401).json({ message: "Invalid email or password" });
+         return res.status(401).json({ message: "Invalid email or password" });
         }
       } else {
-        res.status(400).json({ message: "No user founds" });
+       return res.status(400).json({ message: "No user founds" });
       }
     } catch (error) {
-      res.status(500).json({ message: error.message });
+     return res.status(500).json({ message: error.message });
     }
   }
 }

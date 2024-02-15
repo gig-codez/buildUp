@@ -14,7 +14,7 @@ const consultantSchema = new mongoose.Schema(
       type: String,
       required: false,
     },
-    profileImage: {
+    profile_pic: {
       type: String,
       required: true,
     },

@@ -1,9 +1,10 @@
 const date = require("../global");
 const portfolioModel = require("../models/portifolio.model");
+const fileStoreMiddleware = require("../helpers/file_helper");
 class PortfolioController {
   static async get(req, res) {
     try {
-      const portfolio = await portfolioModel.find({ ownerId: req.params.id });
+      const portfolio = await portfolioModel.find({ ownerId: req.params.id }).sort({ _id: -1 });
       if (portfolio) {
         res.status(200).json(portfolio);
       } else {
@@ -16,15 +17,18 @@ class PortfolioController {
   // store portfolio in model
   static async store(req, res) {
     try {
+      let snaps = [];
+      if( req.files){
+      
+        const imagePath = await fileStoreMiddleware(req, `${req.body.ownerId}_portifolio`);
+        snaps = imagePath;
+      }
       const portfolio = new portfolioModel({
         ownerId: req.body.ownerId,
         clientName: req.body.clientName,
         description: req.body.description,
         projectName: req.body.projectName,
-        snaps: req.files.map(
-          (file) =>
-            `https://buildup-resources.s3.amazonaws.com/buildUp-${req.params.name}/photos/${date}-${file.originalname}`
-        ),
+        snaps: snaps,
       });
 
       await portfolio.save();
@@ -44,10 +48,26 @@ class PortfolioController {
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
+  }  static async delete_many(req, res) {
+    try {
+      const deleted = await portfolioModel.deleteMany({ownerId: req.params.id});
+      if (deleted) {
+        res.status(200).json({ message: "portfolio deleted successfully" });
+      } else {
+        res.status(404).json({ message: "portfolio not found" });
+      }
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
   }
   //   update portfolio
   static async update(req, res) {
     try {
+       let snaps = [];
+      if(req.file || req.files){
+        const imagePath = await fileStoreMiddleware(req, "portfolio");
+        snaps = imagePath;
+      }
       const portfolio = await portfolioModel.findOne(req.params.id);
       if (portfolio) {
         const updatedPortfolio = await portfolioModel.findByIdAndUpdate(
@@ -69,10 +89,7 @@ class PortfolioController {
               snaps:
                 req.files == null
                   ? portfolio.snaps
-                  : req.files.map(
-                      (file) =>
-                        `https://buildup-resources.s3.amazonaws.com/buildUp-${req.params.name}/photos/${date}-${file.originalname}`
-                    ),
+                  : snaps,
             },
           },
           {

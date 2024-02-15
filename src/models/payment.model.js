@@ -6,7 +6,7 @@ const paymentSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "employer",
       required: true,
-    }, 
+    },
     contractor_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "freelancer",
@@ -17,7 +17,7 @@ const paymentSchema = new mongoose.Schema(
       ref: "supplier",
       required: false,
     },
-    recipeint: {
+    recipient: {
       type: String,
       default: "",
     },

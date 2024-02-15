@@ -1,18 +1,31 @@
 const employerModel = require("../models/employer.model.js");
 const bcrypt = require("bcrypt");
 const EmployerLogin = require("../Auth/employerlogin");
-const S3Folder = require("../utils/s3_folder.js");
 const date = require("../global/index.js");
 
 class EmployerController {
   static async getAll(req, res) {
     try {
-      const employers = await employerModel.find().sort({ createdAt: -1 });
+      const employers = await employerModel.find().sort({ _id: -1 });
       if (!employers) {
         return res.status(404).json({ message: "No employers found" });
       }
 
       return res.status(200).json({ data: employers });
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ message: error.message });
+    }
+  } static async getEmployerById(req, res) {
+    try {
+      const employer = await employerModel.findOne({ _id: req.params.id}).populate("business");
+      
+      if(employer){
+        return res.status(200).json(employer);
+      } else {
+        return res.status(404).json({ message: "No employer found" });
+      }
+   
     } catch (error) {
       console.error(error);
       return res.status(500).json({ message: error.message });
@@ -44,9 +57,7 @@ class EmployerController {
             req.body.email = req.body.email_address;
             const auth = await EmployerLogin.loginHelper(req);
             // create respective folders
-            S3Folder.execute(
-              `${date}_${req.body.first_name}_${req.body.last_name}`
-            );
+        
             res.status(200).json({
               message: "Employer created successfully",
               data: newEmployee,

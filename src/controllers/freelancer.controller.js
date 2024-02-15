@@ -1,15 +1,14 @@
 const freelancerModel = require("../models/freelancer.model");
-const otpModel = require("../models/otp.model");
+// const otpModel = require("../models/otp.model");
 const bcrypt = require("bcrypt");
 const FreelancerLogin = require("../Auth/freelancerLogin");
+const fileStorageMiddleware = require("../helpers/file_helper");
 const date = require("../global");
 class FreelancerController {
   static async index(req, res) {
     try {
-      const freelancerPayload = await freelancerModel
-        .find()
-        .sort({ created_at: -1 });
-      res.status(200).json({ data: freelancerPayload });
+      const freelancerPayload = await freelancerModel.find().sort({ _id: -1 });
+      res.status(200).json(freelancerPayload);
     } catch (err) {
       res.status(500).json({ message: err.message });
     }
@@ -21,7 +20,7 @@ class FreelancerController {
         email: req.body.email,
       });
       if (oldAccount) {
-        res.status(400).json({ message: "Account already exists" });
+        return res.status(400).json({ message: "Account already exists" });
       } else {
         let hashedPassword = bcrypt.hashSync(req.body.password, 10);
         const freelancerPayload = new freelancerModel({
@@ -39,8 +38,8 @@ class FreelancerController {
         });
         const newfreelancer = await freelancerPayload.save();
         const auth = await FreelancerLogin.loginHelper(req);
-        console.log({ message: "Account created", data: newfreelancer, auth });
-        res
+
+        return res
           .status(200)
           .json({ message: "Account created", data: newfreelancer, auth });
       }
@@ -119,14 +118,22 @@ class FreelancerController {
   }
 
   static async update_contractor_profile(req, res) {
+    let imageUrl = "";
     try {
+      if (req.file) {
+        // Upload the image to Firebase Storage
+        //   let x = req.file.originalname.split('.')
+        //  console.log(x[x.length-1])
+        imageUrl = await fileStorageMiddleware(req, "photos");
+      }
+
       const freelancerPayload = await freelancerModel.findById(req.params.id);
       if (freelancerPayload) {
         const freelancer = await freelancerModel.findByIdAndUpdate(
           req.params.id,
           {
             $set: {
-              profile_pic: `https://buildup-resources.s3.amazonaws.com/buildUp-${req.params.name}/photos/${date}-${req.file.originalname}`,
+              profile_pic: imageUrl || freelancerPayload.profile_pic,
             },
           },
           {
@@ -158,13 +165,11 @@ class FreelancerController {
       res.status(500).json({ message: err.message });
     }
   }
-  static async show(req, res, next) {
+  static async show(req, res) {
     try {
       const freelancer = await freelancerModel.findById(req.params.id);
       if (freelancer) {
-        res
-          .status(200)
-          .json({ message: "single contractor", data: freelancer });
+        res.status(200).json(freelancer);
       } else {
         res.status(400).json({ message: "Contractor not found" });
       }

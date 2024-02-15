@@ -1,6 +1,6 @@
 const { default: mongoose } = require("mongoose");
 const crypto = require("crypto");
-const supplierModel = new mongoose.Schema(
+const supplierSchema = new mongoose.Schema(
   {
     business_name: {
       type: String,
@@ -13,13 +13,9 @@ const supplierModel = new mongoose.Schema(
     business_email_address: {
       type: String,
       required: true,
-      unique: true
+      unique: true,
     },
     about_business: {
-      type: String,
-      required: false,
-    },
-    type_of_product: {
       type: String,
       required: false,
     },
@@ -44,10 +40,10 @@ const supplierModel = new mongoose.Schema(
       ref: "role",
       required: true,
     },
-    balance:{
-      type:String,
-      required:false,
-      default:0,
+    balance: {
+      type: String,
+      required: false,
+      default: 0,
     },
     supplier_type: {
       type: mongoose.Types.ObjectId,
@@ -62,7 +58,7 @@ const supplierModel = new mongoose.Schema(
     timestamps: true,
   }
 );
-supplierModel.methods.createResetPasswordToken = function () {
+supplierSchema.methods.createResetPasswordToken = function () {
   const resetToken = crypto.randomBytes(32).toString("hex");
   this.passwordResetToken = crypto
     .createHash("sha256")
@@ -70,7 +66,12 @@ supplierModel.methods.createResetPasswordToken = function () {
     .digest("hex");
   this.passwordResetTokenExpires = Date.now() + 10 * 60 * 1000;
 
-  console.log(resetToken, this.passwordResetToken);
   return resetToken;
 };
-module.exports = mongoose.model("supplier", supplierModel);
+// let supplierSchema;
+// try {
+//   supplierSchema = mongoose.model("supplier");
+// } catch (error) {
+//   supplierSchema = mongoose.model("supplier", supplierSchema);
+// }
+module.exports = mongoose.model("supplier", supplierSchema);

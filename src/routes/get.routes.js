@@ -13,15 +13,16 @@ const jobscontroller = require("../controllers/jobs.controller");
 const JobsController = require("../controllers/jobs.controller");
 const MeetingController = require("../controllers/meetings.controller");
 const ShortListedController = require("../controllers/shortlisted.controller");
-const MessageController = require("../controllers/message.controller")
+const MessageController = require("../controllers/message.controller");
 const UserController = require("../controllers/user.controller");
-
+// routes to fetch system users except employers and admins
+router.get("/allUsers", UserController.get_users);
 router.get("/admin", AdminController.index);
 router.get("/verifyToken/:id", AccountVerification.verifyToken);
 router.get("/roles", RoleController.index);
 //freelancers
-router.get("/freelancers", FreelancerController.index);
-router.get("/freelancers/:id", FreelancerController.show);
+router.get("/contractors", FreelancerController.index);
+router.get("/contractor/:id", FreelancerController.show);
 router.get(
   "/contractor-applied-jobs/:contractor_id",
   JobsController.contractor_applied_jobs
@@ -29,13 +30,14 @@ router.get(
 
 //employers
 router.get("/employers", EmployerController.getAll);
+router.get("/employer/:id", EmployerController.getEmployerById);
 router.get("/client-jobs/:client_id", JobsController.client_jobs);
 //business
 router.get("/business", BusinessController.getAll);
 router.get("/business/:id", BusinessController.getBusinessById);
 //suppliers
 router.get("/suppliers", SupplierController.getAll);
-router.get("/suppliers/:id", SupplierController.show);
+router.get("/supplier/:id", SupplierController.show);
 router.get("/deals", SupplierController.deals);
 // deals by category
 router.get("/deals/:id", SupplierController.deals_by_category);
@@ -60,7 +62,12 @@ router.get(
   ShortListedController.fetch_short_listed_contractors
 );
 router.get("/messages", MessageController.getAll);
-router.get("/messages/:role_user_id/:page/:limitPerPage", MessageController.getUserMessages)
-router.get("/messages/:role_user_id/:id", MessageController.getUserMsgGreaterByIdReq)
+router.get(
+  "/messages/:role_user_id/:page/:limitPerPage",
+  MessageController.getUserMessages
+);
+router.get(
+  "/messages/:role_user_id/:id",
+  MessageController.getUserMsgGreaterByIdReq
+);
 module.exports = router;
-

@@ -10,7 +10,7 @@ class AdminController {
     } else {
       bcrypt.hash(req.body.password, 10, async (err, hashedPassword) => {
         if (err) {
-          res.status(500).json({ message: err });
+         return res.status(500).json({ message: err });
         } else {
           const adminPayload = new adminSchema({
             name: req.body.name,
@@ -19,7 +19,11 @@ class AdminController {
           });
 
           await adminPayload.save();
-          res.status(200).send("Admin created");
+          if(adminPayload){
+            return res.status(200).json({message:"Admin created"});
+          } else {
+            return res.status(400).json({message:"Admin not created"});
+          }
         }
       });
     }
@@ -27,7 +31,7 @@ class AdminController {
   static async index(req, res, next) {
     try {
       const adminPayload = await adminSchema.find();
-      res.status(200).json({ adminPayload });
+      res.status(200).json(adminPayload);
     } catch (err) {
       res.status(500).json({ message: err.message });
     }
@@ -48,9 +52,9 @@ class AdminController {
           }
         );
         await admin.save();
-        res.status(200).json({ admin });
+       return res.status(200).json({ message: "Admin updated successfully", data: admin });
       } else {
-        res.status(400).json({ message: "Admin not found" });
+       return res.status(400).json({ message: "Admin not found" });
       }
     } catch (err) {
       res.status(500).json({ message: err.message });
@@ -64,6 +68,17 @@ class AdminController {
       } else {
         res.status(400).json({ message: "Admin not found" });
       }
+    } catch (err) {
+      res.status(500).json({ message: err.message });
+    }
+  }
+  // user data info
+  static async userData(req,res){
+    try {
+      const userPayload = await adminSchema.findOne({
+        _id: req.params.id
+      }).select('name email');
+      res.status(200).json(userPayload);
     } catch (err) {
       res.status(500).json({ message: err.message });
     }
