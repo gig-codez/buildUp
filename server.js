@@ -42,7 +42,7 @@ mongoose.set("strictQuery", false);
 mongoose
   .connect(process.env.DB_URL, dbOptions)
   .then(() => {
-    console.clear();
+    // console.clear();
     console.log("Connected to database successfully\n");
   })
   .catch((err) => {
@@ -52,7 +52,7 @@ mongoose
 
 // end of db connection
 const httpServer = app.listen(4000, () => {
-  console.log(`Server running on port => http://127.0.0.1:${process.env.PORT}`);
+  console.log(`Server running on port => ${process.env.APP_HOST}:${process.env.PORT}`);
   console.table("\nWaiting for database connection");
 });
 
