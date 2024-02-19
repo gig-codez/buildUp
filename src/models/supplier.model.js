@@ -45,13 +45,6 @@ const supplierSchema = new mongoose.Schema(
       required: false,
       default: 0,
     },
-    supplier_deals: [
-      {
-        type: mongoose.Types.ObjectId,
-        ref: "supplierDeal",
-        required: true,
-      },
-    ],
     supplier_type: {
       type: mongoose.Types.ObjectId,
       ref: "supplierType",

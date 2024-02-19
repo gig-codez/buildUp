@@ -41,6 +41,9 @@ router.get("/supplier/:id", SupplierController.show);
 router.get("/deals", SupplierController.deals);
 // deals by category
 router.get("/deals/:id", SupplierController.deals_by_category);
+router.get("/supplier-deals", SupplierController.supplier_deals);
+router.get("/supplier-deals/deals/:supplierId", SupplierController.supplier_deals_by_supplierId);
+router.get("/supplier-deals/suppliers/:dealId", SupplierController.supplier_deals_by_dealId);
 router.get("/admin/profession", ContractorProfessionController.index);
 router.get("/profession/:id", ContractorProfessionController.findProfById);
 router.get("/admin/supplier-type", SupplierTypeController.index);

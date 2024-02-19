@@ -20,7 +20,7 @@ const {
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-// register routes 
+// register routes
 app.use("/get", require("./src/routes/get.routes"));
 app.use("/post", require("./src/routes/post.routes"));
 app.use("/delete", require("./src/routes/delete.routes"));
@@ -52,7 +52,7 @@ mongoose
 
 // end of db connection
 const httpServer = app.listen(4000, () => {
-  console.log(`Server running on port => http://127.0.0.1:${process.env.PORT}`);
+  console.log(`Server running on port => ${process.env.APP_HOST}:${process.env.PORT}`);
   console.table("\nWaiting for database connection");
 });
 
