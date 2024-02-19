@@ -54,4 +54,4 @@ const fileStorageMiddleware = async (req,folder) => {
             return bucketFile;
    }
 
-module.exports = fileStorageMiddleware;
+module.exports = {fileStorageMiddleware};

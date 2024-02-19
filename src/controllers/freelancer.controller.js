@@ -8,7 +8,7 @@ class FreelancerController {
   static async index(req, res) {
     try {
       const freelancerPayload = await freelancerModel.find().sort({ _id: -1 });
-      res.status(200).json(freelancerPayload);
+      res.status(200).json({data: freelancerPayload});
     } catch (err) {
       res.status(500).json({ message: err.message });
     }

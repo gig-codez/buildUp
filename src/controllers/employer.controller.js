@@ -21,9 +21,9 @@ class EmployerController {
       const employer = await employerModel.findOne({ _id: req.params.id}).populate("business");
       
       if(employer){
-        return res.status(200).json(employer);
+        return res.status(200).json({data: employer});
       } else {
-        return res.status(404).json({ message: "No employer found" });
+        return res.status(400).json({ message: "No employer found" });
       }
    
     } catch (error) {

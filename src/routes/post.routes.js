@@ -65,5 +65,7 @@ router.post("/meetings/add", MeetingController.store);
 // send mail
 router.post("/send-mail", MailController.send_mail);
 router.post("/message", MessageController.storeMessage)
+router.post("/message/file", uploadManager().single("file"), MessageController.storeFile);
+// router.post("/message/file", MessageController.storeFile);
 router.post("/search-users", UserController.searchUsersByRolesRequest)
 module.exports = router;

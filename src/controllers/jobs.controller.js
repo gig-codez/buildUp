@@ -1,7 +1,7 @@
 const jobsModel = require("../models/jobPost.model");
 const appliedJobs = require("../models/applied_jobs.model");
 const date = require("../global");
-const { default: fileStorageMiddleware } = require("../helpers/file_helper");
+const { fileStorageMiddleware } = require("../helpers/file_helper");
 const employerModel = require("../models/employer.model");
 
 class JobsController {

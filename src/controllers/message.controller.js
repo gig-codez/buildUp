@@ -1,5 +1,6 @@
 const messageModel = require("../models/message.model");
 const {_sendMessage} = require("../global");
+const {fileStorageMiddleware} = require("../helpers/file_helper")
 class MessageController {
   static async getAll(req, res) {
     try {
@@ -60,27 +61,46 @@ class MessageController {
     await messageModel.updateMany({_id: {$in: messageIds}}, {$set:{seen:true}});
   }
 
+  static async saveMessage(obj){
+    if(parseInt(obj.sender_id[0]).toString() !== "NaN" || parseInt(obj.receiver_id[0]).toString() !== "NaN"){
+      let error = new Error("Invalid data format for sender_id or receiver_id");
+      error.code = 400;
+      throw error;
+    }
+    const messagePayload = new messageModel({
+      sender_id: obj.sender_id,
+      receiver_id: obj.receiver_id,
+      message: obj.message,
+      message_type: obj.message_type,
+      time: new Date()
+    });
+    const newMessage = await messagePayload.save();
+    _sendMessage(newMessage.receiver_id, newMessage);
+    return {
+      message: "Sent successfully",
+      data: messagePayload,
+    };
+  }
+
   static async storeMessage(req, res){
     try {
-      if(parseInt(req.body.sender_id[0]).toString() !== "NaN" || parseInt(req.body.receiver_id[0]).toString() !== "NaN"){
-        res.status(400).json({ message: "Invalid data format for sender_id or receiver_id" });
+      const response = await MessageController.saveMessage(req.body);
+      res.status(200).json(response);
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  }
+
+  static async storeFile(req, res){
+    try {
+      if(!req.file){
+        res.status(400).json({ message: "File is missing!" });
         return;
       }
-      const messagePayload = new messageModel({
-        sender_id: req.body.sender_id,
-        receiver_id: req.body.receiver_id,
-        message: req.body.message,
-        message_type: req.body.message_type,
-        time: new Date()
-      });
-      const newMessage = await messagePayload.save();
-
-      _sendMessage(newMessage.receiver_id, newMessage)
-
-      res.status(200).json({
-        message: "Sent successfully",
-        data: messagePayload,
-      });
+      console.log(fileStorageMiddleware);
+      const docUrl = await fileStorageMiddleware(req, "docs");
+      const response = await MessageController.saveMessage({...req.body, "message":req.file["originalname"]+", "+req.file["size"]+", "+docUrl});
+      res.status(200).json(response);
     } catch (error) {
       res.status(500).json({ message: error.message });
     }
