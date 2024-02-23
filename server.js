@@ -42,7 +42,7 @@ mongoose.set("strictQuery", false);
 mongoose
   .connect(process.env.DB_URL, dbOptions)
   .then(() => {
-    console.clear();
+    // console.clear();
     console.log("Connected to database successfully\n");
   })
   .catch((err) => {
@@ -51,7 +51,7 @@ mongoose
   });
 
 // end of db connection
-const httpServer = app.listen(4000, () => {
+const httpServer = app.listen(process.env.PORT, process.env.APP_HOST, () => {
   console.log(`Server running on port => ${process.env.APP_HOST}:${process.env.PORT}`);
   console.table("\nWaiting for database connection");
 });
@@ -95,7 +95,7 @@ wsServer.on("request", function (request) {
         for(let key of keys){
           if(!json.hasOwnProperty(key)){
             connection.sendUTF(JSON.stringify({error: "Invalid data format", status: 400, data: json}));
-            return;
+            return; build-up2.vercel.app
           }
         }
         //find ways of catching this error and remove code below
