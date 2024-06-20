@@ -8,7 +8,9 @@ const fileStoreMiddleware = require("../helpers/file_helper");
 class SupplierController {
   static async getAll(req, res) {
     try {
-      let Supplier = await supplierModel.find();
+      let Supplier = await supplierModel
+        .find()
+        .populate("supplier_type", "name");
       res.status(200).json({ data: Supplier });
     } catch (error) {
       res.status(500).json({ message: error.message });
@@ -82,8 +84,8 @@ class SupplierController {
       const deals = req.body.deals.split(",");
 
       const docs = [];
-      deals.forEach((deal)=>{
-        docs.push({"supplier":supplierId, "deal":deal});
+      deals.forEach((deal) => {
+        docs.push({ supplier: supplierId, deal: deal });
       });
 
       await supplierDealModel.insertMany(docs, { ordered: true });
@@ -146,7 +148,7 @@ class SupplierController {
     try {
       const deals = await dealModel.find().sort({ _id: -1 });
       if (deals) {
-        res.status(200).json({"data": deals});
+        res.status(200).json({ data: deals });
       } else {
         res.status(400).json({ message: "Error fetching deals.." });
       }
@@ -162,7 +164,7 @@ class SupplierController {
         .sort({ _id: -1 });
 
       if (deals) {
-        res.status(200).json({data: deals});
+        res.status(200).json({ data: deals });
       } else {
         res.status(400).json({ message: "Error fetching deals.." });
       }
@@ -172,9 +174,7 @@ class SupplierController {
   }
   static async delete_deals(req, res) {
     try {
-      const deletedDeals = await dealModel.findByIdAndDelete(
-        req.params.id
-      );
+      const deletedDeals = await dealModel.findByIdAndDelete(req.params.id);
       if (deletedDeals) {
         res.status(200).json({ message: "Deals deleted successfully" });
       } else {
@@ -185,23 +185,26 @@ class SupplierController {
     }
   }
 
-  static async supplier_deals(req, res){
+  static async supplier_deals(req, res) {
     try {
-      const supplierDeals = await supplierDealModel.find().sort({_id:-1});
-      res.status(200).json({data: supplierDeals});
+      const supplierDeals = await supplierDealModel.find().sort({ _id: -1 });
+      res.status(200).json({ data: supplierDeals });
     } catch (error) {
       res.status(500).json({ message: error.message });
     }
   }
 
-  static async supplier_deals_by_supplierId(req, res){
+  static async supplier_deals_by_supplierId(req, res) {
     try {
-      const deals = await supplierDealModel.find({supplier: req.params.supplierId}).sort({_id:-1}).populate({
-        path: "deal"
-      });
-      res.status(200).json({data: deals});
+      const deals = await supplierDealModel
+        .find({ supplier: req.params.supplierId })
+        .sort({ _id: -1 })
+        .populate({
+          path: "deal",
+        });
+      res.status(200).json({ data: deals });
       if (deals) {
-        res.status(200).json({data: deals});
+        res.status(200).json({ data: deals });
       } else {
         res.status(400).json({ message: "Error fetching deals.." });
       }
@@ -210,13 +213,16 @@ class SupplierController {
     }
   }
 
-  static async supplier_deals_by_dealId(req, res){
+  static async supplier_deals_by_dealId(req, res) {
     try {
-      const deals = await supplierDealModel.find({deal: req.params.dealId}).sort({_id:-1}).populate({
-        path: "supplier"
-      });
+      const deals = await supplierDealModel
+        .find({ deal: req.params.dealId })
+        .sort({ _id: -1 })
+        .populate({
+          path: "supplier",
+        });
       if (deals) {
-        res.status(200).json({data: deals});
+        res.status(200).json({ data: deals });
       } else {
         res.status(400).json({ message: "Error fetching deals.." });
       }

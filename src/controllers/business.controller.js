@@ -3,7 +3,9 @@ const businessModel = require("../models/business.model");
 class BusinessController {
   static async getAll(req, res) {
     try {
-      let business = await businessModel.find({});
+      let business = await businessModel
+        .find({})
+        .populate("employer", "first_name");
       res.status(200).json({ data: business });
     } catch (error) {
       res.status(500).json({ message: error.message });
@@ -18,7 +20,7 @@ class BusinessController {
       });
 
       if (businessData) {
-        return res.status(400).json({message:"Business already exists"});
+        return res.status(400).json({ message: "Business already exists" });
       } else {
         const businessPayload = new businessModel(req.body);
         const newBusines = await businessPayload.save();
