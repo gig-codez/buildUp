@@ -10,7 +10,7 @@ const contractorProfessionModel = mongoose.Schema(
     roleId: {
       type: mongoose.Types.ObjectId,
       ref: "role",
-      required: true,
+      // required: true,
     },
     // description: {
     //   type: String,
