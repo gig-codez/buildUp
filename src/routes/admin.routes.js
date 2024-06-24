@@ -6,7 +6,7 @@ const RoleController = require("../controllers/role.controller");
 const ContractorProfessionController = require("../controllers/contractorProfession.controller");
 const SupplierTypeController = require("../controllers/supplierType.controller");
 router.get("/", AdminController.index);
-router.post("/login", AdminLogin.login);
+router.post("/admin/login", AdminLogin.login);
 router.post("/create/admin", AdminController.store);
 router.patch("/:id", AdminController.update);
 router.delete("/:id", AdminController.delete);

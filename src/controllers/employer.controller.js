@@ -6,7 +6,10 @@ const date = require("../global/index.js");
 class EmployerController {
   static async getAll(req, res) {
     try {
-      const employers = await employerModel.find().sort({ _id: -1 });
+      const employers = await employerModel
+        .find()
+        .sort({ _id: -1 })
+        .populate("business", "business_name");
       if (!employers) {
         return res.status(404).json({ message: "No employers found" });
       }
@@ -16,16 +19,18 @@ class EmployerController {
       console.error(error);
       return res.status(500).json({ message: error.message });
     }
-  } static async getEmployerById(req, res) {
+  }
+  static async getEmployerById(req, res) {
     try {
-      const employer = await employerModel.findOne({ _id: req.params.id}).populate("business");
-      
-      if(employer){
-        return res.status(200).json({data: employer});
+      const employer = await employerModel
+        .findOne({ _id: req.params.id })
+        .populate("business");
+
+      if (employer) {
+        return res.status(200).json({ data: employer });
       } else {
         return res.status(400).json({ message: "No employer found" });
       }
-   
     } catch (error) {
       console.error(error);
       return res.status(500).json({ message: error.message });
@@ -38,7 +43,7 @@ class EmployerController {
         email_address: req.body.email_address,
       });
       if (employerData) {
-        res.status(400).json({message: "Employer already exists"});
+        res.status(400).json({ message: "Employer already exists" });
       } else {
         bcrypt.hash(req.body.password, 10, async (err, hashedPassword) => {
           if (err) {
@@ -57,7 +62,7 @@ class EmployerController {
             req.body.email = req.body.email_address;
             const auth = await EmployerLogin.loginHelper(req);
             // create respective folders
-        
+
             res.status(200).json({
               message: "Employer created successfully",
               data: newEmployee,
@@ -101,24 +106,24 @@ class EmployerController {
       res.status(500).json({ message: error.message });
     }
   }
-// update employer model
-static async update(req,res) {
-  try {
-    const employer = await employerModel.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true }
-    );
-    if (!employer) {
-      return res.status(404).json({ message: "Employer not found" });
+  // update employer model
+  static async update(req, res) {
+    try {
+      const employer = await employerModel.findByIdAndUpdate(
+        req.params.id,
+        req.body,
+        { new: true }
+      );
+      if (!employer) {
+        return res.status(404).json({ message: "Employer not found" });
+      }
+      return res.status(200).json({
+        message: "Employer updated successfully",
+        data: employer,
+      });
+    } catch (error) {
+      res.status(500).json({ message: error.message });
     }
-    return res.status(200).json({
-      message: "Employer updated successfully",
-      data: employer,
-    });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
   }
-}
 }
 module.exports = EmployerController;
