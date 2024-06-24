@@ -117,18 +117,18 @@ class Pesapal {
   }
 
   /**
-   * Process an order.
-   *
-   * @param {string} reference - The reference of the order.
-   * @param {number} amount - The amount of the order.
-   * @param {string} phone - The phone number of the customer.
-   * @param {string} description - The description of the order.
-   * @param {function} callback - The callback function to be executed.
-   * @param {string} customer_names - The name of the customer.
-   * @param {string} email - The email of the customer.
-   * @param {string} cancel_url - The cancel URL for the order.
-   * @return {object} The result of the order process.
-   */
+     * Process an order.
+     *
+     * @param {string} reference - The reference of the order.
+     * @param {number} amount - The amount of the order.
+     * @param {string} phone - The phone number of the customer.
+     * @param {string} description - The description of the order.
+     * @param {function} callback - The callback function to be executed.
+     * @param {string} customer_names - The name of the customer.
+     * @param {string} email - The email of the customer.
+     * @param {string} cancel_url - The cancel URL for the order.
+     * @return {object} The result of the order process.
+     */
   static async orderProcess(
     reference,
     amount,
@@ -149,7 +149,7 @@ class Pesapal {
         redirect_mode: "PARENT_WINDOW",
         callback_url: callback,
         cancel_url: cancel_url,
-        notification_id: "1e2e14ac-a538-4400-9063-ddaa61771253",
+        notification_id: "c5671f21-dbbe-4f2f-88fb-dd13f37ea1b1",
         billing_address: {
           phone_number: phone,
           first_name: customer_names,
@@ -177,7 +177,6 @@ class Pesapal {
       return { success: false, message: error.message };
     }
   }
-
   /**
    * Retrieves the status of a transaction.
    *
@@ -219,11 +218,11 @@ class Pesapal {
    * 
    * function to handle money refund
    */
-  static async refundMoney(data){
-    if(!data.hasOwnProperty('confirmation_code')&& data.hasOwnProperty('amount')&& !data.hasOwnProperty('username')&& !data.hasOwnProperty('remarks')){
+  static async refundMoney(data) {
+    if (!data.hasOwnProperty('confirmation_code') && data.hasOwnProperty('amount') && !data.hasOwnProperty('username') && !data.hasOwnProperty('remarks')) {
       throw new Error("Invalid request made.")
     } else {
-        const res = await this.pesapalAuth();
+      const res = await this.pesapalAuth();
       if (!res.token) {
         return {
           success: false,
@@ -238,9 +237,9 @@ class Pesapal {
         accept: "application/json",
         Authorization: `Bearer ${res.token}`,
       };
-// process refund request.
-    const response = await axios.post(url, data, { headers });
-    const result = response.data;
+      // process refund request.
+      const response = await axios.post(url, data, { headers });
+      const result = response.data;
       return result;
     }
   }

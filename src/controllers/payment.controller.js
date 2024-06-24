@@ -92,6 +92,8 @@ class PaymentController {
     }
   }
 
+
+
   static async cancelPayment(req, res) {
     try {
       return res.render("payments.cancel");
