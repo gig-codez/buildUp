@@ -9,6 +9,11 @@ class EmployerLogin {
       email_address: req.body.email,
     });
     if (employer) {
+      if (employer.active === false) {
+        let error = new Error("Account is inactive, please contact admin");
+        error.code = 401;
+        throw error;
+      }
       let isMatch = bcrypt.compareSync(req.body.password, employer.password);
       let token = jwt.sign({ id: employer._id }, process.env.SECRET_KEY, {
         expiresIn: "1h",

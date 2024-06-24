@@ -35,10 +35,15 @@ const employerModel = new mongoose.Schema(
       ref: "role",
       required: false,
     },
-    balance:{
-      type:Number,
-      required:false,
-      default:0,
+    balance: {
+      type: Number,
+      required: false,
+      default: 0,
+    },
+    active: {
+      type: Boolean,
+      required: false,
+      default: true,
     },
     business: { type: mongoose.Types.ObjectId, ref: "business" },
 

@@ -50,10 +50,15 @@ class FreelancerLogin {
   }
   static async consultantLoginHelper(req) {
     const freelancer = await freelancerModel.findOne({
-      email: req.body.email, active: true,
+      email: req.body.email,
     });
     // console.log(freelancer);
     if (freelancer) {
+      if (freelancer.active === false) {
+        let error = new Error("Account is inactive, please contact admin");
+        error.code = 401;
+        throw error;
+      }
       let isMatch = bcrypt.compareSync(req.body.password, freelancer.password);
       let token = jwt.sign({ id: freelancer._id }, process.env.SECRET_KEY, {
         expiresIn: "1h",

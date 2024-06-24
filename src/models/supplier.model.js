@@ -50,10 +50,16 @@ const supplierSchema = new mongoose.Schema(
       ref: "supplierType",
       required: true,
     },
+    active: {
+      type: Boolean,
+      required: false,
+      default: true,
+    },
     passwordChangedAt: Date,
     passwordResetToken: String,
     passwordResetTokenExpires: Date,
   },
+
   {
     timestamps: true,
   }
