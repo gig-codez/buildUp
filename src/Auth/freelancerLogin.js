@@ -6,7 +6,7 @@ require("dotenv").config();
 class FreelancerLogin {
   static async loginHelper(req) {
     const freelancer = await freelancerModel.findOne({
-      email: req.body.email,
+      email: req.body.email, active: true,
     });
     // console.log(freelancer);
     if (freelancer) {
@@ -46,11 +46,11 @@ class FreelancerLogin {
         .status(error.hasOwnProperty("code") ? error.code : 500)
         .json({ message: error.message });
     }
-  
-  }  
-  static async consultantLoginHelper(req){
-       const freelancer = await freelancerModel.findOne({
-      email: req.body.email,
+
+  }
+  static async consultantLoginHelper(req) {
+    const freelancer = await freelancerModel.findOne({
+      email: req.body.email, active: true,
     });
     // console.log(freelancer);
     if (freelancer) {
@@ -59,7 +59,7 @@ class FreelancerLogin {
         expiresIn: "1h",
       });
       if (isMatch) {
-       
+
         const response = {
           token: token,
           userId: freelancer._id,
@@ -70,7 +70,7 @@ class FreelancerLogin {
           userData: freelancer,
           role: "consultant",
         };
-     
+
         return response;
       } else {
         let error = new Error("Invalid email or password");
@@ -88,7 +88,7 @@ class FreelancerLogin {
 
       let respMessage = await FreelancerLogin.consultantLoginHelper(req);
       console.log(respMessage)
-      if(respMessage){
+      if (respMessage) {
         res.status(200).json(respMessage);
       } else {
         res

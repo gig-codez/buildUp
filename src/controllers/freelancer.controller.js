@@ -7,8 +7,8 @@ const date = require("../global");
 class FreelancerController {
   static async index(req, res) {
     try {
-      const freelancerPayload = await freelancerModel.find().sort({ _id: -1 }).populate("profession","name");
-      res.status(200).json({data: freelancerPayload});
+      const freelancerPayload = await freelancerModel.find().sort({ _id: -1 }).populate("profession", "name");
+      res.status(200).json({ data: freelancerPayload });
     } catch (err) {
       res.status(500).json({ message: err.message });
     }
@@ -175,6 +175,35 @@ class FreelancerController {
       }
     } catch (err) {
       res.status(500).json({ message: err.message });
+    }
+  }
+
+  // function to deactivate the account 
+  static async deactivate(req, res) {
+    try {
+      const freelancer = await freelancerModel.findById(req.params.id);
+      if (freelancer) {
+        const updatedFreelancer = await freelancerModel.findByIdAndUpdate(
+          req.params.id,
+          {
+            $set: {
+              active: false,
+            },
+          },
+          {
+            new: true,
+          }
+        );
+        await updatedFreelancer.save();
+        res.status(200).json({
+          message: "freelancer deleted successfully",
+          data: updatedFreelancer,
+        });
+      } else {
+        res.status(400).json({ message: "Freelancer not found" });
+      }
+    } catch (error) {
+      res.status(500).json({ message: error.message });
     }
   }
 }

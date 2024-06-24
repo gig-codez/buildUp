@@ -5,7 +5,7 @@ class SupplierTypeController {
     //  first check if profession exists
     let supplierTypeData = await supplierTypeSchema.findOne({ name: req.body.name });
     if (supplierTypeData) {
-      return res.status(400).json({message:"Supplier Type already exists"});
+      return res.status(400).json({ message: "Supplier Type already exists" });
     } else {
       const supplierTypePayload = new supplierTypeSchema({
         name: req.body.name,
@@ -13,10 +13,10 @@ class SupplierTypeController {
       });
 
       await supplierTypePayload.save();
-      res.status(200).send("Supplier Type created");
+      res.status(200).json({ message: "Supplier Type created" });
     }
   }
-  static async index(req, res, next) {
+  static async index(req, res) {
     try {
       const supplierTypePayload = await supplierTypeSchema.find();
       res.status(200).json(supplierTypePayload);
@@ -29,14 +29,14 @@ class SupplierTypeController {
       const supplierTypePayload = await supplierTypeSchema.findById(req.params.id);
       if (supplierTypePayload) {
         const supplierType = await supplierTypeSchema.findByIdAndUpdate(
-            req.params.id,
-            {
-              name: req.body.name,
-              description: req.body.description
-            },
-            {
-              new: true,
-            }
+          req.params.id,
+          {
+            name: req.body.name,
+            description: req.body.description
+          },
+          {
+            new: true,
+          }
         );
         await supplierType.save();
         res.status(200).json({ supplierType });
