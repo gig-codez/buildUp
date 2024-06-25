@@ -1,16 +1,16 @@
 const multer = require("multer");
 const firebase = require("firebase-admin");
-const serviceAccount =  require("./samba-stats-firebase-adminsdk-8jaaw-7b37d3ce3a.json");
+const serviceAccount = require("./build-up-deb9a-firebase-adminsdk-n0d0y-a15cf778b8.json");
 // Initialize Firebase
 firebase.initializeApp({
   credential: firebase.credential.cert(serviceAccount),
-  databaseURL: "https://samba-stats-default-rtdb.firebaseio.com",
-  storageBucket: "samba-stats.appspot.com",
+  databaseURL: "https://build-up-deb9a-default-rtdb.firebaseio.com",
+  storageBucket: "build-up-deb9a.appspot.com",
 });
 const uploaderManager = () => {
-  return  multer({
-        storage: multer.memoryStorage(),
-      })
+  return multer({
+    storage: multer.memoryStorage(),
+  })
 };
 
 module.exports = uploaderManager;
