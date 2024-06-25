@@ -29,8 +29,8 @@ app.use("/payments", require("./src/routes/payment.routes"));
 app.use("/portfolio", require("./src/routes/portfolio.routes"));
 app.use("/admin", require("./src/routes/admin.routes"));
 app.use("/search", require("./src/routes/search.routes"));
-app.use("/stock",require("./src/routes/stock.routes"));
-
+app.use("/stock", require("./src/routes/stock.routes"));
+app.use("/withdraws", require("./src/routes/withdraw.routes"));
 // db connection
 const dbOptions = {
   useNewUrlParser: true,
@@ -84,32 +84,32 @@ wsServer.on("request", function (request) {
 
   const connection = request.accept("", request.origin);
   connWaitingArea[connection.remoteAddress.toString()] = connection;
-  connection.sendUTF(JSON.stringify({status: 200, request:{referrer: "init"}}));
+  connection.sendUTF(JSON.stringify({ status: 200, request: { referrer: "init" } }));
   // console.log((new Date()) + ' Connection accepted.');
   connection.on("message", function (message) {
     if (message.type === "utf8") {
       try {
         const json = JSON.parse(message.utf8Data.toString());
         const refString = 'referrer';
-        const keys = [refString,'data'];
-        for(let key of keys){
-          if(!json.hasOwnProperty(key)){
-            connection.sendUTF(JSON.stringify({error: "Invalid data format", status: 400, data: json}));
-            return; build-up2.vercel.app
+        const keys = [refString, 'data'];
+        for (let key of keys) {
+          if (!json.hasOwnProperty(key)) {
+            connection.sendUTF(JSON.stringify({ error: "Invalid data format", status: 400, data: json }));
+            return; build - up2.vercel.app
           }
         }
         //find ways of catching this error and remove code below
-        if(wssRoutes.hasOwnProperty(json[refString])){
+        if (wssRoutes.hasOwnProperty(json[refString])) {
           wssRoutes[json[refString]](json, connection);
           // if(typeof(func)==="function"){
           //   func(json, connection);
-            return;
+          return;
           // }
         }
-        connection.sendUTF(JSON.stringify({error: "Not found", status: 404, data: json}));
+        connection.sendUTF(JSON.stringify({ error: "Not found", status: 404, data: json }));
       }
       catch (e) {
-        connection.sendUTF(JSON.stringify({error: "Invalid data format", status: 400, data: message.toString()}));
+        connection.sendUTF(JSON.stringify({ error: "Invalid data format", status: 400, data: message.toString() }));
         console.log(e)
       }
       // console.log('Received Message: ' + message.utf8Data.toString());
