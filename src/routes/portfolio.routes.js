@@ -5,11 +5,11 @@ const uploaderManager = require("../helpers/uploadManager");
 const router = Router();
 // get user portfolio
 router.get("/:id", PortfolioController.get);
-router.post("/add",uploaderManager().array("images") ,PortfolioController.store);
-router.delete("/:id", PortfolioController.delete);
+router.post("/add", uploaderManager().array("images"), PortfolioController.store);
+router.delete("/delete/:id", PortfolioController.delete);
 router.delete("/delete-many/:id", PortfolioController.delete_many);
 router.patch(
-  "/",
+  "/update/",
   uploaderManager().array("images"),
   PortfolioController.update
 );

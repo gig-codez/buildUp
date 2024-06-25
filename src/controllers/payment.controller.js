@@ -342,8 +342,8 @@ class PaymentController {
       const recipient = "John Doe";
       const payment_reference = uuidv4();
       const call_back_url =
-        "http://165.232.121.139:4000/payments/completePayment";
-      const cancel_url = "http://165.232.121.139:4000/payments/cancel-payment";
+        "https://build-up.vercel.app/payments/completePayment";
+      const cancel_url = "https://build-up.vercel.app/payments/cancel-payment";
       // const customer_names = "John Doe"; /// TODO add customer names
       // const customer_email = "pYk2K@example.com"; // TODO add customer email
       const data = await PesaPal.orderProcess(
@@ -379,7 +379,6 @@ class PaymentController {
       }
     } catch (error) {
       // Handle errors
-      // console.error(error);
       return res.status(500).json({ message: error.message });
     }
   }
