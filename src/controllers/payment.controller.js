@@ -191,7 +191,6 @@ class PaymentController {
     try {
       const { amount, reason, recipient_id, sender } = req.body;
       const payment_reference = uuidv4();
-
       /***
        * Check client's account if it has sufficient funds
        */
@@ -280,7 +279,7 @@ class PaymentController {
                 await mailSender(
                   contractor.email,
                   "Payments",
-                  `You have received ${amount} for ${reason}. But you can only withdraw these fees after completion of work.\n Your new account balance is UGX ${updatedResult.balance}`
+                  `<p>You have received ${amount} from ${employer.first_name} ${employer.last_name} (${employer.business.business_name}) for ${reason}. But you can only withdraw these fees after completion of work.<br/> Your new account balance is <b>UGX ${updatedAccount.balance}</b></p>`
                 );
                 // save transaction
                 const recordTransaction = new paymentModel({
