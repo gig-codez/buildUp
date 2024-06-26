@@ -92,8 +92,6 @@ class PaymentController {
     }
   }
 
-
-
   static async cancelPayment(req, res) {
     try {
       return res.render("payments.cancel");
@@ -234,7 +232,7 @@ class PaymentController {
               await mailSender(
                 supplierData.business_email_address,
                 "Payments",
-                `You have received ${amount} from ${employer.first_name} ${employer.last_name} (${employer.business.business_name}) for ${reason}. But you can only withdraw these fees after completion of work.\n Your new balance is UGX ${supplierUpdated.balance}.`
+                `<p>You have received ${amount} from ${employer.first_name} ${employer.last_name} (${employer.business.business_name}) for ${reason}. But you can only withdraw these fees after completion of work.<br/>  Your new account balance is <b>UGX ${new_balance}</b></p>.`
               );
               // update employer's account
               const updated = await employerModel.findByIdAndUpdate(sender, {
@@ -279,7 +277,7 @@ class PaymentController {
                 await mailSender(
                   contractor.email,
                   "Payments",
-                  `<p>You have received ${amount} from ${employer.first_name} ${employer.last_name} (${employer.business.business_name}) for ${reason}. But you can only withdraw these fees after completion of work.<br/> Your new account balance is <b>UGX ${updatedAccount.balance}</b></p>`
+                  `<p>You have received ${amount} from ${employer.first_name} ${employer.last_name} (${employer.business.business_name}) for ${reason}. But you can only withdraw these fees after completion of work.<br/> Your new account balance is <b>UGX ${new_balance}</b></p>`
                 );
                 // save transaction
                 const recordTransaction = new paymentModel({
