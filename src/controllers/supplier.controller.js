@@ -20,7 +20,12 @@ class SupplierController {
       let Supplier = await supplierModel
         .find()
         .populate("supplier_type", "name");
-      res.status(200).json({ data: Supplier });
+      res.status(200).json({
+        totalDocuments,
+        totalPages,
+        currentPage: page,
+        pageSize, data: Supplier
+      });
     } catch (error) {
       res.status(500).json({
         totalDocuments,
