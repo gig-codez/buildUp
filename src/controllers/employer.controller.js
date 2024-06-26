@@ -6,12 +6,26 @@ const date = require("../global/index.js");
 class EmployerController {
   static async getAll(req, res) {
     try {
+      // ADDING PAGINATION FUNCTIONALITY
+      const page = parseInt(req.query.page) || 1; // Default to page 1 if page query param is not provided
+      const pageSize = parseInt(req.query.pageSize) || 10; // Default page size to 10 if pageSize query param is not provided
+      const totalDocuments = await employerModel
+        .find()
+        .countDocuments();
+      const totalPages = Math.ceil(totalDocuments / pageSize);
+      // Calculate the number of documents to skip
+      const skipDocuments = (page - 1) * pageSize;
       const employers = await employerModel
         .find()
         .sort({ _id: -1 })
         .populate("business", "business_name");
       if (!employers) {
-        return res.status(404).json({ message: "No employers found" });
+        return res.status(404).json({
+          totalDocuments,
+          totalPages,
+          currentPage: page,
+          pageSize, message: "No employers found"
+        });
       }
 
       return res.status(200).json(employers);

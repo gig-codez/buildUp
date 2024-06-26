@@ -8,12 +8,26 @@ const fileStoreMiddleware = require("../helpers/file_helper");
 class SupplierController {
   static async getAll(req, res) {
     try {
+      // ADDING PAGINATION FUNCTIONALITY
+      const page = parseInt(req.query.page) || 1; // Default to page 1 if page query param is not provided
+      const pageSize = parseInt(req.query.pageSize) || 10; // Default page size to 10 if pageSize query param is not provided
+      const totalDocuments = await supplierModel
+        .find()
+        .countDocuments();
+      const totalPages = Math.ceil(totalDocuments / pageSize);
+      // Calculate the number of documents to skip
+      const skipDocuments = (page - 1) * pageSize;
       let Supplier = await supplierModel
         .find()
         .populate("supplier_type", "name");
       res.status(200).json({ data: Supplier });
     } catch (error) {
-      res.status(500).json({ message: error.message });
+      res.status(500).json({
+        totalDocuments,
+        totalPages,
+        currentPage: page,
+        pageSize, message: error.message
+      });
     }
   }
 

@@ -3,12 +3,26 @@ const businessModel = require("../models/business.model");
 class BusinessController {
   static async getAll(req, res) {
     try {
+      // ADDING PAGINATION FUNCTIONALITY
+      const page = parseInt(req.query.page) || 1; // Default to page 1 if page query param is not provided
+      const pageSize = parseInt(req.query.pageSize) || 10; // Default page size to 10 if pageSize query param is not provided
+      const totalDocuments = await businessModel
+        .find({})
+        .countDocuments();
+      const totalPages = Math.ceil(totalDocuments / pageSize);
+      // Calculate the number of documents to skip
+      const skipDocuments = (page - 1) * pageSize;
       let business = await businessModel
         .find({})
         .populate("employer", "first_name");
       res.status(200).json({ data: business });
     } catch (error) {
-      res.status(500).json({ message: error.message });
+      res.status(500).json({
+        totalDocuments,
+        totalPages,
+        currentPage: page,
+        pageSize, message: error.message
+      });
     }
   }
   static async store(req, res) {

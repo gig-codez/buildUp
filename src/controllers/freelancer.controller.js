@@ -7,10 +7,24 @@ const date = require("../global");
 class FreelancerController {
   static async index(req, res) {
     try {
+      // ADDING PAGINATION FUNCTIONALITY
+      const page = parseInt(req.query.page) || 1; // Default to page 1 if page query param is not provided
+      const pageSize = parseInt(req.query.pageSize) || 10; // Default page size to 10 if pageSize query param is not provided
+      const totalDocuments = await freelancerModel
+        .find({ role: "65c35d821f9b6742f96bbd96", })
+        .countDocuments();
+      const totalPages = Math.ceil(totalDocuments / pageSize);
+      // Calculate the number of documents to skip
+      const skipDocuments = (page - 1) * pageSize;
       const freelancerPayload = await freelancerModel.find({
         role: "65c35d821f9b6742f96bbd96",
       }).sort({ _id: -1 }).populate("profession", "name");
-      res.status(200).json({ data: freelancerPayload });
+      res.status(200).json({
+        totalDocuments,
+        totalPages,
+        currentPage: page,
+        pageSize, data: freelancerPayload
+      });
     } catch (err) {
       res.status(500).json({ message: err.message });
     }
@@ -211,10 +225,26 @@ class FreelancerController {
   // function to fetch consultants
   static async consultants(req, res) {
     try {
+      // ADDING PAGINATION FUNCTIONALITY
+      const page = parseInt(req.query.page) || 1; // Default to page 1 if page query param is not provided
+      const pageSize = parseInt(req.query.pageSize) || 10; // Default page size to 10 if pageSize query param is not provided
+
+      const totalDocuments = await freelancerModel
+        .find({ role: "65c35d14995a043c785acfd4" })
+        .countDocuments();
+      const totalPages = Math.ceil(totalDocuments / pageSize);
+
+      // Calculate the number of documents to skip
+      const skipDocuments = (page - 1) * pageSize;
       const consultants = await freelancerModel.find({
         role: "65c35d14995a043c785acfd4",
       }).sort({ _id: -1 }).populate("profession", "name");
-      res.status(200).json({ data: consultants });
+      res.status(200).json({
+        totalDocuments,
+        totalPages,
+        currentPage: page,
+        pageSize, data: consultants
+      });
     } catch (error) {
       res.status(500).json({ message: error.message });
     }
