@@ -2,7 +2,7 @@ const { Schema, model } = require("mongoose");
 
 const withdrawSchema = new Schema({
     amount: {
-        type: Number,
+        type: String,
         required: true
     },
     bank: {
