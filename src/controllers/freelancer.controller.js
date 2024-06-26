@@ -7,7 +7,9 @@ const date = require("../global");
 class FreelancerController {
   static async index(req, res) {
     try {
-      const freelancerPayload = await freelancerModel.find().sort({ _id: -1 }).populate("profession", "name");
+      const freelancerPayload = await freelancerModel.find({
+        role: "65c35d821f9b6742f96bbd96",
+      }).sort({ _id: -1 }).populate("profession", "name");
       res.status(200).json({ data: freelancerPayload });
     } catch (err) {
       res.status(500).json({ message: err.message });
@@ -202,6 +204,17 @@ class FreelancerController {
       } else {
         res.status(400).json({ message: "Freelancer not found" });
       }
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  }
+  // function to fetch consultants
+  static async consultants(req, res) {
+    try {
+      const consultants = await freelancerModel.find({
+        role: "65c35d14995a043c785acfd4",
+      }).sort({ _id: -1 }).populate("profession", "name");
+      res.status(200).json({ data: consultants });
     } catch (error) {
       res.status(500).json({ message: error.message });
     }

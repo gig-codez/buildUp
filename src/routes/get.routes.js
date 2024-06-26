@@ -27,6 +27,10 @@ router.get(
   "/contractor-applied-jobs/:contractor_id",
   JobsController.contractor_applied_jobs
 );
+// consultants
+router.get("/consultants", FreelancerController.consultants);
+router.get("/consultant/:id", FreelancerController.show);
+
 
 //employers
 router.get("/employers", EmployerController.getAll);
