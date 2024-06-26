@@ -444,18 +444,18 @@ class PaymentController {
   static async consultants(req, res) {
     try {
       const consultants = await freelancerModel.find({
-
         role: "65c35d14995a043c785acfd4",
       });
-      if (contractors) {
+      if (consultants) {
         return res.status(200).json({ data: consultants });
       } else {
-        return res.status(400).json({ message: "No contractors found." });
+        return res.status(400).json({ message: "No consultants found." });
       }
     } catch (error) {
       return res.status(500).json({ message: error.message });
     }
   }
+  // 
   static async suppliers(req, res) {
     try {
       const contractors = await supplierModel.find({
