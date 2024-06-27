@@ -41,10 +41,10 @@ const jobPostSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  applied: {
-    type: String,
+  is_applied: {
+    type: Boolean,
     required: false,
-    default: "0",
+    default: false,
   },
   profession: {
     type: mongoose.Types.ObjectId,

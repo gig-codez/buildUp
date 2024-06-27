@@ -52,12 +52,13 @@ class JobsController {
       const page = parseInt(req.query.page) || 1; // Default to page 1 if page query param is not provided
       const pageSize = parseInt(req.query.pageSize) || 10; // Default page size to 10 if pageSize query param is not provided
 
-      const totalDocuments = await jobsModel.find({ applied: "0" }).countDocuments();
+      const totalDocuments = await jobsModel.find({ is_applied: false }).countDocuments();
       const totalPages = Math.ceil(totalDocuments / pageSize);
 
       // Calculate the number of documents to skip
       const skipDocuments = (page - 1) * pageSize;
-      const jobs = await jobsModel.find({ applied: "0" }).skip(skipDocuments).limit(pageSize);
+      const jobs = await jobsModel.find({ is_applied: false }).skip(skipDocuments)
+        .limit(pageSize);
       res.status(200).json({
         totalDocuments,
         totalPages,
