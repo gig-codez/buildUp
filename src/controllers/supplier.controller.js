@@ -167,7 +167,7 @@ class SupplierController {
     try {
       const deals = await dealModel.find({}).sort({ _id: -1 }).populate("supplier_type", "name");
       if (deals) {
-        res.status(200).json({ data: deals });
+        res.status(200).json({ deals });
       } else {
         res.status(400).json({ message: "Error fetching deals.." });
       }

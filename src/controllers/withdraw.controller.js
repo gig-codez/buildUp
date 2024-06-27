@@ -71,7 +71,6 @@ module.exports = class WithdrawController {
                         );
                         return res.status(200).json({ message: 'Withdraw recorded', data: result });
                     }
-
                 }
             }
             if (supplier) {
@@ -109,7 +108,6 @@ module.exports = class WithdrawController {
             res.status(500).json({ message: error.message });
         }
     }
-
     // update withdraws
     static async updateWithdraws(req, res) {
         try {
