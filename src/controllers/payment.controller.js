@@ -459,8 +459,7 @@ class PaymentController {
   static async suppliers(req, res) {
     try {
       const contractors = await supplierModel.find({
-
-      });
+      }).populate("supplier_type", "name");
       if (contractors) {
         return res.status(200).json({ data: contractors });
       } else {
