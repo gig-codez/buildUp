@@ -135,7 +135,7 @@ class SupplierController {
   static async show(req, res) {
     try {
       const supplierId = req.params.id;
-      const singleSupplier = await supplierModel.findById(supplierId);
+      const singleSupplier = await supplierModel.findById(supplierId).populate("supplier_type", "name");
 
       if (!singleSupplier) {
         return res.status(404).json({ message: "Supplier not found" });
