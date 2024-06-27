@@ -77,6 +77,7 @@ class JobsController {
       const jobs = await jobsModel
         .find({
           profession: req.params.professionId,
+          applied: "0"
         })
         .populate({
           path: "employer",
