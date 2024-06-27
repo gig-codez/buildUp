@@ -178,8 +178,13 @@ class JobsController {
       const jobs = await appliedJobs
         .find({ clientId: id })
         .populate("clientId")
-        .populate("contractorId")
-        .populate("profession")
+        .populate({
+          path: "contractorId",
+          populate: {
+            path: "profession"
+          }
+        })
+        // .populate("profession")
         .populate("jobId")
         .skip(skipDocuments)
         .limit(pageSize)
