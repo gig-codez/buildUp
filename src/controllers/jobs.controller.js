@@ -179,6 +179,7 @@ class JobsController {
         .find({ clientId: id })
         .populate("clientId")
         .populate("contractorId")
+        .populate("profession")
         .populate("jobId")
         .skip(skipDocuments)
         .limit(pageSize)
