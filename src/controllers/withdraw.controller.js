@@ -40,7 +40,7 @@ module.exports = class WithdrawController {
     // add withdraws
     static async storeWithdraws(req, res) {
         try {
-            const { contractor, supplier, amount } = req.body;
+            const { contractor, supplier, amount, bank, account_number } = req.body;
             // Check if the contractor or supplier exists
             if (contractor) {
                 const contractorExists = await freelancerModel.findById(contractor);
@@ -67,7 +67,7 @@ module.exports = class WithdrawController {
                         mailSender(
                             process.env.ADMIN_MAIL,
                             'Withdraw Request',
-                            `${contractorExists.first_name} ${contractorExists.last_name} has requested a withdraw of UGX ${amount}`,
+                            `${contractorExists.first_name} ${contractorExists.last_name} has requested a withdraw of UGX ${amount}.<b/> <p>Bank: ${bank}</p> <p>Acc. No.: ${account_number}</p>`,
                         );
                         return res.status(201).json({ message: 'withdraw created successfully', data: result });
                     }
