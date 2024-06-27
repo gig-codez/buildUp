@@ -1,7 +1,7 @@
 const jobsModel = require("../models/jobPost.model");
 const appliedJobs = require("../models/applied_jobs.model");
 const date = require("../global");
-const { fileStorageMiddleware } = require("../helpers/file_helper");
+const fileStorageMiddleware = require("../helpers/file_helper");
 const employerModel = require("../models/employer.model");
 
 class JobsController {
@@ -200,8 +200,8 @@ class JobsController {
   }
   static async store_applied_jobs(req, res) {
     let docUrl = "";
-    if(req.file){
-     docUrl = await fileStorageMiddleware(req, "docs");
+    if (req.file) {
+      docUrl = await fileStorageMiddleware(req, "docs");
     }
     try {
       const jobs = new appliedJobs({
@@ -213,11 +213,19 @@ class JobsController {
       });
       await jobs.save();
       if (jobs) {
+        // update jobs model
+        const job = await jobsModel.findByIdAndUpdate(
+          req.body.job,
+          { $set: { applied: 1 } },
+          { new: true }
+        );
+        await job.save();
         res.status(200).json({ message: "New applied saved successfully" });
       } else {
         res.status(400).json({ message: "Failed to add a new application." });
       }
     } catch (error) {
+
       res.status(500).json({ message: error.message });
     }
   }
@@ -244,7 +252,7 @@ class JobsController {
       if (jobs) {
         res.status(200).json({ message: "Applied job deleted successfully" });
       } else {
-   ''
+        ''
         res
           .status(400)
           .json({ message: "Failed to delete a new application." });

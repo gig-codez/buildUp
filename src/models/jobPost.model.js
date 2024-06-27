@@ -18,7 +18,7 @@ const jobPostSchema = new mongoose.Schema({
   project_fees: {
     type: Number,
     required: false,
-    default:0,
+    default: 0,
   },
   experience: {
     type: String,
@@ -40,6 +40,11 @@ const jobPostSchema = new mongoose.Schema({
   job_duration: {
     type: String,
     required: true,
+  },
+  applied: {
+    type: String,
+    required: false,
+    default: "0",
   },
   profession: {
     type: mongoose.Types.ObjectId,
