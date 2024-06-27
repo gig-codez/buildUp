@@ -6,7 +6,7 @@ const router = Router();
 // get all withdraws
 router.get("/", WithdrawController.getWithdraws);
 // add withdraw
-router.post("/store/", WithdrawController.storeWithdraws);
+router.post("/store", WithdrawController.storeWithdraws);
 // update withdraw
 router.patch("/update/:id", WithdrawController.updateWithdraws);
 // delete withdraw

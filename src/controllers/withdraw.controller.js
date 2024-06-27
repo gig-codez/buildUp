@@ -1,4 +1,9 @@
+const adminModel = require("../models/admin.model");
+const freelancerModel = require("../models/freelancer.model");
+const supplierModel = require("../models/supplier.model");
 const withdrawModel = require("../models/withdraws.model");
+const mailSender = require("../utils/mailSender");
+require("dotenv").config();
 module.exports = class WithdrawController {
     // get withdraws
     static async getWithdraws(req, res) {
@@ -35,9 +40,72 @@ module.exports = class WithdrawController {
     // add withdraws
     static async storeWithdraws(req, res) {
         try {
-            const withdraw = new withdrawModel(req.body);
-            const result = await withdraw.save();
-            res.status(200).json({ message: "withdraw ", data: result });
+            const { contractor, supplier, amount } = req.body;
+            // Check if the contractor or supplier exists
+            if (contractor) {
+                const contractorExists = await freelancerModel.findById(contractor);
+                if (!contractorExists) {
+                    return res.status(404).json({ message: 'Contractor not found' });
+                } else {
+                    // update contractor balance
+                    const contractorBalance = parseInt(`${contractorExists.balance}`);
+                    const newBalance = (contractorBalance - parseInt(amount));
+                    const updated = await freelancerModel.findByIdAndUpdate(contractor, { balance: `${newBalance}` });
+                    await updated.save();
+                    // save withdraw
+                    const withdraw = new withdrawModel(req.body);
+                    const result = await withdraw.save();
+                    if (!result) {
+                        return res.status(400).json({ message: 'Failed to save withdraw' });
+                    } else {
+                        mailSender(
+                            contractorExists.email,
+                            'Withdraw Request',
+                            'Your withdraw request has been received and is being processed',
+                        );
+                        // notifying system admin about the request
+                        mailSender(
+                            process.env.ADMIN_MAIL,
+                            'Withdraw Request',
+                            `${contractorExists.first_name} ${contractorExists.last_name} has requested a withdraw of UGX ${amount}`,
+                        );
+                        return res.status(201).json({ message: 'withdraw created successfully', data: result });
+                    }
+
+                }
+            }
+            if (supplier) {
+                const supplierExists = await freelancerModel.findById(supplier);
+                if (!supplierExists) {
+                    return res.status(404).json({ message: 'Supplier not found' });
+                } else {
+                    // update supplier balance
+                    const supplierBalance = supplierExists.balance;
+                    const newBalance = supplierBalance - req.body.amount;
+                    const updated = await supplierModel.findByIdAndUpdate(supplier, { balance: newBalance });
+                    updated.save();
+                    const withdraw = new withdrawModel(req.body);
+                    const result = await withdraw.save();
+                    if (!result) {
+                        return res.status(400).json({ message: 'Failed to save withdraw' });
+                    } else {
+                        // notify supplier
+                        mailSender(
+                            supplierExists.business_email_address,
+                            'Withdraw Request',
+                            '<p>Your withdraw request has been received and is being processed by the admin.<br/> This may take about 24 hours to process.<br/> <b>Thank you!</b></p>',
+                        );
+                        // notifying system admin about the request
+                        mailSender(
+                            process.env.ADMIN_MAIL,
+                            'Withdraw Request',
+                            `${supplierExists.business_name} has requested a withdraw of UGX ${amount}`,
+                        );
+                        return res.status(201).json({ message: 'withdraw created successfully', data: result });
+
+                    }
+                }
+            }
         } catch (error) {
             res.status(500).json({ message: error.message });
         }
