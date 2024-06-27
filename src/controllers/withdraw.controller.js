@@ -69,7 +69,7 @@ module.exports = class WithdrawController {
                             'Withdraw Request',
                             `${contractorExists.first_name} ${contractorExists.last_name} has requested a withdraw of UGX ${amount}.<b/> <p>Bank: ${bank}</p> <p>Acc. No.: ${account_number}</p>`,
                         );
-                        return res.status(201).json({ message: 'withdraw created successfully', data: result });
+                        return res.status(200).json({ message: 'Withdraw recorded', data: result });
                     }
 
                 }
@@ -101,8 +101,7 @@ module.exports = class WithdrawController {
                             'Withdraw Request',
                             `${supplierExists.business_name} has requested a withdraw of UGX ${amount}`,
                         );
-                        return res.status(201).json({ message: 'withdraw created successfully', data: result });
-
+                        return res.status(200).json({ message: 'Withdraw recorded successfully', data: result });
                     }
                 }
             }
