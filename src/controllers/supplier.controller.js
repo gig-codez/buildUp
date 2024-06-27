@@ -165,7 +165,7 @@ class SupplierController {
   }
   static async deals(req, res) {
     try {
-      const deals = await dealModel.find().sort({ _id: -1 });
+      const deals = await dealModel.find({}).sort({ _id: -1 }).populate("supplier_type", "name");
       if (deals) {
         res.status(200).json({ data: deals });
       } else {
