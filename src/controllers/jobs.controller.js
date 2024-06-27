@@ -60,7 +60,6 @@ class JobsController {
       const jobs = await jobsModel.find({ applied: "0" }).skip(skipDocuments).limit(pageSize);
       res.status(200).json({
         totalDocuments,
-
         totalPages,
         currentPage: page,
         pageSize,
