@@ -52,12 +52,12 @@ class JobsController {
       const page = parseInt(req.query.page) || 1; // Default to page 1 if page query param is not provided
       const pageSize = parseInt(req.query.pageSize) || 10; // Default page size to 10 if pageSize query param is not provided
 
-      const totalDocuments = await jobsModel.find().countDocuments();
+      const totalDocuments = await jobsModel.find({ applied: "0" }).countDocuments();
       const totalPages = Math.ceil(totalDocuments / pageSize);
 
       // Calculate the number of documents to skip
       const skipDocuments = (page - 1) * pageSize;
-      const jobs = await jobsModel.find().skip(skipDocuments).limit(pageSize);
+      const jobs = await jobsModel.find({ applied: "0" }).skip(skipDocuments).limit(pageSize);
       res.status(200).json({
         totalDocuments,
 
@@ -225,7 +225,6 @@ class JobsController {
         res.status(400).json({ message: "Failed to add a new application." });
       }
     } catch (error) {
-
       res.status(500).json({ message: error.message });
     }
   }
