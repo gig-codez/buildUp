@@ -104,9 +104,9 @@ class FreelancerLogin {
       }
       res.status(200).json(respMessage);
     } catch (error) {
-      res
-        .status(error.hasOwnProperty("code") ? error.code : 500)
-        .json({ message: error.message });
+      res.status(500).json({ message: error.message });
+      // .status(error.hasOwnProperty("code") ? error.code : 500)
+
     }
   }
 }

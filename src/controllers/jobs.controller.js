@@ -78,7 +78,7 @@ class JobsController {
       const jobs = await jobsModel
         .find({
           profession: req.params.professionId,
-          applied: "0"
+          is_applied: false
         })
         .populate({
           path: "employer",
@@ -217,7 +217,7 @@ class JobsController {
         // update jobs model
         const job = await jobsModel.findByIdAndUpdate(
           req.body.job,
-          { $set: { applied: 1 } },
+          { $set: { is_applied: true } },
           { new: true }
         );
         await job.save();
