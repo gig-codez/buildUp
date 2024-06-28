@@ -102,7 +102,6 @@ class FreelancerLogin {
           .status(400)
           .json({ message: "Invalid email or password" });
       }
-      res.status(200).json(respMessage);
     } catch (error) {
       res.status(500).json({ message: error.message });
       // .status(error.hasOwnProperty("code") ? error.code : 500)

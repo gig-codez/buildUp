@@ -34,6 +34,7 @@ router.get("/consultant/:id", FreelancerController.show);
 
 //employers
 router.get("/employers", EmployerController.getAll);
+router.get("/employers-not-paginated", EmployerController.notPaginated);
 router.get("/employer/:id", EmployerController.getEmployerById);
 router.get("/client-jobs/:client_id", JobsController.client_jobs);
 //business

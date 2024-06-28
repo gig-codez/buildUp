@@ -21,13 +21,28 @@ class EmployerController {
         .populate("business", "business_name");
       if (!employers) {
         return res.status(404).json({
-          totalDocuments,
-          totalPages,
-          currentPage: page,
-          pageSize, message: "No employers found"
+          message: "No employers found"
         });
       }
 
+      return res.status(200).json({
+        totalDocuments,
+        totalPages,
+        currentPage: page,
+        pageSize,
+        employers,
+      });
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ message: error.message });
+    }
+  }
+  static async notPaginated(req, res) {
+    try {
+      const employers = await employerModel.find().populate("business");
+      if (!employers) {
+        return res.status(404).json({ message: "No employers found" });
+      }
       return res.status(200).json(employers);
     } catch (error) {
       console.error(error);
@@ -139,5 +154,28 @@ class EmployerController {
       res.status(500).json({ message: error.message });
     }
   }
+  // update employer password
+  static async updatePassword(req, res) {
+    try {
+      const employer = await employerModel.findById(req.params.id);
+      if (!employer) {
+        return res.status(404).json({ message: "Employer not found" });
+      }
+      // Hash the password
+      const hashedPassword = await bcrypt.hash(req.body.password, 10);
+
+      // Update the password
+      employer.password = hashedPassword;
+      await employer.save();
+
+      return res.status(200).json({
+        message: "Employer password updated successfully",
+        data: employer,
+      });
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  }
+
 }
 module.exports = EmployerController;

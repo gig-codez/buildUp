@@ -9,10 +9,20 @@ const withdrawSchema = new Schema({
         type: String,
         required: true
     },
-    status: {
+    recipient: {
         type: String,
         required: false,
-        default: 'pending'
+        default: "",
+    },
+    cleared: {
+        type: Boolean,
+        required: false,
+        default: false,
+    },
+    approved: {
+        type: Boolean,
+        required: false,
+        default: false,
     },
     account_number: {
         type: String,
@@ -22,6 +32,11 @@ const withdrawSchema = new Schema({
         type: String,
         required: false,
         default: '',
+    },
+    approvedBy: {
+        type: Schema.Types.ObjectId,
+        ref: 'employer',
+        required: false,
     },
     contractor: {
         type: Schema.Types.ObjectId,

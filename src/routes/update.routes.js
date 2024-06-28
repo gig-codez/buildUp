@@ -30,4 +30,7 @@ router.patch("/suppliers/:id", SupplierController.update);
 router.patch("/resetpassword/:token", Password.resetPassword);
 // meetings
 router.patch("/meetings/:id", MeetingController.update);
+// password routes
+router.patch("/employer/password/:id", EmployerController.updatePassword);
+router.patch("/supplier/password/:id", SupplierController.updatePassword);
 module.exports = router;

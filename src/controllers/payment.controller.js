@@ -210,7 +210,7 @@ class PaymentController {
             let new_balance =
               parseInt(`${supplierData.balance}`) + parseInt(`${amount}`);
             const updatedSupplierBal = await supplierModel.findByIdAndUpdate(
-              supplier._id,
+              supplierData._id,
               {
                 $set: {
                   balance: new_balance,
@@ -222,6 +222,7 @@ class PaymentController {
               // save transaction in payments model
               new paymentModel({
                 supplier_id: recipient_id,
+                employer_id: sender,
                 payment_reference: payment_reference,
                 amount: amount,
                 phone_number: supplierData.business_tel,

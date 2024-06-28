@@ -96,6 +96,37 @@ class SupplierController {
       res.status(500).json({ message: error.message });
     }
   }
+  // update supplier password
+  static async updatePassword(req, res) {
+    try {
+      const supplierId = req.params.id;
+      const updatedData = req.body;
+      bcrypt.hash(req.body.password, 10, async (err, hashedPassword) => {
+        if (err) {
+          res.status(500).json({ message: err });
+        } else {
+          updatedData.password = hashedPassword;
+          const updatedSupplier = await supplierModel.findByIdAndUpdate(
+            supplierId,
+            updatedData,
+            { new: true }
+          );
+
+          if (!updatedSupplier) {
+            return res.status(404).json({ message: "Supplier not found" });
+          }
+
+          res.status(200).json({
+            message: "Supplier password updated successfully",
+            data: updatedSupplier,
+          });
+        }
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: error.message });
+    }
+  }
 
   static async update_deals(req, res) {
     try {
