@@ -129,58 +129,61 @@ class PaymentController {
       const result = await PesaPal.transactionStatus(OrderTrackingId);
       console.log(result);
       //perform some logic to verify the payment and complete the payment
-      // if (result.payment_status_description == "Completed") {
-      // console.log("payment completed")
-      let customer_transaction = await paymentModel.findOne({
-        reference: paymentReference,
-      });
-      if (customer_transaction) {
-        if (customer_transaction.status == "PENDING") {
-          const paymentTransaction = await paymentModel.findByIdAndUpdate(
-            customer_transaction._id,
-            { status: "COMPLETED" }
-          );
-          paymentTransaction.save();
-          // update client balance
-          const client = await employerModel.findOne({
-            _id: customer_transaction.employer_id,
-          });
-          if (client) {
-            let old_balance = parseInt(`${client.balance}`);
-            let new_balance = parseInt(`${result.amount}`);
-            let total = old_balance + new_balance;
-            // console.log(`Total balance ${total}`);
-            //  update client balance
-            const updatedAccount = await employerModel.findByIdAndUpdate(
-              customer_transaction.employer_id,
-              {
-                $set: {
-                  balance: total,
-                },
-              }
+      if (result.payment_status_description == "Completed") {
+        // console.log("payment completed")
+        let customer_transaction = await paymentModel.findOne({
+          reference: paymentReference,
+        });
+        if (customer_transaction) {
+          if (customer_transaction.status == "PENDING") {
+            const paymentTransaction = await paymentModel.findByIdAndUpdate(
+              customer_transaction._id,
+              { status: "COMPLETED" }
             );
-            updatedAccount.save();
-            // sender mail for successful top up
-            await mailSender(
-              client.email_address,
-              "Account TopUp!",
-              `<h4>You have topped <b>${new_balance}.</b> Your new account balance is UGX <b>${total}.</b></h4>`
-            );
-            return res
-              .status(200)
-              .json({ message: "Payment completed successfully.." });
+            paymentTransaction.save();
+            // update client balance
+            const client = await employerModel.findOne({
+              _id: customer_transaction.employer_id,
+            });
+            if (client) {
+              let old_balance = parseInt(`${client.balance}`);
+              let new_balance = parseInt(`${result.amount}`);
+              let total = old_balance + new_balance;
+              // console.log(`Total balance ${total}`);
+              //  update client balance
+              const updatedAccount = await employerModel.findByIdAndUpdate(
+                customer_transaction.employer_id,
+                {
+                  $set: {
+                    balance: total,
+                  },
+                }
+              );
+              updatedAccount.save();
+              // sender mail for successful top up
+              await mailSender(
+                client.email_address,
+                "Account TopUp!",
+                `<h4>You have topped <b>${new_balance}.</b> Your new account balance is UGX <b>${total}.</b></h4>`
+              );
+              return res
+                .status(200)
+                .json({ message: "Payment completed successfully, close this tab and return back to your portal." });
+            } else {
+              return res.status(400).json({ message: "User not found." });
+            }
           } else {
-            return res.status(400).json({ message: "User not found." });
+            return res
+              .status(400)
+              .json({ message: "Transaction already executed." });
           }
         } else {
-          return res
-            .status(400)
-            .json({ message: "Transaction already executed." });
+          return res.status(400).json({ message: "Payment record not found." });
         }
       } else {
-        return res.status(400).json({ message: "Payment record not found." });
+        // render error page
+        return res.status(400).json({ message: "Payment not completed." });
       }
-      // }
     } catch (error) {
       return res.status(500).json({ message: error.message });
     }
