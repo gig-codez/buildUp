@@ -53,7 +53,7 @@ class FreelancerController {
           profession: req.body.profession,
         });
         const newfreelancer = await freelancerPayload.save();
-        const auth = await FreelancerLogin.loginHelper(req);
+        const auth = req.body.role === "65c35d14995a043c785acfd4" ? await FreelancerLogin.consultantLoginHelper(req) : await FreelancerLogin.loginHelper(req);
 
         return res
           .status(200)

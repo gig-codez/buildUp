@@ -210,11 +210,11 @@ class SupplierController {
     try {
       console.log(req.params.id);
       const deals = await dealModel
-        .find({ supplier_type: req.params.id })
+        .find({ supplier_type: req.params.id }).populate("supplier_type", "name")
         .sort({ _id: -1 });
 
       if (deals) {
-        res.status(200).json({ data: deals });
+        res.status(200).json({ deals });
       } else {
         res.status(400).json({ message: "Error fetching deals.." });
       }
@@ -237,7 +237,7 @@ class SupplierController {
 
   static async supplier_deals(req, res) {
     try {
-      const supplierDeals = await supplierDealModel.find().sort({ _id: -1 });
+      const supplierDeals = await supplierDealModel.find().sort({ _id: -1 }).populate("supplier_type", "name");
       res.status(200).json({ data: supplierDeals });
     } catch (error) {
       res.status(500).json({ message: error.message });
@@ -249,6 +249,7 @@ class SupplierController {
       const deals = await supplierDealModel
         .find({ supplier: req.params.supplierId })
         .sort({ _id: -1 })
+        // .populate("supplier_type", "name")
         .populate({
           path: "deal",
         });
@@ -296,16 +297,18 @@ class SupplierController {
         supplier_id: req.body.supplier,
         product_name: req.body.product_name,
         product_quantity: req.body.product_quantity,
+        product_price: req.body.product_price,
         status: req.body.status,
         product_image: req.body.product_image,
       });
       await stock.save();
       if (stock) {
-        res.status(200).json({ message: "stock created successfully" });
+        res.status(200).json({ message: `${req.body.product_name} created successfully` });
       } else {
-        res.status(400).json({ message: "stock not created" });
+        res.status(400).json({ message: `${req.body.product_name} stock not created` });
       }
     } catch (error) {
+      console.log(error);
       res.status(500).json({ message: error.message });
     }
   }
@@ -317,7 +320,7 @@ class SupplierController {
       const pageSize = parseInt(req.query.pageSize) || 10; // Default page size to 10 if pageSize query param is not provided
 
       const totalDocuments = await supplierStockModel
-        .find({ employer: req.params.employerId })
+        .find({ supplier_id: req.params.id })
         .countDocuments();
       const totalPages = Math.ceil(totalDocuments / pageSize);
 

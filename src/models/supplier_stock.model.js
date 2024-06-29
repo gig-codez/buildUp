@@ -14,9 +14,13 @@ const supplierStockSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+    product_price: {
+      type: Number,
+      required: true,
+    },
     status: {
       type: String,
-      default: "in_stock",
+      default: "In stock",
       required: false,
     },
     product_image: {
