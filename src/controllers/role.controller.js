@@ -25,5 +25,20 @@ class RoleController {
       res.status(500).json({ message: error.message });
     }
   }
+  // delete role
+  static async delete(req, res) {
+    try {
+      const rolePayload = await roleSchema.findById(req.params.id);
+      if (rolePayload) {
+        await roleSchema.findByIdAndDelete(req.params.id);
+        res.status(200).json({ message: "Role deleted" });
+      } else {
+        res.status(404).json({ message: "Role not found" });
+      }
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  }
 }
 module.exports = RoleController;
+

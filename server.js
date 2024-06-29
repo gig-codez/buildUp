@@ -31,6 +31,8 @@ app.use("/admin", require("./src/routes/admin.routes"));
 app.use("/search", require("./src/routes/search.routes"));
 app.use("/stock", require("./src/routes/stock.routes"));
 app.use("/withdraws", require("./src/routes/withdraw.routes"));
+app.use("/contractor", require("./src/routes/contractor.routes"));
+app.use("/role", require("./src/routes/roles.routes"));
 // db connection
 const dbOptions = {
   useNewUrlParser: true,
@@ -42,7 +44,7 @@ mongoose.set("strictQuery", false);
 mongoose
   .connect(process.env.DB_URL, dbOptions)
   .then(() => {
-    // console.clear();
+    console.clear();
     console.log("Connected to database successfully\n");
   })
   .catch((err) => {

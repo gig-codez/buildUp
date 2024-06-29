@@ -434,7 +434,7 @@ class PaymentController {
   static async contractors(req, res) {
     try {
       const contractors = await freelancerModel.find({
-        role: "65c35d821f9b6742f96bbd96",
+        role: "65c35d821f9b6742f96bbd96", active: true,
       });
       if (contractors) {
         return res.status(200).json({ data: contractors });
@@ -448,7 +448,7 @@ class PaymentController {
   static async consultants(req, res) {
     try {
       const consultants = await freelancerModel.find({
-        role: "65c35d14995a043c785acfd4",
+        role: "65c35d14995a043c785acfd4", active: true,
       });
       if (consultants) {
         return res.status(200).json({ data: consultants });
@@ -462,8 +462,7 @@ class PaymentController {
   // 
   static async suppliers(req, res) {
     try {
-      const contractors = await supplierModel.find({
-      }).populate("supplier_type", "name");
+      const contractors = await supplierModel.find({ active: true }).populate("supplier_type", "name");
       if (contractors) {
         return res.status(200).json({ data: contractors });
       } else {

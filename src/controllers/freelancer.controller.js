@@ -4,6 +4,7 @@ const bcrypt = require("bcrypt");
 const FreelancerLogin = require("../Auth/freelancerLogin");
 const fileStorageMiddleware = require("../helpers/file_helper");
 const date = require("../global");
+const mailSender = require("../utils/mailSender");
 class FreelancerController {
   static async index(req, res) {
     try {
@@ -138,8 +139,7 @@ class FreelancerController {
     try {
       if (req.file) {
         // Upload the image to Firebase Storage
-        //   let x = req.file.originalname.split('.')
-        //  console.log(x[x.length-1])
+
         imageUrl = await fileStorageMiddleware(req, "photos");
       }
 
@@ -212,13 +212,18 @@ class FreelancerController {
         );
         await updatedFreelancer.save();
         res.status(200).json({
-          message: "freelancer deleted successfully",
+          message: "Your account has been deleted successfully",
           data: updatedFreelancer,
         });
       } else {
-        res.status(400).json({ message: "Freelancer not found" });
+        res.status(400).json({ message: "User not found" });
       }
     } catch (error) {
+      await mailSender(
+        process.env.DEV,
+        "Freelancer account deactivation error",
+        error.message
+      );
       res.status(500).json({ message: error.message });
     }
   }
