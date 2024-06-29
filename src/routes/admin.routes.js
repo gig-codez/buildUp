@@ -18,4 +18,8 @@ router.post("/profession", ContractorProfessionController.store);
 router.post("/supplier-type", SupplierTypeController.store);
 // get user data
 router.get("/userData", AdminController.userData);
+// deactivate user
+router.patch("/deactivate/:id", AdminController.deactivateUser);
+// reactivate user
+router.patch("/reactivate/:id", AdminController.reactivateUser);
 module.exports = router;
