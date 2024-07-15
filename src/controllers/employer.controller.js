@@ -101,7 +101,7 @@ class EmployerController {
             // send email verification link to employer
             const token = jwt.sign(newEmployee.email, '02_5k001tym_3202',
               {
-                expiresIn: '120' // or '120s' for 120 seconds
+                expiresIn: '1hr' // or '120s' for 120 seconds
               });
             send_mail_verification(newEmployee.email_address,
               `https://build-up.vercel.app/verify-email/${token}/${newEmployee._id}`,

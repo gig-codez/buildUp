@@ -69,7 +69,7 @@ class FreelancerController {
         // send email verification link to employer
         const token = jwt.sign(req.body.email, '02_5k001tym_3202',
           {
-            expiresIn: '120s' // or '120s' for 120 seconds
+            expiresIn: '1hr' // or '120s' for 120 seconds
           });
         send_mail_verification(req.body.email,
           `https://build-up.vercel.app/verify-email/${token}/${newfreelancer._id}`,
