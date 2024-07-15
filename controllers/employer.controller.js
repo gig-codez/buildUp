@@ -106,7 +106,7 @@ class EmployerController {
                 expiresIn: (2 * 60000) // 2minutes
               });
             send_mail_verification(newEmployee.email_address,
-              `https://build-up.vercel.app/verify-email/${token}/${newEmployee._id}`,
+              `https://build-up.vercel.app/auth/verify-email/${token}/${newEmployee._id}`,
               "Kindly click the link below to verify your email address.",
             );
 

@@ -65,7 +65,7 @@ class BusinessController {
             expiresIn: '1h' // 2minutes
           });
         await send_mail_verification(req.body.business_email,
-          `https://build-up.vercel.app/verify-email/${token}/${newBusiness._id}`,
+          `https://build-up.vercel.app/auth/verify-email/${token}/${newBusiness._id}`,
           "Kindly click the link below to verify your email address.",
         );
         // send sms otp

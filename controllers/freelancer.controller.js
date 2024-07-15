@@ -34,6 +34,7 @@ class FreelancerController {
       res.status(500).json({ message: err.message });
     }
   }
+
   static async store(req, res) {
     try {
       var secret = speakeasy.generateSecret();
@@ -66,7 +67,7 @@ class FreelancerController {
           otp: short_code,
         });
         const newfreelancer = await freelancerPayload.save();
-        const auth = req.body.role === "65c35d14995a043c785acfd4" ? await FreelancerLogin.consultantLoginHelper(req) : await FreelancerLogin.loginHelper(req);
+        // const auth = req.body.role === "65c35d14995a043c785acfd4" ? await FreelancerLogin.consultantLoginHelper(req) : await FreelancerLogin.loginHelper(req);
         // send email verification link to employer
         const token = jwt.sign(
           { email: req.body.email },
@@ -74,7 +75,7 @@ class FreelancerController {
           { expiresIn: "1h" }  // Use a string to represent 60 seconds
         );
         await send_mail_verification(req.body.email,
-          `https://build-up.vercel.app/verify-email/${token}/${newfreelancer._id}`,
+          `https://build-up.vercel.app/auth/verify-email/${token}/${newfreelancer._id}`,
           "Kindly click the link below to verify your email address.",
         );
         // send sms otp
@@ -95,7 +96,7 @@ class FreelancerController {
 
         return res
           .status(200)
-          .json({ message: "Account created", data: newfreelancer, auth });
+          .json({ message: "Account created", data: newfreelancer });
       }
     } catch (error) {
       console.log(error);
