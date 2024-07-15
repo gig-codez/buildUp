@@ -42,9 +42,10 @@ class SupplierController {
 
   static async store(req, res) {
     try {
+      var secret = speakeasy.generateSecret();
       // Generate a new short-code with a 5-minute expiration time
       const short_code = speakeasy.totp({
-        secret: "my-secret-key",
+        secret: secret,
         encoding: "base32",
         window: 2, // OTP valid for 2 minutes
       });
@@ -74,9 +75,9 @@ class SupplierController {
             // send email verification link to employer
             const token = jwt.sign(req.body.business_tel, '02_5k001tym_3202',
               {
-                expiresIn: '1hr' // or '120s' for 120 seconds
+                expiresIn: (2 * 60000) // 2minutes
               });
-            send_mail_verification(req.body.business_tel,
+            await send_mail_verification(req.body.business_tel,
               `https://build-up.vercel.app/verify-email/${token}/${newSupplier._id}`,
               "Kindly click the link below to verify your email address.",
             );

@@ -58,7 +58,12 @@ const supplierSchema = new mongoose.Schema(
     otp: {
       type: Number,
       required: false,
-      deafult: 0,
+      default: 0,
+    },
+    otpToken: {
+      type: String,
+      required: false,
+      default: "",
     },
     emailVerified: {
       type: Boolean,

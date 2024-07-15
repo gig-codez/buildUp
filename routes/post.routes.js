@@ -68,4 +68,6 @@ router.post("/message", MessageController.storeMessage)
 router.post("/message/file", uploadManager().single("file"), MessageController.storeFile);
 // router.post("/message/file", MessageController.storeFile);
 router.post("/search-users", UserController.searchUsersByRolesRequest)
+// verify otp
+router.post("/verify-otp", OtpController.verifyOtp);
 module.exports = router;

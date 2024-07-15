@@ -69,13 +69,15 @@ class EmployerController {
     }
   }
   static async storeEmployer(req, res) {
-    // Generate a new short-code with a 5-minute expiration time
-    const short_code = speakeasy.totp({
-      secret: "my-secret-key",
-      encoding: "base32",
-      window: 2, // OTP valid for 2 minutes
-    });
+
     try {
+      var secret = speakeasy.generateSecret();
+      // Generate a new short-code with a 5-minute expiration time
+      const short_code = speakeasy.totp({
+        secret: secret,
+        encoding: "base32",
+        window: 2, // OTP valid for 2 minutes
+      });
       const employerData = await employerModel.findOne({
         email_address: req.body.email_address,
       });
@@ -99,9 +101,9 @@ class EmployerController {
             const newEmployee = await employerPayload.save();
             // login the employer
             // send email verification link to employer
-            const token = jwt.sign(newEmployee.email, '02_5k001tym_3202',
+            const token = jwt.sign({ email: newEmployee.email }, '02_5k001tym_3202',
               {
-                expiresIn: '1hr' // or '120s' for 120 seconds
+                expiresIn: (2 * 60000) // 2minutes
               });
             send_mail_verification(newEmployee.email_address,
               `https://build-up.vercel.app/verify-email/${token}/${newEmployee._id}`,

@@ -1,19 +1,24 @@
 const { default: mongoose } = require("mongoose");
 const crypto = require("crypto");
-const employerModel = new mongoose.Schema(
+const freelancerSchema = new mongoose.Schema(
   {
     profile_pic: {
       type: String,
-      required: false,
       default: "https://via.placeholder.com/100",
+      required: false,
     },
-    email_address: {
+    email: {
       type: String,
       required: true,
     },
     password: {
       type: String,
       required: true,
+    },
+    category: {
+      type: String,
+      default: "",
+      required: false,
     },
     first_name: {
       type: String,
@@ -23,34 +28,51 @@ const employerModel = new mongoose.Schema(
       type: String,
       required: true,
     },
-    TIN_NIN: {
-      type: String,
-      required: false,
+    tel_num: {
+      type: Number,
+      required: true,
     },
     country: {
       type: String,
       required: false,
     },
-    role: {
-      type: mongoose.Types.ObjectId,
-      ref: "role",
+    NIN_NUM: {
+      type: String,
       required: false,
+    },
+    profession: {
+      type: mongoose.Types.ObjectId,
+      ref: "contractorProfession",
+      required: true,
     },
     balance: {
       type: Number,
       required: false,
       default: 0,
     },
-    active: {
-      type: Boolean,
+    address: {
+      type: String,
       required: false,
-      default: true,
     },
-    business: { type: mongoose.Types.ObjectId, ref: "business" },
+    gender: { type: String, enum: ["Male", "Female"], required: true },
+    role: {
+      type: mongoose.Types.ObjectId,
+      ref: "role",
+      required: true,
+    },
     otp: {
       type: String,
-      default: "",
       required: false,
+      default: "",
+    },
+    otpToken: {
+      type: String,
+      required: false,
+      default: "",
+    },
+    active: {
+      type: Boolean,
+      default: true,
     },
     emailVerified: {
       type: Boolean,
@@ -61,12 +83,14 @@ const employerModel = new mongoose.Schema(
     passwordResetToken: String,
     passwordResetTokenExpires: Date,
   },
+
+
   {
     timestamps: true,
   }
 );
 
-employerModel.methods.createResetPasswordToken = function () {
+freelancerSchema.methods.createResetPasswordToken = function () {
   const resetToken = crypto.randomBytes(32).toString("hex");
   this.passwordResetToken = crypto
     .createHash("sha256")
@@ -77,5 +101,4 @@ employerModel.methods.createResetPasswordToken = function () {
   console.log(resetToken, this.passwordResetToken);
   return resetToken;
 };
-
-module.exports = mongoose.model("employer", employerModel);
+module.exports = mongoose.model("freelancer", freelancerSchema);

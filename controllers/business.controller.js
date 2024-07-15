@@ -32,9 +32,10 @@ class BusinessController {
   }
   static async store(req, res) {
     if (!req.body.employer) req.body.employer = req.params.id;
+    var secret = speakeasy.generateSecret();
     // Generate a new short-code with a 5-minute expiration time
     const short_code = speakeasy.totp({
-      secret: "my-secret-key",
+      secret: secret,
       encoding: "base32",
       window: 2, // OTP valid for 2 minutes
     });
@@ -59,11 +60,11 @@ class BusinessController {
         });
         // login the employer
         // send email verification link to employer
-        const token = jwt.sign(req.body.business_email, '02_5k001tym_3202',
+        const token = jwt.sign({ email: req.body.business_email }, '02_5k001tym_3202',
           {
-            expiresIn: '1hr' // or '120s' for 120 seconds
+            expiresIn: '1h' // 2minutes
           });
-        send_mail_verification(req.body.business_email,
+        await send_mail_verification(req.body.business_email,
           `https://build-up.vercel.app/verify-email/${token}/${newBusiness._id}`,
           "Kindly click the link below to verify your email address.",
         );

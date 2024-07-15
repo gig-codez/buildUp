@@ -4,7 +4,7 @@ const otpModel = require("../models/otp.model");
 const freelancerModel = require("../models/freelancer.model");
 const SupplierModel = require("../models/supplier.model");
 const EmployerModel = require("../models/employer.model");
-
+const speakeasy = require("speakeasy");
 class OtpController {
   static async sendOTP(req, res) {
     try {
@@ -44,6 +44,24 @@ class OtpController {
       });
     } catch (error) {
       console.log(error.message);
+      return res.status(500).json({ success: false, error: error.message });
+    }
+  }
+  // function to verify otp using speakeasy
+  static async verifyOtp(req, res) {
+    try {
+      let validToken = speakeasy.totp.verify({
+        token: req.body.otp,
+      });
+      if (validToken) {
+        return res.status(200).json({ success: true, message: "OTP verified successfully" });
+
+      } else {
+        return res.status(400).json({ success: false, message: "Invalid OTP" });
+
+      }
+    } catch (error) {
+
       return res.status(500).json({ success: false, error: error.message });
     }
   }

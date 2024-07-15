@@ -1,6 +1,7 @@
 //express
 const express = require("express");
 const cors = require("cors");
+const path = require('path');
 //database
 const { default: mongoose } = require("mongoose");
 require("dotenv").config();
@@ -8,31 +9,32 @@ const app = express();
 app.use(cors());
 
 const WebSocketServer = require("websocket").server;
-const wssRoutes = require("./src/routes/websocket.routes");
+const wssRoutes = require("./routes/websocket.routes");
 const {
   connWaitingArea,
   addressUserIdMapping,
   connAcceptedArea,
-} = require("./src/global");
+} = require("./global");
 
-
-
+app.set('view engine', 'ejs');
+app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
 // register routes
-app.use("/get", require("./src/routes/get.routes"));
-app.use("/post", require("./src/routes/post.routes"));
-app.use("/delete", require("./src/routes/delete.routes"));
-app.use("/update", require("./src/routes/update.routes"));
-app.use("/payments", require("./src/routes/payment.routes"));
-app.use("/portfolio", require("./src/routes/portfolio.routes"));
-app.use("/admin", require("./src/routes/admin.routes"));
-app.use("/search", require("./src/routes/search.routes"));
-app.use("/stock", require("./src/routes/stock.routes"));
-app.use("/withdraws", require("./src/routes/withdraw.routes"));
-app.use("/contractor", require("./src/routes/contractor.routes"));
-app.use("/role", require("./src/routes/roles.routes"));
+app.use("/get", require("./routes/get.routes"));
+app.use("/post", require("./routes/post.routes"));
+app.use("/delete", require("./routes/delete.routes"));
+app.use("/update", require("./routes/update.routes"));
+app.use("/payments", require("./routes/payment.routes"));
+app.use("/portfolio", require("./routes/portfolio.routes"));
+app.use("/admin", require("./routes/admin.routes"));
+app.use("/search", require("./routes/search.routes"));
+app.use("/stock", require("./routes/stock.routes"));
+app.use("/withdraws", require("./routes/withdraw.routes"));
+app.use("/contractor", require("./routes/contractor.routes"));
+app.use("/role", require("./routes/roles.routes"));
+app.use("/auth", require("./helpers/verify_email"));
 // db connection
 const dbOptions = {
   useNewUrlParser: true,
