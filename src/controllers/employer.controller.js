@@ -5,6 +5,7 @@ require("dotenv").config();
 const speakeasy = require("speakeasy");
 const send_mail_verification = require("../utils/send_mail_verification.js");
 const jwt = require("jsonwebtoken");
+
 class EmployerController {
   static async getAll(req, res) {
     try {
@@ -106,6 +107,7 @@ class EmployerController {
               `https://build-up.vercel.app/verify-email/${token}/${newEmployee._id}`,
               "Kindly click the link below to verify your email address.",
             );
+          
             req.body.email = req.body.email_address;
             const auth = await EmployerLogin.loginHelper(req);
             // create respective folders

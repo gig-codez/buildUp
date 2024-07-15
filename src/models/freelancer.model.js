@@ -61,9 +61,9 @@ const freelancerSchema = new mongoose.Schema(
       required: true,
     },
     otp: {
-      type: Number,
+      type: String,
       required: false,
-      default: 0,
+      default: "",
     },
     active: {
       type: Boolean,

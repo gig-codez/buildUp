@@ -39,6 +39,11 @@ const businessModel = mongoose.Schema(
       type: String,
       required: false,
     },
+    otp: {
+      type: String,
+      default: "",
+      required: 0,
+    }
   },
   {
     timestamps: true,

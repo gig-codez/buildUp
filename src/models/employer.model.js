@@ -48,8 +48,8 @@ const employerModel = new mongoose.Schema(
     },
     business: { type: mongoose.Types.ObjectId, ref: "business" },
     otp: {
-      type: Number,
-      default: 0,
+      type: String,
+      default: "",
       required: false,
     },
     emailVerified: {

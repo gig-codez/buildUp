@@ -5,6 +5,10 @@ const FreelancerLogin = require("../Auth/freelancerLogin");
 const fileStorageMiddleware = require("../helpers/file_helper");
 const date = require("../global");
 const mailSender = require("../utils/mailSender");
+require("dotenv").config();
+const speakeasy = require("speakeasy");
+const send_mail_verification = require("../utils/send_mail_verification.js");
+const jwt = require("jsonwebtoken");
 class FreelancerController {
   static async index(req, res) {
     try {
@@ -32,6 +36,12 @@ class FreelancerController {
   }
   static async store(req, res) {
     try {
+      // Generate a new short-code with a 5-minute expiration time
+      const short_code = speakeasy.totp({
+        secret: "my-secret-key",
+        encoding: "base32",
+        window: 2, // OTP valid for 2 minutes
+      });
       // first check for occurrence of the account
       const oldAccount = await freelancerModel.findOne({
         email: req.body.email,
@@ -55,7 +65,33 @@ class FreelancerController {
         });
         const newfreelancer = await freelancerPayload.save();
         const auth = req.body.role === "65c35d14995a043c785acfd4" ? await FreelancerLogin.consultantLoginHelper(req) : await FreelancerLogin.loginHelper(req);
-
+        // send email verification link to employer
+        const token = jwt.sign(req.body.email, 'secret',
+          {
+            expiresIn: '2m' // or '120s' for 120 seconds
+          });
+        send_mail_verification(req.body.email,
+          `https://build-up.vercel.app/verify-email/${token}/${newfreelancer._id}`,
+          "Kindly click the link below to verify your email address.",
+        );
+        // send sms otp
+        // Set your app credentials
+        const credentials = {
+          apiKey: process.env.AFRIKA_API_KEY,
+          username: process.env.AFRIKA_USERNAME,
+        };
+        const AfricasTalking = require("africastalking")(credentials);
+        const sms = AfricasTalking.SMS;
+        const options = {
+          // Set the numbers you want to send to in international format
+          to: `+256${newfreelancer.tel_num}`,
+          message: `Dear ${newfreelancer.first_name}, Your OTP is  ${short_code}. It will expire in 2 minutes`,
+        };
+        sms
+          .send(options)
+          .then((response) => {
+            console.log(response);
+          });
         return res
           .status(200)
           .json({ message: "Account created", data: newfreelancer, auth });

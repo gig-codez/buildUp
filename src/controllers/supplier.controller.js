@@ -5,6 +5,10 @@ const dealModel = require("../models/deal.model");
 const supplierDealModel = require("../models/supplierDeal.model");
 const supplierStockModel = require("../models/supplier_stock.model");
 const fileStoreMiddleware = require("../helpers/file_helper");
+require("dotenv").config();
+const speakeasy = require("speakeasy");
+const send_mail_verification = require("../utils/send_mail_verification.js");
+const jwt = require("jsonwebtoken");
 class SupplierController {
   static async getAll(req, res) {
     try {
@@ -38,6 +42,12 @@ class SupplierController {
 
   static async store(req, res) {
     try {
+      // Generate a new short-code with a 5-minute expiration time
+      const short_code = speakeasy.totp({
+        secret: "my-secret-key",
+        encoding: "base32",
+        window: 2, // OTP valid for 2 minutes
+      });
       const supplierData = await supplierModel.findOne({
         business_email_address: req.body.business_email_address,
       });
@@ -60,6 +70,33 @@ class SupplierController {
             const newSupplier = await supplierPayload.save();
             req.body.email = req.body.business_email_address;
             const auth = await SupplierLogin.loginHelper(req);
+            // send email verification link to employer
+            const token = jwt.sign(req.body.business_tel, 'secret',
+              {
+                expiresIn: '2m' // or '120s' for 120 seconds
+              });
+            send_mail_verification(req.body.business_tel,
+              `https://build-up.vercel.app/verify-email/${token}/${newSupplier._id}`,
+              "Kindly click the link below to verify your email address.",
+            );
+            // send sms otp
+            // Set your app credentials
+            const credentials = {
+              apiKey: process.env.AFRIKA_API_KEY,
+              username: process.env.AFRIKA_USERNAME,
+            };
+            const AfricasTalking = require("africastalking")(credentials);
+            const sms = AfricasTalking.SMS;
+            const options = {
+              // Set the numbers you want to send to in international format
+              to: `+256${req.body.business_tel}`,
+              message: `Dear ${req.body.business_name}, Your OTP is  ${short_code}. It will expire in 2 minutes`,
+            };
+            sms
+              .send(options)
+              .then((response) => {
+                console.log(response);
+              });
             res.status(200).json({
               message: "Supplier created successfully",
               data: newSupplier,
