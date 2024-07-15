@@ -39,7 +39,7 @@ class FreelancerController {
       var secret = speakeasy.generateSecret();
       // Generate a new short-code with a 5-minute expiration time
       const short_code = speakeasy.totp({
-        secret: secret,
+        secret: "secret",
         encoding: "base32",
         window: 2, // OTP valid for 2 minutes
       });

@@ -53,7 +53,7 @@ const supplierSchema = new mongoose.Schema(
     active: {
       type: Boolean,
       required: false,
-      default: true,
+      default: false,
     },
     otp: {
       type: Number,

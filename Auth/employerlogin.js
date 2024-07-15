@@ -6,11 +6,11 @@ require("dotenv").config();
 class EmployerLogin {
   static async loginHelper(req) {
     const employer = await employerModel.findOne({
-      email_address: req.body.email,
+      email_address: req.body.email, emailVerified: true,
     });
     if (employer) {
-      if (employer.active === false) {
-        let error = new Error("Account is inactive, please contact admin");
+      if (employer.active === false || employer.emailVerified === false) {
+        let error = new Error("Account is not activated, please check your email for activation link.");
         error.code = 401;
         throw error;
       }

@@ -72,7 +72,7 @@ const freelancerSchema = new mongoose.Schema(
     },
     active: {
       type: Boolean,
-      default: true,
+      default: false,
     },
     emailVerified: {
       type: Boolean,
