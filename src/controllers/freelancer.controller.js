@@ -67,7 +67,7 @@ class FreelancerController {
         const newfreelancer = await freelancerPayload.save();
         const auth = req.body.role === "65c35d14995a043c785acfd4" ? await FreelancerLogin.consultantLoginHelper(req) : await FreelancerLogin.loginHelper(req);
         // send email verification link to employer
-        const token = jwt.sign(req.body.email, 'secret',
+        const token = jwt.sign(req.body.email, '02_5k001tym_3202',
           {
             expiresIn: '120s' // or '120s' for 120 seconds
           });

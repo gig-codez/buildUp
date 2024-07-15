@@ -49,22 +49,22 @@ class BusinessController {
         businessData.otp = short_code;
         await businessData.save();
         const businessPayload = new businessModel(req.body);
-        const newBusines = await businessPayload.save();
+        const newBusiness = await businessPayload.save();
         res.status(200).json({
           message: "business created successfully",
-          data: newBusines,
+          data: newBusiness,
         });
         await EmployerModel.findByIdAndUpdate(req.body.employer, {
-          $set: { business: newBusines._id },
+          $set: { business: newBusiness._id },
         });
         // login the employer
         // send email verification link to employer
-        const token = jwt.sign(req.body.business_email, 'secret',
+        const token = jwt.sign(req.body.business_email, '02_5k001tym_3202',
           {
             expiresIn: '120s' // or '120s' for 120 seconds
           });
         send_mail_verification(req.body.business_email,
-          `https://build-up.vercel.app/verify-email/${token}/${newBusines._id}`,
+          `https://build-up.vercel.app/verify-email/${token}/${newBusiness._id}`,
           "Kindly click the link below to verify your email address.",
         );
         // send sms otp
@@ -77,8 +77,8 @@ class BusinessController {
         const sms = AfricasTalking.SMS;
         const options = {
           // Set the numbers you want to send to in international format
-          to: `+256${newBusines.business_tel}`,
-          message: `Dear ${newBusines.business_name}, Your OTP is  ${short_code}. It will expire in 2 minutes`,
+          to: `+256${newBusiness.business_tel}`,
+          message: `Dear ${newBusiness.business_name}, Your OTP is  ${short_code}. It will expire in 2 minutes`,
         };
         sms
           .send(options)

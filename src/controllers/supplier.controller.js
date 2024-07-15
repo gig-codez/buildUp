@@ -72,7 +72,7 @@ class SupplierController {
             req.body.email = req.body.business_email_address;
             const auth = await SupplierLogin.loginHelper(req);
             // send email verification link to employer
-            const token = jwt.sign(req.body.business_tel, 'secret',
+            const token = jwt.sign(req.body.business_tel, '02_5k001tym_3202',
               {
                 expiresIn: '120s' // or '120s' for 120 seconds
               });

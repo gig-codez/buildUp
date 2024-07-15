@@ -99,7 +99,7 @@ class EmployerController {
             const newEmployee = await employerPayload.save();
             // login the employer
             // send email verification link to employer
-            const token = jwt.sign(newEmployee.email, 'secret',
+            const token = jwt.sign(newEmployee.email, '02_5k001tym_3202',
               {
                 expiresIn: '120' // or '120s' for 120 seconds
               });
