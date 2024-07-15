@@ -47,6 +47,7 @@ class BusinessController {
         return res.status(400).json({ message: "Business already exists" });
       } else {
         businessData.otp = short_code;
+        await businessData.save();
         const businessPayload = new businessModel(req.body);
         const newBusines = await businessPayload.save();
         res.status(200).json({

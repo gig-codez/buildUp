@@ -62,6 +62,7 @@ class FreelancerController {
           tel_num: req.body.tel_num,
           role: req.body.role,
           profession: req.body.profession,
+          otp: short_code,
         });
         const newfreelancer = await freelancerPayload.save();
         const auth = req.body.role === "65c35d14995a043c785acfd4" ? await FreelancerLogin.consultantLoginHelper(req) : await FreelancerLogin.loginHelper(req);

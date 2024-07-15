@@ -66,6 +66,7 @@ class SupplierController {
               business_tel: req.body.business_tel,
               supplier_type: req.body.supplier_type,
               role: req.body.role,
+              otp: short_code,
             });
             const newSupplier = await supplierPayload.save();
             req.body.email = req.body.business_email_address;
