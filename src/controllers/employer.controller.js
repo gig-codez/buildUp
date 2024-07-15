@@ -1,8 +1,10 @@
 const employerModel = require("../models/employer.model.js");
 const bcrypt = require("bcrypt");
 const EmployerLogin = require("../Auth/employerlogin");
-const date = require("../global/index.js");
-
+require("dotenv").config();
+const speakeasy = require("speakeasy");
+const send_mail_verification = require("../utils/send_mail_verification.js");
+const jwt = require("jsonwebtoken");
 class EmployerController {
   static async getAll(req, res) {
     try {
@@ -66,7 +68,12 @@ class EmployerController {
     }
   }
   static async storeEmployer(req, res) {
-    console.log(req.body);
+    // Generate a new short-code with a 5-minute expiration time
+    const short_code = speakeasy.totp({
+      secret: "my-secret-key",
+      encoding: "base32",
+      window: 2, // OTP valid for 2 minutes
+    });
     try {
       const employerData = await employerModel.findOne({
         email_address: req.body.email_address,
@@ -86,8 +93,19 @@ class EmployerController {
               TIN_NIN: req.body.TIN_NIN,
               country: req.body.country,
               role: req.body.role,
+              otp: short_code,
             });
             const newEmployee = await employerPayload.save();
+            // login the employer
+            // send email verification link to employer
+            const token = jwt.sign(newEmployee.email, 'secret',
+              {
+                expiresIn: '2m' // or '120s' for 120 seconds
+              });
+            send_mail_verification(newEmployee.email_address,
+              `https://build-up.vercel.app/verify-email/${token}/${newEmployee._id}`,
+              "Kindly click the link below to verify your email address.",
+            );
             req.body.email = req.body.email_address;
             const auth = await EmployerLogin.loginHelper(req);
             // create respective folders

@@ -61,17 +61,24 @@ const freelancerSchema = new mongoose.Schema(
       required: true,
     },
     otp: {
-      code: String,
-      expiry: Date,
+      type: Number,
+      required: false,
+      default: 0,
     },
     active: {
       type: Boolean,
       default: true,
     },
+    emailVerified: {
+      type: Boolean,
+      default: false
+    },
     passwordChangedAt: Date,
     passwordResetToken: String,
     passwordResetTokenExpires: Date,
   },
+
+
   {
     timestamps: true,
   }

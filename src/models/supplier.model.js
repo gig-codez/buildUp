@@ -55,6 +55,16 @@ const supplierSchema = new mongoose.Schema(
       required: false,
       default: true,
     },
+    otp: {
+      type: Number,
+      required: false,
+      deafult: 0,
+    },
+    emailVerified: {
+      type: Boolean,
+      default: false,
+      required: false,
+    },
     passwordChangedAt: Date,
     passwordResetToken: String,
     passwordResetTokenExpires: Date,
