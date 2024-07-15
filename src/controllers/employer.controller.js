@@ -101,13 +101,13 @@ class EmployerController {
             // send email verification link to employer
             const token = jwt.sign(newEmployee.email, 'secret',
               {
-                expiresIn: '2m' // or '120s' for 120 seconds
+                expiresIn: '120' // or '120s' for 120 seconds
               });
             send_mail_verification(newEmployee.email_address,
               `https://build-up.vercel.app/verify-email/${token}/${newEmployee._id}`,
               "Kindly click the link below to verify your email address.",
             );
-          
+
             req.body.email = req.body.email_address;
             const auth = await EmployerLogin.loginHelper(req);
             // create respective folders
