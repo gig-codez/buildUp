@@ -142,25 +142,26 @@ class OtpController {
       const supplier = await supplierModel.findOne({ email: email });
       if (supplier) {
         // send email verification link to supplier
-        this.sendMailVerification({ email: email, userId: supplier._id });
+        OtpController.sendMailVerification({ email: email, userId: supplier._id });
         return res.status(200).json({ message: "Email verification link sent successfully" });
       }
       // check if employer email exists
       const employer = await employerModel.findOne({ email: email });
       if (employer) {
         // send email verification link to employer
-        this.sendMailVerification({ email: email, userId: employer._id });
+        OtpController.sendMailVerification({ email: email, userId: employer._id });
         return res.status(200).json({ message: "Email verification link sent successfully" });
       }
       // check if freelancer email exists
       const freelancer = await freelancerModel.findOne({ email: email });
       if (freelancer) {
         // send email verification link to freelancer
-        this.sendMailVerification({ email: email, userId: freelancer._id });
+        OtpController.sendMailVerification({ email: email, userId: freelancer._id });
         return res.status(200).json({ message: "Email verification link sent successfully" });
       }
       return res.status(400).json({ message: "The provided email doesn't match our records" });
     } catch (error) {
+      console.log(error);
       res.status(500).json({ message: error.message });
     }
   }
@@ -173,25 +174,26 @@ class OtpController {
       const supplier = await supplierModel.findOne({ email: email });
       if (supplier) {
         // send reset password link to supplier
-        this.sendMail({ email: email, userId: supplier._id });
+        OtpController.sendMail({ email: email, userId: supplier._id });
         return res.status(200).json({ message: "Reset password link sent successfully" });
       }
       // check if employer email exists
       const employer = await employerModel.findOne({ email: email });
       if (employer) {
         // send reset password link to employer
-        this.sendMail({ email: email, userId: employer._id });
+        OtpController.sendMail({ email: email, userId: employer._id });
         return res.status(200).json({ message: "Reset password link sent successfully" });
       }
       // check if freelancer email exists
       const freelancer = await freelancerModel.findOne({ email: email });
       if (freelancer) {
         // send reset password link to freelancer
-        this.sendMail({ email: email, userId: freelancer._id });
+        OtpController.sendMail({ email: email, userId: freelancer._id });
         return res.status(200).json({ message: "Reset password link sent successfully" });
       }
       return res.status(400).json({ message: "The provided email doesn't match our records" });
     } catch (error) {
+      console.log(error);
       res.status(500).json({ message: error.message });
     }
   }
