@@ -18,7 +18,7 @@ const UserController = require("../controllers/user.controller");
 // routes to fetch system users except employers and admins
 router.get("/allUsers", UserController.get_users);
 router.get("/admin", AdminController.index);
-router.get("/verifyToken/:id", AccountVerification.verifyToken);
+// router.get("/verifyToken/:id", AccountVerification.verifyToken);
 router.get("/roles", RoleController.index);
 //freelancers
 router.get("/contractors", FreelancerController.index);

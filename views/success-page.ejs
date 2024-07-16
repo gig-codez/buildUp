@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Reset Successful</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+    <style>
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fadeInUp {
+            animation: fadeInUp 0.5s ease-out;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-r from-blue-500 to-purple-600 min-h-screen flex items-center justify-center">
+    <div class="bg-white sm:p-8 p-6 sm:mx-1 mx-2 rounded-lg shadow-2xl sm:max-w-md sm:w-full w-50 text-center animate-fadeInUp">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-24 sm:w-24 text-green-500 mx-auto mb-6 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <h1 class="text-3xl font-bold mb-4 text-gray-800">Password Reset Successful!</h1>
+        <p class="text-gray-600 mb-8">Congratulations! Your password has been successfully reset. You can now log in with your new password.</p>
+        <a href="https://build-up-deb9a.web.app/" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-full transition duration-300 ease-in-out transform hover:scale-105">
+            Back to Login
+        </a>
+    </div>
+
+    <script>
+        // Confetti effect
+        confetti({
+            particleCount: 100,
+            spread: 70,
+            origin: { y: 0.6 }
+        });
+
+        // Trigger confetti every 3 seconds
+        setInterval(() => {
+            confetti({
+                particleCount: 50,
+                spread: 70,
+                origin: { y: 0.6 }
+            });
+        }, 3000);
+    </script>
+</body>
+</html>

@@ -100,7 +100,7 @@ wsServer.on("request", function (request) {
         for (let key of keys) {
           if (!json.hasOwnProperty(key)) {
             connection.sendUTF(JSON.stringify({ error: "Invalid data format", status: 400, data: json }));
-            return; build - up2.vercel.app
+            return;
           }
         }
         //find ways of catching this error and remove code below
@@ -115,7 +115,7 @@ wsServer.on("request", function (request) {
       }
       catch (e) {
         connection.sendUTF(JSON.stringify({ error: "Invalid data format", status: 400, data: message.toString() }));
-        console.log(e)
+        // console.log(e)
       }
       // console.log('Received Message: ' + message.utf8Data.toString());
       // connection.sendUTF(message.utf8Data);

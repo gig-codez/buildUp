@@ -44,7 +44,7 @@ const employerModel = new mongoose.Schema(
     active: {
       type: Boolean,
       required: false,
-      default: false,
+      default: true,
     },
     business: { type: mongoose.Types.ObjectId, ref: "business" },
     otp: {

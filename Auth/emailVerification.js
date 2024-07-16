@@ -99,24 +99,7 @@ class AccountVerification {
     }
   }
   q;
-  static async verifyToken(req, res) {
-    try {
-      // console.log(req.params.id);
-      if (req.params.id) {
-        jwt.verify(req.params.id, process.env.SECRET_KEY, (err, decoded) => {
-          if (err) {
-            res.status(400).json({ message: "Invalid token" });
-          } else {
-            res
-              .status(200)
-              .json({ message: `Token verified successfully => ${decoded}` });
-          }
-        });
-      }
-    } catch (error) {
-      res.status(500).json({ message: `Error ${error.message}` });
-    }
-  }
+  // function to verify otp using speakeasy
 }
 
 module.exports = AccountVerification;

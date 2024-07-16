@@ -70,4 +70,7 @@ router.post("/message/file", uploadManager().single("file"), MessageController.s
 router.post("/search-users", UserController.searchUsersByRolesRequest)
 // verify otp
 router.post("/verify-otp", OtpController.verifyOtp);
+router.post("/resend-otp", OtpController.sendOTP)
+router.post("/resend-email", OtpController.sendEmailVerification)
+router.post("/forgot-password", OtpController.forgotPassword)
 module.exports = router;

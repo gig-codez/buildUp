@@ -37,13 +37,14 @@ class FreelancerController {
 
   static async store(req, res) {
     try {
-      var secret = speakeasy.generateSecret();
+      // var secret = speakeasy.generateSecret();
       // Generate a new short-code with a 5-minute expiration time
       const short_code = speakeasy.totp({
         secret: "secret",
         encoding: "base32",
         window: 2, // OTP valid for 2 minutes
       });
+      console.log(short_code);
       // first check for occurrence of the account
       const oldAccount = await freelancerModel.findOne({
         email: req.body.email,

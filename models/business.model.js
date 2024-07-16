@@ -1,6 +1,6 @@
 const { default: mongoose } = require("mongoose");
 
-const businessModel = mongoose.Schema(
+const businessSchema = mongoose.Schema(
   {
     employer: {
       type: mongoose.Types.ObjectId,
@@ -54,4 +54,4 @@ const businessModel = mongoose.Schema(
     timestamps: true,
   }
 );
-module.exports = mongoose.model("business", businessModel);
+module.exports = mongoose.model("business", businessSchema);
