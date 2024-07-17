@@ -10,49 +10,58 @@ const app = express.Router();
 
 
 app.get('/verify-email/:token/:user', async (req, res) => {
-    const token = req.params.token;
-    // check for user
-    const user = req.params.user;
-    // console.log(user);
-    const client = await employerModel.findById(user);
-    // check freelancer
-    const freelancer = freelancerModel.findById(user);
-    // supplier
-    const supplier = supplierModel.findById(user);
-    console.log(supplier);
-    if (client) {
-        jwt.verify(token, secret, async (err, decoded) => {
-            if (err) {
-                return res.render("verification-error", { message: err.message });
-            }
-            // update email_verified to true
-            client.emailVerified = true;
-            await client.save();
-            return res.render("verification-success", { message: "Email verified successfully" });
-        });
-    }
-    if (freelancer) {
-        // update email verified to true
-        jwt.verify(token, secret, async (err, decoded) => {
-            if (err) {
-                res.render("verification-error", { message: err.message });
-            }
-            const update = await freelancer.findOneAndUpdate({ _id: user }, { $set: { emailVerified: true } });
-            await update.save();
-            res.render("verification-success", { message: "Email verified successfully" });
-        });
-    }
-    if (supplier) {
-        // update email verified to true
-        jwt.verify(token, secret, async (err, decoded) => {
-            if (err) {
-                return res.render("verification-error", { message: err.message });
-            }
-            const newSupplier = await supplier.findOneAndUpdate({ _id: user }, { $set: { emailVerified: true } });
-            await newSupplier.save();
-            return res.render("verification-success", { message: "Email verified successfully" });
+    const { token, user } = req.params;
+    console.log(user);
 
-        });
+    try {
+        // Check for employer
+        const client = await employerModel.findById(user);
+        if (client) {
+            jwt.verify(token, secret, async (err, decoded) => {
+                if (err) {
+                    return res.render("verification-error", { message: err.message });
+                }
+                client.emailVerified = true;
+                await client.save();
+                return res.render("verification-success", { message: "Email verified successfully" });
+            });
+            return; // Exit the function here to prevent further execution
+        }
+
+        // Check for freelancer
+        const freelancer = await freelancerModel.findOne({ _id: user });
+        if (freelancer) {
+            jwt.verify(token, secret, async (err, decoded) => {
+                if (err) {
+                    return res.render("verification-error", { message: err.message });
+                }
+                freelancer.emailVerified = true;
+                await freelancer.save();
+                return res.render("verification-success", { message: "Email verified successfully" });
+            });
+            return;
+        }
+
+        // Check for supplier
+        const supplier = await supplierModel.findOne({ _id: user });
+        if (supplier) {
+            jwt.verify(token, secret, async (err, decoded) => {
+                if (err) {
+                    return res.render("verification-error", { message: err.message });
+                }
+                supplier.emailVerified = true;
+                await supplier.save();
+                return res.render("verification-success", { message: "Email verified successfully" });
+            });
+            return;
+        }
+
+        // If no user found
+        res.render("verification-error", { message: "User not found" });
+
+    } catch (error) {
+        console.error(error);
+        res.render("verification-error", { message: "An error occurred during verification" });
     }
 });
 // render change password view
