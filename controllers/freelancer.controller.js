@@ -9,6 +9,7 @@ require("dotenv").config();
 const speakeasy = require("speakeasy");
 const send_mail_verification = require("../utils/send_mail_verification");
 const jwt = require("jsonwebtoken");
+const OtpController = require("./otpController");
 class FreelancerController {
   static async index(req, res) {
     try {
@@ -42,7 +43,7 @@ class FreelancerController {
       const short_code = speakeasy.totp({
         secret: "secret",
         encoding: "base32",
-        window: 2, // OTP valid for 2 minutes
+        window: 5, // OTP valid for 5 minutes
       });
       console.log(short_code);
       // first check for occurrence of the account
@@ -69,31 +70,17 @@ class FreelancerController {
         });
         const newfreelancer = await freelancerPayload.save();
         // const auth = req.body.role === "65c35d14995a043c785acfd4" ? await FreelancerLogin.consultantLoginHelper(req) : await FreelancerLogin.loginHelper(req);
-        // send email verification link to employer
-        const token = jwt.sign(
-          { email: req.body.email },
-          process.env.JWT_SECRET_KEY,
-          { expiresIn: "1h" }  // Use a string to represent 60 seconds
-        );
-        await send_mail_verification(req.body.email,
-          `https://build-up.vercel.app/auth/verify-email/${token}/${newfreelancer._id}`,
-          "Kindly click the link below to verify your email address.",
-        );
+        // send email verification code
+        await OtpController.sendMailVerification({
+          email: req.body.email,
+          userId: newfreelancer._id,
+        })
         // send sms otp
-        // Set your app credentials
-        const credentials = {
-          apiKey: process.env.AFRIKA_API_KEY,
-          username: process.env.AFRIKA_USERNAME,
-        };
-        const AfricasTalking = require("africastalking")(credentials);
-        const sms = AfricasTalking.SMS;
-        const options = {
-          // Set the numbers you want to send to in international format
-          to: `+256${newfreelancer.tel_num}`,
-          message: `Dear ${newfreelancer.first_name}, Your OTP is  ${short_code}. It will expire in 2 minutes`,
-        };
-        await sms
-          .send(options)
+        await OtpController.otpMsg({
+          phone: req.body.tel_num,
+          name: req.body.first_name,
+          code: short_code,
+        });
 
         return res
           .status(200)

@@ -4,6 +4,7 @@ require("dotenv").config();
 const speakeasy = require("speakeasy");
 const send_mail_verification = require("../utils/send_mail_verification.js");
 const jwt = require("jsonwebtoken");
+const OtpController = require("./otpController.js");
 
 class BusinessController {
   static async getAll(req, res) {
@@ -32,12 +33,12 @@ class BusinessController {
   }
   static async store(req, res) {
     if (!req.body.employer) req.body.employer = req.params.id;
-    var secret = speakeasy.generateSecret();
+
     // Generate a new short-code with a 5-minute expiration time
     const short_code = speakeasy.totp({
-      secret: secret,
+      secret: "ecret",
       encoding: "base32",
-      window: 2, // OTP valid for 2 minutes
+      window: 5, // OTP valid for 5 minutes
     });
     try {
       const businessData = await businessModel.findOne({
@@ -47,8 +48,8 @@ class BusinessController {
       if (businessData) {
         return res.status(400).json({ message: "Business already exists" });
       } else {
-        businessData.otp = short_code;
-        await businessData.save();
+        // businessData.otp = short_code;
+        // await businessData.save();
         const businessPayload = new businessModel(req.body);
         const newBusiness = await businessPayload.save();
         res.status(200).json({
@@ -58,34 +59,7 @@ class BusinessController {
         await EmployerModel.findByIdAndUpdate(req.body.employer, {
           $set: { business: newBusiness._id },
         });
-        // login the employer
-        // send email verification link to employer
-        const token = jwt.sign({ email: req.body.business_email }, '02_5k001tym_3202',
-          {
-            expiresIn: '1h' // 2minutes
-          });
-        await send_mail_verification(req.body.business_email,
-          `https://build-up.vercel.app/auth/verify-email/${token}/${newBusiness._id}`,
-          "Kindly click the link below to verify your email address.",
-        );
-        // send sms otp
-        // Set your app credentials
-        const credentials = {
-          apiKey: process.env.AFRIKA_API_KEY,
-          username: process.env.AFRIKA_USERNAME,
-        };
-        const AfricasTalking = require("africastalking")(credentials);
-        const sms = AfricasTalking.SMS;
-        const options = {
-          // Set the numbers you want to send to in international format
-          to: `+256${newBusiness.business_tel}`,
-          message: `Dear ${newBusiness.business_name}, Your OTP is  ${short_code}. It will expire in 2 minutes`,
-        };
-        sms
-          .send(options)
-          .then((response) => {
-            console.log(response);
-          });
+
       }
     } catch (error) {
       res.status(500).json({ message: error.message });

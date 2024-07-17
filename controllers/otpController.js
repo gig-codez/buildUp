@@ -171,14 +171,14 @@ class OtpController {
     try {
       // check user email from supplier, employer, freelancer
       const { email } = req.body;
-      const supplier = await supplierModel.findOne({ email: email });
+      const supplier = await supplierModel.findOne({ business_email_address: email });
       if (supplier) {
         // send reset password link to supplier
         OtpController.sendMail({ email: email, userId: supplier._id });
         return res.status(200).json({ message: "Reset password link sent successfully" });
       }
       // check if employer email exists
-      const employer = await employerModel.findOne({ email: email });
+      const employer = await employerModel.findOne({ email_address: email });
       if (employer) {
         // send reset password link to employer
         OtpController.sendMail({ email: email, userId: employer._id });
@@ -220,7 +220,7 @@ class OtpController {
     );
     await send_mail_verification(data.email,
       `https://build-up.vercel.app/auth/verify-email/${token}/${data.userId}`,
-      "Kindly click the link below to reset your password.",
+      "Kindly click the link below to verify your email address.",
     );
   }
 }
