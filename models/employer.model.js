@@ -47,16 +47,16 @@ const employerModel = new mongoose.Schema(
       default: true,
     },
     business: { type: mongoose.Types.ObjectId, ref: "business" },
-    otp: {
-      type: String,
-      default: "",
-      required: false,
-    },
-    otpToken: {
-      type: String,
-      required: false,
-      default: "",
-    },
+    // otp: {
+    //   type: String,
+    //   default: "",
+    //   required: false,
+    // },
+    // otpToken: {
+    //   type: String,
+    //   required: false,
+    //   default: "",
+    // },
     emailVerified: {
       type: Boolean,
       default: false,

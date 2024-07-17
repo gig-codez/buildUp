@@ -96,14 +96,14 @@ class EmployerController {
               TIN_NIN: req.body.TIN_NIN,
               country: req.body.country,
               role: req.body.role,
-              otp: short_code,
+              // otp: short_code,
             });
             const newEmployee = await employerPayload.save();
             // login the employer
             // send email verification link to employer
             const token = jwt.sign({ email: newEmployee.email }, process.env.JWT_SECRET_KEY,
               {
-                expiresIn: '1h' // 2minutes
+                expiresIn: '1h' // 1 hour
               });
             send_mail_verification(newEmployee.email_address,
               `https://build-up.vercel.app/auth/verify-email/${token}/${newEmployee._id}`,
