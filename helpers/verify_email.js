@@ -48,7 +48,7 @@ app.get('/verify-email/:token/:user', async (req, res) => {
             if (err) {
                 return res.render("verification-error", { message: err.message });
             }
-            const newSupplier = supplier.findOneAndUpdate({ _id: user }, { $set: { emailVerified: true } });
+            const newSupplier = await supplier.findOneAndUpdate({ _id: user }, { $set: { emailVerified: true } });
             await newSupplier.save();
             return res.render("verification-success", { message: "Email verified successfully" });
 
