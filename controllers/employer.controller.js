@@ -73,7 +73,11 @@ class EmployerController {
 
     try {
       // var secret = speakeasy.generateSecret();
-
+      speakeasy.totp({
+        secret: "secret",
+        encoding: "base32",
+        window: 5,
+      })
       const employerData = await employerModel.findOne({
         email_address: req.body.email_address,
       });
