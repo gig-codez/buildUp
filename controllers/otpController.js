@@ -52,7 +52,7 @@ class OtpController {
         return res.status(200).json({ message: "OTP sent  successfully" });
       }
 
-      const employer = await businessModel.findOne({ otp });
+      const employer = await employerModel.findOne({ otp });
       if (employer) {
         // Generate a 6 digit OTP
         const otpCode = speakeasy.totp({
@@ -66,6 +66,7 @@ class OtpController {
           code: otpCode,
         })
         employer.otp = otpCode;
+        employer.active = false;
         await employer.save();
         return res.status(200).json({ message: "OTP sent successfully" });
       }
@@ -86,7 +87,7 @@ class OtpController {
       const freelancer = await freelancerModel.findOne({ otp });
       if (freelancer) {
         freelancer.active = true;
-        freelancer.otp = 0;
+        freelancer.otp = "0";
         await freelancer.save();
         return res.status(200).json({ message: "Account verified successfully" });
       }
@@ -94,15 +95,15 @@ class OtpController {
       const supplier = await supplierModel.findOne({ otp });
       if (supplier) {
         supplier.active = true;
-        supplier.otp = 0;
+        supplier.otp = "0";
         await supplier.save();
         return res.status(200).json({ message: "Account verified successfully" });
       }
 
-      const employer = await businessModel.findOne({ otp });
+      const employer = await employerModel.findOne({ otp });
       if (employer) {
         employer.active = true;
-        employer.otp = 0;
+        employer.otp = "0";
         await employer.save();
         return res.status(200).json({ message: "Account verified successfully" });
       }
