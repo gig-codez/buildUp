@@ -96,11 +96,11 @@ class PaymentController {
 
   static async cancelPayment(req, res) {
     try {
-      return res.render("payments.cancel");
+      return res.render("failed-transaction");
     } catch (error) {
       // Handle errors
       console.error(error);
-      return res.render("payments.cancel"); // Or return an error view
+      return res.render("failed-transaction"); // Or return an error view
     }
   }
   static async updateTransaction(req, res) {
@@ -170,26 +170,22 @@ class PaymentController {
                 "Subscription Notification",
                 subscriptionMail("Monthly", moment(subscriptionEndDate).format('MMMM DD, YYYY'), client.first_name),
               );
-              return res
-                .status(200)
-                .json({ message: "Payment completed successfully, close this tab and return back to your portal." });
+              return res.render("successful-subscription");
             } else {
               return res.status(400).json({ message: "User not found." });
             }
           } else {
-            return res
-              .status(400)
-              .json({ message: "Transaction already executed." });
+            return res.render("failed-transaction", { message: "Transaction already executed." });
           }
         } else {
-          return res.status(400).json({ message: "Payment record not found." });
+          return res.render("failed-transaction", { message: "Payment record not found." });
         }
       } else {
         // render error page
-        return res.status(400).json({ message: "Payment not completed." });
+        return res.render("failed-transaction", { message: "Payment not completed." });
       }
     } catch (error) {
-      return res.status(500).json({ message: error.message });
+      return res.render("failed-transaction", { message: error.message });
     }
   }
   static async processTransaction(req, res) {
