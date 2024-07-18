@@ -73,7 +73,7 @@ class EmployerController {
 
     try {
       // var secret = speakeasy.generateSecret();
-      speakeasy.totp({
+      const short_code = speakeasy.totp({
         secret: "secret",
         encoding: "base32",
         window: 5,
