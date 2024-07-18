@@ -89,21 +89,23 @@ class EmployerController {
               last_name: req.body.last_name,
               password: hashedPassword,
               email_address: req.body.email_address,
-              TIN_NIN: req.body.TIN_NIN,
+              phone: req.body.phone,
               country: req.body.country,
               role: req.body.role,
-              // otp: short_code,
+              otp: short_code,
             });
             const newEmployee = await employerPayload.save();
             // login the employer
             OtpController.sendMailVerification({
               email: req.body.email_address,
               userId: newEmployee._id,
-            })
-
-            // req.body.email = req.body.email_address;
-            // const auth = await EmployerLogin.loginHelper(req);
-            // create respective folders
+            });
+            // send otp msg
+            OtpController.otpMsg({
+              name: req.body.first_name,
+              phone: req.body.phone,
+              code: short_code,
+            });
 
             res.status(200).json({
               message: "Employer created successfully",

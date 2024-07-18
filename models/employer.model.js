@@ -23,7 +23,7 @@ const employerModel = new mongoose.Schema(
       type: String,
       required: true,
     },
-    TIN_NIN: {
+    phone: {
       type: String,
       required: false,
     },
@@ -48,14 +48,14 @@ const employerModel = new mongoose.Schema(
     active: {
       type: Boolean,
       required: false,
-      default: true,
+      default: false,
     },
     business: { type: mongoose.Types.ObjectId, ref: "business" },
-    // otp: {
-    //   type: String,
-    //   default: "",
-    //   required: false,
-    // },
+    otp: {
+      type: String,
+      default: "",
+      required: false,
+    },
     // otpToken: {
     //   type: String,
     //   required: false,
