@@ -49,9 +49,18 @@ const paymentSchema = new mongoose.Schema(
       type: Object,
       default: {},
     },
+    subscription_plan: {
+      type: String,
+      default: "",
+    },
+    subscription_end_date: {
+      type: Date,
+      required: false,
+    }
   },
   {
     timestamps: true,
   }
 );
+
 module.exports = mongoose.model("payment", paymentSchema);

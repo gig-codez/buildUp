@@ -2,6 +2,10 @@
 const express = require("express");
 const cors = require("cors");
 const path = require('path');
+const cron = require('node-cron');
+const Employer = require('./models/employer.model'); // Adjust the path as necessary
+const Payment = require('./models/payment.model'); // Adjust the path as necessary
+const moment = require('moment');
 //database
 const { default: mongoose } = require("mongoose");
 require("dotenv").config();
@@ -15,6 +19,8 @@ const {
   addressUserIdMapping,
   connAcceptedArea,
 } = require("./global");
+const mailSender = require("./utils/mailSender");
+const { default: subscriptionExpiry } = require("./utils/subscriptionExpiry");
 
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
@@ -54,7 +60,29 @@ mongoose
     console.error("Connection error", err);
     process.exit();
   });
+// handling subscriptions.
 
+
+// Check every day at midnight
+cron.schedule('0 0 * * *', async () => {
+  const now = new Date();
+  const soon = new Date(now);
+  soon.setDate(now.getDate() + 7); // 7 days before expiration
+
+  const expiringSubscriptions = await Payment.find({
+    subscription_end_date: { $lte: soon, $gte: now },
+  });
+
+  expiringSubscriptions.forEach(async (subscription) => {
+    const employer = await Employer.findById(subscription.employer_id);
+    if (employer) {
+      // Send alert to the employer about the upcoming expiration
+      console.log(`Subscription for employer ${employer.email_address} is about to expire.`);
+      // Implement email or other alert mechanisms here
+      await mailSender(employer.email_address, 'Subscription Expiration Alert', subscriptionExpiry(moment(subscription.subscription_end_date).format('MMMM DD, YYYY'), employer.first_name, subscription.subscription_plan));
+    }
+  });
+});
 // end of db connection
 const httpServer = app.listen(process.env.PORT, process.env.APP_HOST, () => {
   console.log(`Server running on port => ${process.env.APP_HOST}:${process.env.PORT}`);

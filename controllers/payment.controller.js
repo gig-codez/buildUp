@@ -5,7 +5,9 @@ const supplierModel = require("../models/supplier.model");
 const PesaPal = require("../services/payments/pesapal");
 const { v4: uuidv4 } = require("uuid");
 const mailSender = require("../utils/mailSender");
-
+const calculateSubscriptionEndDate = require("../utils/computingExpiryDates");
+const subscriptionMail = require("../utils/subscriptionMail");
+const moment = require('moment');
 class PaymentController {
   // fetch all transactions
   static async transactions(req, res) {
@@ -136,35 +138,37 @@ class PaymentController {
         });
         if (customer_transaction) {
           if (customer_transaction.status == "PENDING") {
+
+            const subscriptionEndDate = calculateSubscriptionEndDate("monthly");
             const paymentTransaction = await paymentModel.findByIdAndUpdate(
               customer_transaction._id,
-              { status: "COMPLETED" }
+              { $set: { status: "COMPLETED", subscription_end_date: subscriptionEndDate } }
             );
-            paymentTransaction.save();
-            // update client balance
+            await paymentTransaction.save();
+            // update client subscription status
             const client = await employerModel.findOne({
               _id: customer_transaction.employer_id,
             });
             if (client) {
-              let old_balance = parseInt(`${client.balance}`);
-              let new_balance = parseInt(`${result.amount}`);
-              let total = old_balance + new_balance;
+              // let old_balance = parseInt(`${client.balance}`);
+              // let new_balance = parseInt(`${result.amount}`);
+              // let total = old_balance + new_balance;
               // console.log(`Total balance ${total}`);
               //  update client balance
               const updatedAccount = await employerModel.findByIdAndUpdate(
                 customer_transaction.employer_id,
                 {
                   $set: {
-                    balance: total,
+                    subscription_expired: false,
                   },
                 }
               );
-              updatedAccount.save();
-              // sender mail for successful top up
+              await updatedAccount.save();
+              // sender mail for successful subscription
               await mailSender(
                 client.email_address,
-                "Account TopUp!",
-                `<h4>You have topped <b>${new_balance}.</b> Your new account balance is UGX <b>${total}.</b></h4>`
+                "Subscription Notification",
+                subscriptionMail("Monthly", moment(subscriptionEndDate).format('MMMM DD, YYYY'), client.first_name),
               );
               return res
                 .status(200)
@@ -333,7 +337,7 @@ class PaymentController {
   static async processOrder(req, res) {
     try {
       // Extract required parameters from the request body
-      const { amount, phone_number, employer, reason } = req.body;
+      const { amount, phone_number, subscription, employer, reason } = req.body;
       const client = await employerModel.findOne({ _id: employer });
       if (!client) {
         return res.status(400).json({ message: "Client not found" });
@@ -368,6 +372,7 @@ class PaymentController {
           recipient: customer_name,
           status: "PENDING",
           order: data,
+          subscription_plan: subscription
         });
         await paymentRecord.save();
         res.status(200).json({

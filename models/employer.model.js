@@ -31,6 +31,10 @@ const employerModel = new mongoose.Schema(
       type: String,
       required: false,
     },
+    subscription_expired: {
+      type: Boolean,
+      default: false,
+    },
     role: {
       type: mongoose.Types.ObjectId,
       ref: "role",

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BuildUp | Congratulations!</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: #f7fafc;
+    }
+    .confetti {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 10;
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-white p-10 rounded-lg shadow-lg text-center">
+    <h1 class="text-4xl font-bold mb-4">Congratulations!</h1>
+    <p class="text-lg mb-6">You have successfully subscribed.</p>
+    <div class="animate-bounce">
+      <svg class="w-16 h-16 mx-auto mb-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+      </svg>
+    </div>
+    <p class="text-lg mb-6">You can now close this tab and resume with the system.</p>
+  </div>
+  <canvas class="confetti"></canvas>
+  <script>
+    const confettiSettings = { target: 'confetti' };
+    const confetti = new ConfettiGenerator(confettiSettings);
+    confetti.render();
+
+    // Optional: Stop the confetti after some time
+    setTimeout(() => confetti.clear(), 5000);
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/confetti-js@0.0.17/dist/index.min.js"></script>
+</body>
+</html>
