@@ -94,7 +94,7 @@ cron.schedule('0 0 * * *', async () => {
   });
 });
 // end of db connection
-const httpServer = app.listen(process.env.PORT, process.env.APP_HOST, () => {
+const httpServer = app.listen(process.env.PORT, () => {
   console.log(`Server running on port => ${process.env.APP_HOST}:${process.env.PORT}`);
   console.table("\nWaiting for database connection");
 });
