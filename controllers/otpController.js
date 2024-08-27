@@ -135,6 +135,25 @@ class OtpController {
     await sms
       .send(options)
   }
+
+  // send custom message
+  static async customMsg(data) {
+    // send custom message to the user
+    // Set your app credentials
+    const credentials = {
+      apiKey: process.env.AFRIKA_API_KEY,
+      username: process.env.AFRIKA_USERNAME,
+    };
+    const AfricasTalking = require("africastalking")(credentials);
+    const sms = AfricasTalking.SMS;
+    const options = {
+      // Set the numbers you want to send to in international format
+      to: `+256${data.phone}`,
+      message: data.message,
+    };
+    await sms
+      .send(options);
+  }
   // function to send email verification link
   static async sendEmailVerification(req, res) {
     try {

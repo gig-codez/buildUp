@@ -32,7 +32,7 @@ app.use(express.json());
 // setup sms server routes
 app.post("/sms/send", async function (req, res) {
   try {
-    await OtpController.otpMsg(req.body);
+    await OtpController.customMsg(req.body);
     res.status(200).json({ message: "Sms sent successfully." });
   } catch (error) {
     res.status(500).json({ message: error.message });
