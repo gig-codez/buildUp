@@ -20,7 +20,7 @@ app.use(cors());
 // } = require("./global");
 const mailSender = require("./utils/mailSender");
 const { default: subscriptionExpiry } = require("./utils/subscriptionExpiry");
-const { otpMsg } = require("./controllers/otpController");
+// const { otpMsg } = require("./controllers/otpController");
 const OtpController = require("./controllers/otpController");
 
 app.set('views', path.join(__dirname, 'views'));
