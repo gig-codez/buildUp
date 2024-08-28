@@ -5,6 +5,7 @@ const employerModel = require('../models/employer.model');
 const freelancerModel = require('../models/freelancer.model');
 const supplierModel = require('../models/supplier.model');
 const LoginController = require('../Auth/login');
+const OtpController = require('../controllers/otpController');
 require("dotenv").config();
 const secret = process.env.JWT_SECRET_KEY; // Replace with your actual secret key
 const app = express.Router();
@@ -122,5 +123,8 @@ app.post("/update-password", async (req, res) => {
 })
 
 app.post("/login", LoginController.loginUser);
-
+app.post('/email', (req, res) => {
+    OtpController.sendMail(req.body);
+    return res.status(200).json({ message: "Email verification link sent successfully" });
+})
 module.exports = app;

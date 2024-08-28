@@ -219,16 +219,21 @@ class OtpController {
   }
   // function to send email password reset link
   static async sendMail(data) {
-    // send email verification link to employer
-    const token = jwt.sign(
-      { email: data.email },
-      process.env.JWT_SECRET_KEY,
-      { expiresIn: "1h" }  // Use a string to represent 60 seconds
-    );
-    await send_mail_verification(data.email,
-      `https://build-up.vercel.app/auth/passwordReset/${token}/${data.userId}`,
-      "Kindly click the link below to reset your password.",
-    );
+    try {
+      // send email verification link to employer
+      const token = jwt.sign(
+        { email: data.email },
+        process.env.JWT_SECRET_KEY,
+        { expiresIn: "1h" }  // Use a string to represent 60 seconds
+      );
+      await send_mail_verification(data.email,
+        `https://server.buildupuganda.com/auth/passwordReset/${token}/${data.userId}`,
+        "Kindly click the link below to reset your password.",
+      );
+    } catch (error) {
+      console.log(error);
+    }
+
   }
   // function to send email verification.
   static async sendMailVerification(data) {
@@ -239,7 +244,7 @@ class OtpController {
       { expiresIn: "1h" }  // Use a string to represent 60 seconds
     );
     await send_mail_verification(data.email,
-      `https://build-up.vercel.app/auth/verify-email/${token}/${data.userId}`,
+      `https://server.buildupuganda.com/auth/verify-email/${token}/${data.userId}`,
       "Kindly click the link below to verify your email address.",
     );
   }
