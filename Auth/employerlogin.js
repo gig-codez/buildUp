@@ -33,7 +33,7 @@ class EmployerLogin {
         throw error;
       }
     } else {
-      let error = new Error("Email does not exist");
+      let error = new Error("Email not verified!!");
       error.code = 401;
       throw error;
     }

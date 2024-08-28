@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const employerModel = require('../models/employer.model');
 const freelancerModel = require('../models/freelancer.model');
 const supplierModel = require('../models/supplier.model');
+const LoginController = require('../Auth/login');
 require("dotenv").config();
 const secret = process.env.JWT_SECRET_KEY; // Replace with your actual secret key
 const app = express.Router();
@@ -119,5 +120,7 @@ app.post("/update-password", async (req, res) => {
     // res.render('success-page');
     //
 })
+
+app.post("/login", LoginController.loginUser);
 
 module.exports = app;
