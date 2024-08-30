@@ -6,6 +6,9 @@ const speakeasy = require("speakeasy");
 const send_mail_verification = require("../utils/send_mail_verification.js");
 const jwt = require("jsonwebtoken");
 const OtpController = require("./otpController.js");
+const freelancerModel = require("../models/freelancer.model.js");
+const { response } = require("express");
+const supplierModel = require("../models/supplier.model.js");
 
 class EmployerController {
   static async getAll(req, res) {
@@ -81,6 +84,21 @@ class EmployerController {
       const employerData = await employerModel.findOne({
         email_address: req.body.email_address,
       });
+      const freelance = await freelancerModel.findOne({
+        email_address: req.body.email_address
+      });
+      const supplier = await supplierModel.findOne({
+        business_email_address: req.body.email_address,
+      });
+      // check if email used by supplier
+      if (supplier) {
+        return res.status(200).json({ message: "Email already exists" });
+      }
+      // check if email used by freelancer
+      if (freelance) {
+        return res.status(200).json({ message: "Email already exists" });
+      }
+      // check if email used by employer
       if (employerData) {
         res.status(400).json({ message: "Employer already exists" });
       } else {

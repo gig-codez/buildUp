@@ -10,6 +10,8 @@ const speakeasy = require("speakeasy");
 const send_mail_verification = require("../utils/send_mail_verification");
 const jwt = require("jsonwebtoken");
 const OtpController = require("./otpController");
+const employerModel = require("../models/employer.model");
+const supplierModel = require("../models/supplier.model");
 class FreelancerController {
   static async index(req, res) {
     try {
@@ -45,6 +47,18 @@ class FreelancerController {
         encoding: "base32",
         window: 5, // OTP valid for 5 minutes
       });
+      // check for email in employer
+      const employer = employerModel.findOne({
+        email_address: req.body.email,
+      });
+      if (employer) {
+        return res.status(400).json({ message: "Account already exists" });
+      }
+      // check for email in supplier
+      const supplier = await supplierModel.findOne({ business_email_address: req.body.email });
+      if (supplier) {
+        return res.status(400).json({ message: "Account already exists" });
+      }
       console.log(short_code);
       // first check for occurrence of the account
       const oldAccount = await freelancerModel.findOne({
