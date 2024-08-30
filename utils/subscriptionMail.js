@@ -65,7 +65,7 @@ module.exports = function subscriptionMail(subscription_plan, subscription_end_d
       <p class="mt-4">Thank you for subscribing to our service. Your subscription is now active.</p>
       <p class="mt-4">Subscription Plan: ${subscription_plan}</p>
       <p class="mt-4">End Date: ${subscription_end_date}</p>
-      <a href="https://build-up-deb9a.web.app/" target="_blank" class="btn">Manage Subscription</a>
+      <a href="https://portal.buildupuganda.com/" target="_blank" class="btn">Manage Subscription</a>
     </div>
     <div class="footer">
       <p>&copy;${new Date().getFullYear()} BuildUp. All rights reserved.</p>
