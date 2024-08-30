@@ -37,7 +37,7 @@ const mailTemplate = (type, redirectLink, content) => {
         <div class="bg-white rounded-lg shadow-lg overflow-hidden">
             <!-- Header -->
             <div class="bg-blue-600 p-3">
-                <!-- <img src="images/image-2.png" alt="Logo" class="w-32 mx-auto mb-4"> -->
+               
                 <h1 class="text-3xl font-bold text-center text-white mb-2">${type}</h1>
             </div>
 
@@ -55,16 +55,12 @@ const mailTemplate = (type, redirectLink, content) => {
             <!-- Footer -->
             <div class="bg-gray-50 p-6 mt-8">
                 <p class="text-center text-gray-600 text-sm">
-                    © <b class="year"></b> Renuir BuildUp. All rights reserved.
+                    © <b class="year">${new Date().getFullYear()}</b> Renuir BuildUp. All rights reserved.
                 </p>
             </div>
         </div>
     </div>
 </body>
-<script>
-    document.querySelector('.year').textContent = new Date().getFullYear();
-</script>
-
 </html>
     `;
 }
