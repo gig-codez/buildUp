@@ -159,14 +159,14 @@ class OtpController {
     try {
       const { email } = req.body;
       // check user email from supplier, employer, freelancer
-      const supplier = await supplierModel.findOne({ email: email });
+      const supplier = await supplierModel.findOne({ business_email_address: email });
       if (supplier) {
         // send email verification link to supplier
         OtpController.sendMailVerification({ email: email, userId: supplier._id });
         return res.status(200).json({ message: "Email verification link sent successfully" });
       }
       // check if employer email exists
-      const employer = await employerModel.findOne({ email: email });
+      const employer = await employerModel.findOne({ email_address: email });
       if (employer) {
         // send email verification link to employer
         OtpController.sendMailVerification({ email: email, userId: employer._id });
