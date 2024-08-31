@@ -39,8 +39,9 @@ module.exports = class LoginController {
                 active: true,
             });
             if (supplier) {
-                const supplier = SupplierLogin.loginHelper(req, res);
-                res.status(200).json(supplier);
+                console.log(supplier);
+                const supplierData = await SupplierLogin.loginHelper(req, res);
+                res.status(200).json(supplierData);
             }
             res.status(401).json({ message: "Invalid details" });
         } catch (error) {
