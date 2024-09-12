@@ -48,22 +48,19 @@ class FreelancerController {
         window: 5, // OTP valid for 5 minutes
       });
       // check for email in employer
-      const employer = employerModel.findOne({
-        email_address: req.body.email,
-      });
-      if (employer) {
-        return res.status(400).json({ message: "Account already exists" });
-      }
+      const employer = await employerModel.findOne({ email_address: req.body.email });
       // check for email in supplier
       const supplier = await supplierModel.findOne({ business_email_address: req.body.email });
-      if (supplier) {
-        return res.status(400).json({ message: "Account already exists" });
-      }
       console.log(short_code);
       // first check for occurrence of the account
-      const oldAccount = await freelancerModel.findOne({
-        email: req.body.email,
-      });
+      const oldAccount = await freelancerModel.findOne({ email: req.body.email });
+      if (employer) {
+        console.log(req.body);
+        return res.status(400).json({ message: "Account already exists under client account" });
+      }
+      if (supplier) {
+        return res.status(400).json({ message: "Account already exists under suppliers" });
+      }
       if (oldAccount) {
         return res.status(400).json({ message: "Account already exists" });
       } else {
