@@ -6,7 +6,7 @@ require("dotenv").config();
 class FreelancerLogin {
   static async loginHelper(req) {
     const freelancer = await freelancerModel.findOne({
-      email: req.body.email, active: true, role: "65c35d821f9b6742f96bbd96",
+      email: req.body.email, active: true, role: "66cee9726365fb4237b73425",
     });
     // console.log(freelancer);
     if (freelancer) {
@@ -52,9 +52,9 @@ class FreelancerLogin {
     const freelancer = await freelancerModel.findOne({
       email: req.body.email,
       active: true,
-      role: "65c35d14995a043c785acfd4"
+      role: "66cee9846365fb4237b7342b"
     });
-    // console.log(freelancer);
+
     if (freelancer) {
       if (freelancer.active === false) {
         let error = new Error("Account is inactive, please contact admin");

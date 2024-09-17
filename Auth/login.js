@@ -9,21 +9,23 @@ module.exports = class LoginController {
     // function to check which user to login
     static async loginUser(req, res) {
         try {
-            const { email, password } = req.body;
+            const { email } = req.body;
+
             // check if user is a freelancer
             const freelancer = await freelancerModel.findOne({
                 email: email,
                 active: true,
             });
             if (freelancer) {
+                let respMessage;
                 if (freelancer.role === "66cee9726365fb4237b73425") {
-                    let respMessage = await FreelancerLogin.loginHelper(req);
-                    res.status(200).json(respMessage);
+                    respMessage = await FreelancerLogin.loginHelper(req);
                 } else {
-                    let respMessage = await FreelancerLogin.consultantLoginHelper(req);
-                    res.status(200).json(respMessage);
+                    respMessage = await FreelancerLogin.consultantLoginHelper(req);
                 }
+                return res.status(200).json(respMessage);  // Return after sending response
             }
+
             // check if user is an employer
             const employer = await employerModel.findOne({
                 email_address: email,
@@ -31,21 +33,22 @@ module.exports = class LoginController {
             });
             if (employer) {
                 let respMessage = await EmployerLogin.loginHelper(req);
-                res.status(200).json(respMessage);
+                return res.status(200).json(respMessage);  // Return after sending response
             }
+
             // check if user is a supplier
             const supplier = await supplierModel.findOne({
                 business_email_address: email,
                 active: true,
             });
             if (supplier) {
-                console.log(supplier);
                 const supplierData = await SupplierLogin.loginHelper(req, res);
-                res.status(200).json(supplierData);
+                return res.status(200).json(supplierData);  // Return after sending response
             }
-            res.status(401).json({ message: "Invalid details" });
+            return res.status(401).json({ message: "Invalid details" });  // Return after sending response
         } catch (error) {
-            res.status(500).json({ message: error.message });
+            console.log(error);
+            return res.status(500).json({ message: error.message });  // Return after sending response
         }
     }
 }
