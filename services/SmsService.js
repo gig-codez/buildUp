@@ -19,7 +19,7 @@ async function sendSms(to, message) {
     url.searchParams.append('password', password);
     url.searchParams.append('sender', sender);
     url.searchParams.append('priority', priority);
-    console.log(url);
+    // console.log(url);
     try {
         // Send the request using fetch API
         const response = await fetch(url.toString())
