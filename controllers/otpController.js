@@ -126,12 +126,16 @@ class OtpController {
     //   apiKey: process.env.AFRIKA_API_KEY,
     //   username: process.env.AFRIKA_USERNAME,
     // };
-    console.log(data);
+    // const tel = "";
+    // Remove leading 0 if it exists
+    // if (data.phone.startsWith("0")) {
+    const tel = data.phone.substring(1);
+    // }
     // const AfricasTalking = require("africastalking")(credentials);
     // const sms = AfricasTalking.SMS;
     const options = {
       // Set the numbers you want to send to in international format
-      to: `+256${data.phone}`,
+      to: `+256${tel}`,
       message: `Dear ${data.name}, Your BuildUp OTP code is ${data.code}.`,
     };
     await sendSms(options.to, options.message);
