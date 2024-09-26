@@ -7,6 +7,7 @@ const supplierModel = require("../models/supplier.model");
 const send_mail_verification = require("../utils/send_mail_verification");
 const jwt = require("jsonwebtoken");
 const employerModel = require("../models/employer.model");
+const sendSms = require("../services/SmsService");
 
 class OtpController {
   static async sendOTP(req, res) {
@@ -121,38 +122,36 @@ class OtpController {
   static async otpMsg(data) {
     // send otp message to the user
     // Set your app credentials
-    const credentials = {
-      apiKey: process.env.AFRIKA_API_KEY,
-      username: process.env.AFRIKA_USERNAME,
-    };
-    const AfricasTalking = require("africastalking")(credentials);
-    const sms = AfricasTalking.SMS;
+    // const credentials = {
+    //   apiKey: process.env.AFRIKA_API_KEY,
+    //   username: process.env.AFRIKA_USERNAME,
+    // };
+    // const AfricasTalking = require("africastalking")(credentials);
+    // const sms = AfricasTalking.SMS;
     const options = {
       // Set the numbers you want to send to in international format
       to: `+256${data.phone}`,
       message: `Dear ${data.name}, Your BuildUp OTP code is ${data.code}.`,
     };
-    await sms
-      .send(options)
+    await sendSms(options.to, options.message);
   }
 
   // send custom message
   static async customMsg(data) {
     // send custom message to the user
     // Set your app credentials
-    const credentials = {
-      apiKey: process.env.AFRIKA_API_KEY,
-      username: process.env.AFRIKA_USERNAME,
-    };
-    const AfricasTalking = require("africastalking")(credentials);
-    const sms = AfricasTalking.SMS;
+    // const credentials = {
+    //   apiKey: process.env.AFRIKA_API_KEY,
+    //   username: process.env.AFRIKA_USERNAME,
+    // };
+    // const AfricasTalking = require("africastalking")(credentials);
+    // const sms = AfricasTalking.SMS;
     const options = {
       // Set the numbers you want to send to in international format
       to: `+256${data.phone}`,
       message: data.message,
     };
-    await sms
-      .send(options);
+    await sendSms(options.phone, options.message);
   }
   // function to send email verification link
   static async sendEmailVerification(req, res) {
