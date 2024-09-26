@@ -8,6 +8,7 @@ const send_mail_verification = require("../utils/send_mail_verification");
 const jwt = require("jsonwebtoken");
 const employerModel = require("../models/employer.model");
 const sendSms = require("../services/SmsService");
+const notificationsModel = require("../models/notifications.model");
 
 class OtpController {
   static async sendOTP(req, res) {
@@ -128,16 +129,16 @@ class OtpController {
     // };
     // const tel = "";
     // Remove leading 0 if it exists
-    // if (data.phone.startsWith("0")) {
-    const tel = data.phone.substring(1);
+
     // }
     // const AfricasTalking = require("africastalking")(credentials);
     // const sms = AfricasTalking.SMS;
     const options = {
       // Set the numbers you want to send to in international format
-      to: `+256${tel}`,
+      to: `+256${data.phone}`,
       message: `Dear ${data.name}, Your BuildUp OTP code is ${data.code}.`,
     };
+    console.log(options);
     await sendSms(options.to, options.message);
   }
 
@@ -156,6 +157,12 @@ class OtpController {
       to: `+256${data.phone}`,
       message: data.message,
     };
+    // record the notification sent
+    const saveNotify = new notificationsModel({
+      message: data.message,
+      phone: data.phone,
+    });
+    await saveNotify.save();
     await sendSms(options.phone, options.message);
   }
   // function to send email verification link
