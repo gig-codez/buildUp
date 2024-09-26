@@ -117,7 +117,7 @@ class OtpController {
     }
   }
   /** 
-   * @params {data} { name, phone, code}
+   * @params {Object} { name, phone, code}
    */
   static async otpMsg(data) {
     // send otp message to the user
@@ -126,6 +126,7 @@ class OtpController {
     //   apiKey: process.env.AFRIKA_API_KEY,
     //   username: process.env.AFRIKA_USERNAME,
     // };
+    console.log(data);
     // const AfricasTalking = require("africastalking")(credentials);
     // const sms = AfricasTalking.SMS;
     const options = {
