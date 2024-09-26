@@ -141,6 +141,14 @@ class OtpController {
     console.log(options);
     await sendSms(options.to, options.message);
   }
+  async fetchSavedNotifications(req, res) {
+    try {
+      const notifications = await notificationsModel.find();
+      return res.status(200).json(notifications);
+    } catch (error) {
+      return res.status(500).json({ message: error.message });
+    }
+  }
 
   // send custom message
   static async customMsg(data) {
