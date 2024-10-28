@@ -13,7 +13,7 @@ async function sendSms(to, message) {
     const sender = "COTE TECH";
     // Build the URL with the parameters
     const url = new URL(baseUrl);
-    url.searchParams.append('number', "256" + String(to).substring(1));
+    url.searchParams.append('number', "256" + to);
     url.searchParams.append('message', message);
     url.searchParams.append('username', username);
     url.searchParams.append('password', password);
