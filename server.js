@@ -23,6 +23,7 @@ const { default: subscriptionExpiry } = require("./utils/subscriptionExpiry");
 // const { otpMsg } = require("./controllers/otpController");
 const OtpController = require("./controllers/otpController");
 const notificationsModel = require("./models/notifications.model");
+const sendSms = require("./services/SmsService");
 
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
@@ -33,7 +34,7 @@ app.use(express.json());
 // setup sms server routes
 app.post("/sms/send", async function (req, res) {
   try {
-    await OtpController.customMsg(req.body);
+    await sendSms(req.body.phone, req.body.message);
     res.status(200).json({ message: "Sms sent successfully." });
   } catch (error) {
     res.status(500).json({ message: error.message });
