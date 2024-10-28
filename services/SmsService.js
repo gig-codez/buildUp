@@ -20,13 +20,13 @@ async function sendSms(to, message) {
     url.searchParams.append('sender', sender);
     url.searchParams.append('priority', priority);
     // console.log(url);
-    try {
-        // Send the request using fetch API
-        const response = await fetch(url.toString())
-        return await response.json()
-    } catch (error) {
-        throw new Error("Error: " + error.message);
-    }
+    // try {
+    // Send the request using fetch API
+    const response = await fetch(url.toString())
+    return await response.json()
+    // } catch (error) {
+    //     // throw new Error("Error: " + error.message);
+    // }
 }
 
 module.exports = sendSms;
