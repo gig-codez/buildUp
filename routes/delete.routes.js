@@ -16,7 +16,7 @@ router.delete("/admin/profession/:id", ContractorProfessionController.delete);
 //delete freelancer
 router.delete("/freelancer/:id", FreelancerController.delete);
 //delete employer
-// router.delete("/employer/:id", EmployerController.delete);
+router.delete("/employer/:id", EmployerController.delete);
 //delete business
 router.delete("/business/:id", BusinessController.deleteBusiness);
 //delete supplier

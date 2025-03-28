@@ -213,6 +213,19 @@ class EmployerController {
       res.status(500).json({ message: error.message });
     }
   }
-
+  static async delete(req, res) {
+    try {
+      const employer = await employerModel.findByIdAndDelete(req.params.id);
+      if (!employer) {
+        return res.status(404).json({ message: "Employer not found" });
+      }
+      return res.status(200).json({
+        message: "Employer deleted successfully",
+        data: employer,
+      });
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  }
 }
 module.exports = EmployerController;
