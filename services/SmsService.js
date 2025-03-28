@@ -23,10 +23,11 @@ async function sendSms(to, message) {
     // try {
     // Send the request using fetch API
     const response = await fetch(url.toString())
+    const responseData = await response.json();
     console.log("========================================")
-    console.log(response.json())
+    console.log(responseData)
     console.log("========================================")
-    return await response.json();
+    return responseData;
 }
 
 module.exports = sendSms;
