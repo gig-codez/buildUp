@@ -9,6 +9,7 @@ const jwt = require("jsonwebtoken");
 const employerModel = require("../models/employer.model");
 const sendSms = require("../services/SmsService");
 const notificationsModel = require("../models/notifications.model");
+const mailSender = require("../utils/mailSender");
 
 class OtpController {
   static async sendOTP(req, res) {
@@ -245,9 +246,14 @@ class OtpController {
         process.env.JWT_SECRET_KEY,
         { expiresIn: "1h" }  // Use a string to represent 60 seconds
       );
-      await send_mail_verification(data.email,
-        `https://server.buildupuganda.com/auth/passwordReset/${token}/${data.userId}`,
-        "Kindly click the link below to reset your password.",
+      await mailSender(data.email,
+        "Password Reset",
+        mailTemplate(
+          "Password Reset",
+          `https://server.buildupuganda.com/auth/passwordReset/${token}/${data.userId}`,  //
+          "Kindly click the link below to reset your password.",
+        )
+        ,
       );
     } catch (error) {
       console.log(error);
