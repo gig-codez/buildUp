@@ -10,8 +10,13 @@ module.exports = async (email, redirectLink, content) => {
         redirectLink, //
         content,
       )
-    )
+    ).then((response) => {
+      console.log("Verification email sent successfully:", response);
+    }).catch((error) => {
+      console.error("Error sending verification email:", error);
+    });
   } catch (error) {
+    console.error("Error sending verification email:", error);
     throw new Error(error);
   }
 }
