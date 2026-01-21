@@ -139,7 +139,7 @@ class OtpController {
       message: `Dear ${data.name}, Your BuildUp OTP code is ${data.code}.`,
     };
     console.log(options);
-    await sendSms(options.to, options.message);
+    await sendSms(parseInt(options.to), options.message);
   }
   async fetchSavedNotifications(req, res) {
     try {
@@ -162,7 +162,7 @@ class OtpController {
     // const sms = AfricasTalking.SMS;
     const options = {
       // Set the numbers you want to send to in international format
-      to: `+256${data.phone}`,
+      to: `${data.phone}`,
       message: data.message,
     };
     // record the notification sent
@@ -171,7 +171,7 @@ class OtpController {
       phone: data.phone,
     });
     await saveNotify.save();
-    await sendSms(options.phone, options.message);
+    await sendSms(parseInt(options.to), options.message);
   }
   // function to send email verification link
   static async sendEmailVerification(req, res) {
