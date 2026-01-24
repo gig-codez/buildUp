@@ -52,7 +52,7 @@ class FreelancerLogin {
     const freelancer = await freelancerModel.findOne({
       email: req.body.email,
       active: true,
-      role: "66cee9846365fb4237b7342b"
+      role: "6970598f84638dd58abdb551"
     });
 
     if (freelancer) {
