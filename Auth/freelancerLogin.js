@@ -6,7 +6,7 @@ require("dotenv").config();
 class FreelancerLogin {
   static async loginHelper(req) {
     const freelancer = await freelancerModel.findOne({
-      email: req.body.email, active: true, role: "66cee9726365fb4237b73425",
+      email: req.body.email, active: true, role: "6970599784638dd58abdb554",
     });
     // console.log(freelancer);
     if (freelancer) {
