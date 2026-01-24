@@ -18,7 +18,7 @@ module.exports = class LoginController {
             });
             if (freelancer) {
                 let respMessage;
-                if (freelancer.role === "66cee9726365fb4237b73425") {
+                if (freelancer.role === "6970599784638dd58abdb554") {
                     respMessage = await FreelancerLogin.loginHelper(req);
                 } else {
                     respMessage = await FreelancerLogin.consultantLoginHelper(req);
