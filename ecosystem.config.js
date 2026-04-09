@@ -1,32 +1,34 @@
 // pm2 process definition for the BuildUp backend.
 //
 // Used by the GitHub Actions deploy workflow:
-//   pm2 reload ecosystem.config.js --env production --update-env  (production)
-//   pm2 reload ecosystem.config.js --only buildup-backend-staging --update-env  (staging)
+//   pm2 reload ecosystem.config.js --only buildup-backend --env production --update-env  (production)
+//   pm2 reload ecosystem.config.js --only buildup-backend-staging --update-env           (staging)
 //
 // Each environment is rsync'd into its own project directory on the VPS, and
 // `cwd: __dirname` means pm2 starts each app from the directory where its
 // ecosystem.config.js lives. The two apps therefore run independently and
-// pick up their own `.env` (and hence their own PORT).
+// pick up their own `.env` (and hence their own PORT — except staging, which
+// pins PORT below).
 //
-// On first deploy, `pm2 start ecosystem.config.js [--env production | --only buildup-backend-staging]`
-// bootstraps the process. Subsequent deploys use `reload` for zero-downtime
-// restarts (requires cluster mode, which is set below).
+// We run in **fork mode** via `npm start` (one process per app). Cluster
+// mode was tried first but every worker errored on boot, so we fell back to
+// the same command developers run locally. With one process, `pm2 reload`
+// degrades to a normal restart (brief downtime), which is fine for this app.
 const baseApp = {
-  script: 'server.js',
+  // Run `npm start` so we use exactly the same entrypoint as local dev
+  // (package.json: "start": "node server.js").
+  script: 'npm',
+  args: 'start',
   cwd: __dirname,
 
-  // Cluster mode with one worker per CPU core. `reload` (as opposed to
-  // `restart`) brings workers up one at a time so there's no request gap.
-  exec_mode: 'cluster',
+  exec_mode: 'fork',
+  instances: 1,
 
   // Restart the process if RSS grows beyond this. Protects against
   // runaway memory from long-running uploads / buffered files.
   max_memory_restart: '512M',
 
-  // Merge stdout/stderr from all workers into one log so `pm2 logs` is
-  // readable. Add timestamps so log lines are diagnosable.
-  merge_logs: true,
+  // Timestamps so log lines are diagnosable.
   time: true,
 
   // Auto-restart policy.
@@ -43,7 +45,6 @@ module.exports = {
     {
       ...baseApp,
       name: 'buildup-backend',
-      instances: 'max',
       env_production: {
         NODE_ENV: 'production',
       },
@@ -51,8 +52,6 @@ module.exports = {
     {
       ...baseApp,
       name: 'buildup-backend-staging',
-      // Staging doesn't need every core — keep it light so prod isn't starved.
-      instances: 2,
       env: {
         NODE_ENV: 'staging',
         // Pinned here (rather than in .env) so staging can never accidentally
