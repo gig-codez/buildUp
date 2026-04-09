@@ -36,13 +36,13 @@ router.post("/admin/resolve/:escrow_id", EscrowController.adminResolveDispute);
 // buildUp-escrow-dev/routes/escrow.routes.js (additions)
 
 // Create escrow for a job post
-router.post("/jobs/:jobId/create-escrow",  jobsController.createJobWithEscrow);
+router.post("/jobs/:jobId/create-escrow", authMiddleware, jobsController.createJobWithEscrow);
 
 // Get escrow for a specific job
-router.get("/jobs/:jobId/escrow",  jobsController.getJobWithEscrow);
+router.get("/jobs/:jobId/escrow", authMiddleware, jobsController.getJobWithEscrow);
 
 // Accept job and auto-fetch contractor ID (links contractor to escrow)
-router.post("/jobs/:jobId/accept",  jobsController.acceptJob);
+router.post("/jobs/:jobId/accept", authMiddleware, jobsController.acceptJob);
 
 // // Update escrow status when job progress changes
 // router.patch("/jobs/:jobId/escrow/status", authMiddleware, jobsController.updateEscrowStatus);

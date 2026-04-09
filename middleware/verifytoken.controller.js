@@ -10,7 +10,8 @@ class VerifyToken {
     }
     try {
       const token = authToken.split(" ")[1];
-      const decoded = jwt.verify(token, process.env.JWT_TOKEN_KEY);
+      
+      const decoded = jwt.verify(token, process.env.SECRET_KEY);
       req.userid = decoded.id;
       req.role = decoded.role;
       return next();
@@ -18,7 +19,8 @@ class VerifyToken {
       if (error.name === "TokenExpiredError") {
         return res.status(401).json({ message: "Token expired" });
       }
-      return res.status(401).json({ success: false, message: "Invalid token" });
+
+      return res.status(401).json({ success: false, message: "Invalid token: " + error.message });
     }
   }
 
