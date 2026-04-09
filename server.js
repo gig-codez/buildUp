@@ -61,6 +61,7 @@ app.use("/search", require("./routes/search.routes"));
 app.use("/stock", require("./routes/stock.routes"));
 app.use("/withdraws", require("./routes/withdraw.routes"));
 app.use("/contractor", require("./routes/contractor.routes"));
+app.use("/jobs", require("./routes/jobs.routes"));
 // Escrow, Wallet & Task Chat
 app.use("/escrow", require("./routes/escrow.routes"));
 app.use("/wallet", require("./routes/wallet.routes"));

@@ -6,17 +6,55 @@ const escrowSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "employer",
       required: true,
+      index: true,
     },
     contractor_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "freelancer",
-      required: true,
+      required: false,
+      index: true,
+      description: "Contractor ID (auto-fetched on job acceptance)",
     },
+
+    // ============================================
+    // NEW: JOB INTEGRATION FIELDS
+    // ============================================
+
     job_post_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "jobPost",
       required: false,
+      index: true,
+      description: "Associated job post",
     },
+
+    // Job acceptance and work timeline
+    job_accepted_at: {
+      type: Date,
+      default: null,
+      description: "When contractor accepted the job",
+    },
+    work_start_date: {
+      type: Date,
+      default: null,
+      description: "Agreed work start date",
+    },
+    work_deadline: {
+      type: Date,
+      default: null,
+      description: "Work deadline",
+    },
+    actual_completion_date: {
+      type: Date,
+      default: null,
+      description: "When work was actually completed",
+    },
+
+    // ============================================
+    // END: JOB INTEGRATION FIELDS
+    // ============================================
+
+    // Core escrow fields
     title: {
       type: String,
       required: true,
@@ -57,8 +95,16 @@ const escrowSchema = new mongoose.Schema(
     // Status: pending_deposit | active | completion_requested | completed | disputed | cancelled
     status: {
       type: String,
-      enum: ["pending_deposit", "active", "completion_requested", "completed", "disputed", "cancelled"],
+      enum: [
+        "pending_deposit",
+        "active",
+        "completion_requested",
+        "completed",
+        "disputed",
+        "cancelled",
+      ],
       default: "pending_deposit",
+      index: true,
     },
     // Xyle payment reference for the initial deposit
     xyle_deposit_reference: {
@@ -98,5 +144,11 @@ const escrowSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+// Composite indexes for common queries
+escrowSchema.index({ job_post_id: 1, status: 1 });
+escrowSchema.index({ contractor_id: 1, employer_id: 1 });
+escrowSchema.index({ status: 1, createdAt: -1 });
+escrowSchema.index({ employer_id: 1, status: 1 });
 
 module.exports = mongoose.model("escrow", escrowSchema);
