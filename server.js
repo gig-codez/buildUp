@@ -2,6 +2,7 @@
 const express = require("express");
 const cors = require("cors");
 const path = require('path');
+const fs = require('fs');
 const cron = require('node-cron');
 const Employer = require('./models/employer.model'); // Adjust the path as necessary
 const Payment = require('./models/payment.model'); // Adjust the path as necessary
@@ -28,8 +29,27 @@ const sendSms = require("./services/SmsService");
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Ensure the uploads directory exists and serve it publicly. Uploads are
+// written here by helpers/file_helper.js and fetched by clients via the
+// absolute URL returned from the upload endpoints.
+const uploadsDir = path.join(__dirname, 'uploads');
+fs.mkdirSync(uploadsDir, { recursive: true });
+app.use('/uploads', express.static(uploadsDir));
+
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+
+// Lightweight health endpoint used by the deploy pipeline and uptime checks.
+// Does not touch the database on purpose so it can't cascade DB outages into
+// a failing health check.
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString(),
+  });
+});
 
 // setup sms server routes
 app.post("/sms/send", async function (req, res) {
