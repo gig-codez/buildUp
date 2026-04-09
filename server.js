@@ -61,6 +61,10 @@ app.use("/search", require("./routes/search.routes"));
 app.use("/stock", require("./routes/stock.routes"));
 app.use("/withdraws", require("./routes/withdraw.routes"));
 app.use("/contractor", require("./routes/contractor.routes"));
+// Escrow, Wallet & Task Chat
+app.use("/escrow", require("./routes/escrow.routes"));
+app.use("/wallet", require("./routes/wallet.routes"));
+app.use("/task-chat", require("./routes/taskChat.routes"));
 app.use("/role", require("./routes/roles.routes"));
 app.use("/auth", require("./helpers/verify_email"));
 // db connection
