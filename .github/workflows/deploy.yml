@@ -256,8 +256,8 @@ jobs:
           # Make sure the uploads directory exists and is writable. The app
           # will also create it on boot, but doing it here means permissions
           # are deterministic from day one.
-          # mkdir -p uploads
-          chmod 755 uploads
+          #   mkdir -p uploads
+          #   chmod 755 uploads
 
           echo "==> Installing production dependencies..."
           npm ci 
