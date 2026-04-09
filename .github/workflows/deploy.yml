@@ -43,10 +43,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: yarn
+          cache: npm
 
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        run: npm ci
 
       - name: Syntax check all JS files
         # No test suite exists yet, so at minimum make sure every JS file
@@ -121,22 +121,18 @@ jobs:
             exit 1
           fi
 
-          # Ensure node/yarn/pm2 are installed. These are idempotent — they
+          # Ensure node/pm2 are installed. These are idempotent — they
           # install on the first deploy and become no-ops afterward.
           if ! command -v node >/dev/null 2>&1; then
             echo "==> Installing Node.js 22..."
             curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
             sudo apt-get install -y nodejs
           fi
-          if ! command -v yarn >/dev/null 2>&1; then
-            echo "==> Installing yarn..."
-            sudo npm install -g yarn
-          fi
           if ! command -v pm2 >/dev/null 2>&1; then
             echo "==> Installing pm2..."
             sudo npm install -g pm2
           fi
-          echo "==> node $(node --version) / yarn $(yarn --version) / pm2 $(pm2 --version)"
+          echo "==> node $(node --version) / npm $(npm --version) / pm2 $(pm2 --version)"
 
           # Make sure the uploads directory exists and is writable. The app
           # will also create it on boot, but doing it here means permissions
@@ -145,7 +141,7 @@ jobs:
           chmod 755 uploads
 
           echo "==> Installing production dependencies..."
-          yarn install --frozen-lockfile --production
+          npm ci --omit=dev
 
           # Reload if the app is already running (zero-downtime in cluster
           # mode); otherwise bootstrap it from the ecosystem file.
@@ -251,22 +247,18 @@ jobs:
             exit 1
           fi
 
-          # Ensure node/yarn/pm2 are installed. These are idempotent — they
+          # Ensure node/pm2 are installed. These are idempotent — they
           # install on the first deploy and become no-ops afterward.
           if ! command -v node >/dev/null 2>&1; then
             echo "==> Installing Node.js 22..."
             curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
             sudo apt-get install -y nodejs
           fi
-          if ! command -v yarn >/dev/null 2>&1; then
-            echo "==> Installing yarn..."
-            sudo npm install -g yarn
-          fi
           if ! command -v pm2 >/dev/null 2>&1; then
             echo "==> Installing pm2..."
             sudo npm install -g pm2
           fi
-          echo "==> node $(node --version) / yarn $(yarn --version) / pm2 $(pm2 --version)"
+          echo "==> node $(node --version) / npm $(npm --version) / pm2 $(pm2 --version)"
 
           # Make sure the uploads directory exists and is writable. The app
           # will also create it on boot, but doing it here means permissions
@@ -275,7 +267,7 @@ jobs:
           chmod 755 uploads
 
           echo "==> Installing production dependencies..."
-          yarn install --frozen-lockfile --production
+          npm ci --omit=dev
 
           # Reload if the app is already running (zero-downtime in cluster
           # mode); otherwise bootstrap it from the ecosystem file.
