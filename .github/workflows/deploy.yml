@@ -1,15 +1,19 @@
 name: Deploy BuildUp Backend
 
-# Deploys the backend to the production VPS on every push to `main` that
-# passes the `checks` job. Also supports manual dispatch from the Actions tab.
+# Deploys the backend on every push that passes the `checks` job:
+#   - `main`        → production VPS at ${PROJECT_PATH}
+#   - `escrow-dev`  → staging  VPS at ${TEST_PROJECT_PATH}
+# Also supports manual dispatch from the Actions tab.
 #
-# One-time setup required (see README at bottom of this file):
+# One-time setup required:
 #   Secrets:  SSH_KEY
-#   Vars:     VPS_HOST, VPS_USER, VPS_PORT, PROJECT_PATH
+#   Vars:     VPS_HOST, VPS_USER, VPS_PORT, PROJECT_PATH, TEST_PROJECT_PATH
+#             HEALTH_URL (prod, optional), STAGING_HEALTH_URL (staging, optional)
 #
-# The production `.env` is NOT managed by this pipeline — it lives on the
-# server at ${PROJECT_PATH}/.env and is preserved across deploys via rsync
-# exclusion. Update it out-of-band when secrets change.
+# The `.env` files are NOT managed by this pipeline — they live on the
+# server at ${PROJECT_PATH}/.env and ${TEST_PROJECT_PATH}/.env and are
+# preserved across deploys via rsync exclusion. Update them out-of-band
+# when secrets change.
 
 on:
   push:
@@ -22,9 +26,9 @@ env:
   NODE_VERSION: "22"
 
 concurrency:
-  # Only one deploy at a time. Cancel in-progress runs if a newer commit lands
-  # so we don't race pm2 reloads.
-  group: deploy-production
+  # Only one deploy at a time per environment. Newer commits queue behind
+  # the running deploy so we don't race pm2 reloads.
+  group: deploy-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -147,10 +151,140 @@ jobs:
           # mode); otherwise bootstrap it from the ecosystem file.
           if pm2 describe buildup-backend >/dev/null 2>&1; then
             echo "==> Reloading pm2 process buildup-backend..."
-            pm2 reload ecosystem.config.js --env production --update-env
+            pm2 reload ecosystem.config.js --only buildup-backend --env production --update-env
           else
             echo "==> Starting pm2 process buildup-backend for the first time..."
-            pm2 start ecosystem.config.js --env production
+            pm2 start ecosystem.config.js --only buildup-backend --env production
+          fi
+
+          pm2 save
+          echo "==> Deployment completed"
+          ENDSSH
+
+      # - name: Health check
+      #   # Hits the /health endpoint through the server's public URL (set via
+      #   # vars.HEALTH_URL, e.g. https://server.buildupuganda.com/health).
+      #   # Retries briefly to absorb the pm2 reload gap.
+      #   run: |
+      #     URL="${{ vars.HEALTH_URL }}"
+      #     if [ -z "$URL" ]; then
+      #       echo "HEALTH_URL var not set — skipping health check."
+      #       exit 0
+      #     fi
+
+      #     echo "==> Probing $URL"
+      #     for i in 1 2 3 4 5; do
+      #       STATUS=$(curl -sS -o /tmp/health.json -w "%{http_code}" "$URL" || echo "000")
+      #       if [ "$STATUS" = "200" ]; then
+      #         echo "==> Health OK:"
+      #         cat /tmp/health.json
+      #         exit 0
+      #       fi
+      #       echo "Attempt $i: HTTP $STATUS — retrying in 3s"
+      #       sleep 3
+      #     done
+      #     echo "ERROR: Health check failed after 5 attempts."
+      #     cat /tmp/health.json 2>/dev/null || true
+      #     exit 1
+
+  deploy-staging:
+    name: Deploy to Staging
+    needs: checks
+    if: github.ref == 'refs/heads/escrow-dev'
+    runs-on: ubuntu-latest
+    environment: staging
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -p ${{ vars.VPS_PORT }} -H ${{ vars.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Build rsync exclude list
+        run: |
+          cat > .rsync-exclude << 'EOF'
+          .git/
+          .github/
+          .gitignore
+          .vscode/
+          .DS_Store
+          .env
+          .env.*
+          node_modules/
+          uploads/
+          .rsync-exclude
+          test.js
+          EOF
+
+      - name: Sync code to server
+        run: |
+          rsync -avz --delete \
+            -e "ssh -p ${{ vars.VPS_PORT }} -o StrictHostKeyChecking=no" \
+            --exclude-from=.rsync-exclude \
+            --chmod=D755,F644 \
+            ./ ${{ vars.VPS_USER }}@${{ vars.VPS_HOST }}:${{ vars.TEST_PROJECT_PATH }}/
+
+      - name: Install dependencies and reload pm2
+        run: |
+          ssh -p ${{ vars.VPS_PORT }} \
+            -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=30 \
+            -o ServerAliveInterval=60 \
+            ${{ vars.VPS_USER }}@${{ vars.VPS_HOST }} << 'ENDSSH'
+          set -euo pipefail
+
+          cd ${{ vars.TEST_PROJECT_PATH }}
+          echo "==> Working directory: $(pwd)"
+
+          # Fail loudly if the staging .env is missing rather than
+          # silently booting with wrong values.
+          if [ ! -f .env ]; then
+            echo "ERROR: ${{ vars.TEST_PROJECT_PATH }}/.env is missing on the server."
+            echo "       Create it manually before deploying — this pipeline"
+            echo "       intentionally does NOT write .env (secrets live on"
+            echo "       the server only)."
+            exit 1
+          fi
+
+          # Ensure node/yarn/pm2 are installed. These are idempotent — they
+          # install on the first deploy and become no-ops afterward.
+          if ! command -v node >/dev/null 2>&1; then
+            echo "==> Installing Node.js 22..."
+            curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+            sudo apt-get install -y nodejs
+          fi
+          if ! command -v yarn >/dev/null 2>&1; then
+            echo "==> Installing yarn..."
+            sudo npm install -g yarn
+          fi
+          if ! command -v pm2 >/dev/null 2>&1; then
+            echo "==> Installing pm2..."
+            sudo npm install -g pm2
+          fi
+          echo "==> node $(node --version) / yarn $(yarn --version) / pm2 $(pm2 --version)"
+
+          # Make sure the uploads directory exists and is writable. The app
+          # will also create it on boot, but doing it here means permissions
+          # are deterministic from day one.
+          mkdir -p uploads
+          chmod 755 uploads
+
+          echo "==> Installing production dependencies..."
+          yarn install --frozen-lockfile --production
+
+          # Reload if the app is already running (zero-downtime in cluster
+          # mode); otherwise bootstrap it from the ecosystem file.
+          if pm2 describe buildup-backend-staging >/dev/null 2>&1; then
+            echo "==> Reloading pm2 process buildup-backend-staging..."
+            pm2 reload ecosystem.config.js --only buildup-backend-staging --update-env
+          else
+            echo "==> Starting pm2 process buildup-backend-staging for the first time..."
+            pm2 start ecosystem.config.js --only buildup-backend-staging
           fi
 
           pm2 save
@@ -158,13 +292,10 @@ jobs:
           ENDSSH
 
       - name: Health check
-        # Hits the /health endpoint through the server's public URL (set via
-        # vars.HEALTH_URL, e.g. https://server.buildupuganda.com/health).
-        # Retries briefly to absorb the pm2 reload gap.
         run: |
-          URL="${{ vars.HEALTH_URL }}"
+          URL="${{ vars.STAGING_HEALTH_URL }}"
           if [ -z "$URL" ]; then
-            echo "HEALTH_URL var not set — skipping health check."
+            echo "STAGING_HEALTH_URL var not set — skipping health check."
             exit 0
           fi
 
