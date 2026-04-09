@@ -23,7 +23,7 @@ exports.createJobWithEscrow = async (req, res) => {
       escrow_type = "partial_60_40",
     } = req.body;
 
-    const employerId = req.user._id;
+    const employerId = req.userid;
 
     // Validation
     if (!job_title || !project_fees) {
@@ -117,7 +117,7 @@ exports.createJobWithEscrow = async (req, res) => {
 exports.acceptJob = async (req, res) => {
   try {
     const { jobId } = req.params;
-    const contractorId = req.user._id; // Current user is the contractor
+    const contractorId = req.userid; // Current user is the contractor
 
     // Validate job exists
     const jobPost = await JobPost.findById(jobId);
@@ -237,7 +237,7 @@ exports.completeJob = async (req, res) => {
   try {
     const { jobId } = req.params;
     const { completionProof, notes } = req.body;
-    const contractorId = req.user._id;
+    const contractorId = req.userid;
 
     // Validate job exists
     const jobPost = await JobPost.findById(jobId);
@@ -303,7 +303,7 @@ exports.completeJob = async (req, res) => {
 exports.confirmJobCompletion = async (req, res) => {
   try {
     const { jobId } = req.params;
-    const employerId = req.user._id;
+    const employerId = req.userid;
 
     // Validate job exists
     const jobPost = await JobPost.findById(jobId);
@@ -360,7 +360,7 @@ exports.confirmJobCompletion = async (req, res) => {
 // ============================================
 exports.getEmployerJobs = async (req, res) => {
   try {
-    const employerId = req.user._id;
+    const employerId = req.userid;
     const { status, escrowOnly, page = 1, limit = 10 } = req.query;
 
     let query = { employer: employerId };
@@ -409,7 +409,7 @@ exports.getEmployerJobs = async (req, res) => {
 // ============================================
 exports.getContractorJobs = async (req, res) => {
   try {
-    const contractorId = req.user._id;
+    const contractorId = req.userid;
     const { status, escrowOnly, page = 1, limit = 10 } = req.query;
 
     let query = { selected_contractor_id: contractorId };

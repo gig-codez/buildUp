@@ -14,7 +14,7 @@ const authMiddleware = require("../middleware/auth.middleware");
  */
 router.post(
   "/create-with-escrow",
-  authMiddleware,
+  // authMiddleware,
   jobsController.createJobWithEscrow
 );
 
@@ -28,7 +28,7 @@ router.post(
  */
 router.post(
   "/:jobId/accept",
-  authMiddleware,
+  // authMiddleware,
   jobsController.acceptJob
 );
 
@@ -42,7 +42,7 @@ router.post(
  */
 router.get(
   "/:jobId/with-escrow",
-  authMiddleware,
+  // authMiddleware,
   jobsController.getJobWithEscrow
 );
 
@@ -57,7 +57,7 @@ router.get(
  */
 router.post(
   "/:jobId/complete",
-  authMiddleware,
+  // authMiddleware,
   jobsController.completeJob
 );
 
@@ -67,7 +67,7 @@ router.post(
  */
 router.post(
   "/:jobId/confirm-completion",
-  authMiddleware,
+  // authMiddleware,
   jobsController.confirmJobCompletion
 );
 
@@ -82,7 +82,7 @@ router.post(
  */
 router.get(
   "/employer/my-jobs",
-  authMiddleware,
+  // authMiddleware,
   jobsController.getEmployerJobs
 );
 
@@ -93,7 +93,7 @@ router.get(
  */
 router.get(
   "/contractor/my-jobs",
-  authMiddleware,
+  // authMiddleware,
   jobsController.getContractorJobs
 );
 
