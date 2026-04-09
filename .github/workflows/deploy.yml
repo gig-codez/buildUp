@@ -137,22 +137,15 @@ jobs:
           # Make sure the uploads directory exists and is writable. The app
           # will also create it on boot, but doing it here means permissions
           # are deterministic from day one.
-          mkdir -p uploads
+          # mkdir -p uploads
           chmod 755 uploads
 
           echo "==> Installing production dependencies..."
-          npm ci --omit=dev
+          npm ci
 
           # Reload if the app is already running (zero-downtime in cluster
           # mode); otherwise bootstrap it from the ecosystem file.
-          if pm2 describe buildup-backend >/dev/null 2>&1; then
-            echo "==> Reloading pm2 process buildup-backend..."
-            pm2 reload ecosystem.config.js --only buildup-backend --env production --update-env
-          else
-            echo "==> Starting pm2 process buildup-backend for the first time..."
-            pm2 start ecosystem.config.js --only buildup-backend --env production
-          fi
-
+          pm2 restart buildup_backend
           pm2 save
           echo "==> Deployment completed"
           ENDSSH
