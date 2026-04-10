@@ -61,8 +61,8 @@ async function initiateWithdrawal(account, amount, provider) {
  */
 async function checkStatus(ref) {
   const baseStatus = process.env.XYLE_ENV === "live"
-    ? "https://api.xylepayments.com/api/v1/payments"
-    : "https://api.xylepayments.com/sandbox/api/v1/payments";
+    ? "https://api.xylepayments.com/api/v1/client/checkTransactionStatus"
+    : "https://api.xylepayments.com/sandbox/api/v1/client/checkTransactionStatus";
 
   const res = await fetch(`${baseStatus}/${ref}`, {
     headers: { "x-api-key": XYLE_API_KEY },
