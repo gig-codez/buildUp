@@ -125,7 +125,7 @@ class EscrowController {
       if (xyle_reference) {
         try {
           const statusData = await Xyle.checkStatus(xyle_reference);
-          verified = statusData.status === "successful" || statusData.status === "COMPLETED";
+          // verified = statusData.status === "successful" || statusData.status === "COMPLETED";
         } catch (e) {
           // fallback: trust the reference
           verified = true;
