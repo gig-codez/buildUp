@@ -157,14 +157,14 @@ class EscrowController {
       }).save();
 
       // Notify contractor
-      await mailSender(
-        escrow.contractor_id.email,
-        "Escrow Funded — Start Work!",
-        `<p>Hi ${escrow.contractor_id.first_name},</p>
-         <p>The escrow for task <b>${escrow.title}</b> has been funded.</p>
-         <p>Amount in Escrow: <b>UGX ${escrow_balance.toLocaleString()}</b></p>
-         <p>You can now start working. Submit proof of completion when done.</p>`
-      );
+      // await mailSender(
+      //   escrow.contractor_id.email,
+      //   "Escrow Funded — Start Work!",
+      //   `<p>Hi ${escrow.contractor_id.first_name},</p>
+      //    <p>The escrow for task <b>${escrow.title}</b> has been funded.</p>
+      //    <p>Amount in Escrow: <b>UGX ${escrow_balance.toLocaleString()}</b></p>
+      //    <p>You can now start working. Submit proof of completion when done.</p>`
+      // );
 
       return res.status(200).json({ message: "Deposit confirmed. Escrow is now active.", escrow_balance });
     } catch (error) {
