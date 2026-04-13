@@ -88,13 +88,24 @@ router.get(
 
 /**
  * GET /api/jobs/contractor/my-jobs
- * Get all jobs assigned to contractor
- * Query: ?status=in_progress&escrowOnly=true&page=1&limit=10
+ * Get all available jobs for contractor to apply for
+ * Query: ?status=open&escrowOnly=true&page=1&limit=10
  */
 router.get(
   "/contractor/my-jobs",
   authMiddleware,
   jobsController.getContractorJobs
+);
+
+/**
+ * GET /api/jobs/contractor/assigned-jobs
+ * Get all jobs assigned to contractor
+ * Query: ?status=in_progress&escrowOnly=true&page=1&limit=10
+ */
+router.get(
+  "/contractor/assigned-jobs",
+  authMiddleware,
+  jobsController.getContractorAssignedJobs
 );
 
 module.exports = router;

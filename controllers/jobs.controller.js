@@ -405,13 +405,65 @@ exports.getEmployerJobs = async (req, res) => {
 };
 
 // ============================================
-// GET ALL JOBS FOR CONTRACTOR
+// GET ALL AVAILABLE JOBS FOR CONTRACTOR
 // ============================================
 exports.getContractorJobs = async (req, res) => {
   try {
     const contractorId = req.userid;
     const { status, escrowOnly, page = 1, limit = 10 } = req.query;
 
+    // Query for AVAILABLE jobs (open jobs not yet assigned to any contractor)
+    let query = { contract_status: "open", selected_contractor_id: null };
+
+    // Allow filtering by status if provided (but default to "open")
+    if (status) {
+      query.contract_status = status;
+    }
+
+    if (escrowOnly === "true") {
+      query.escrow_enabled = true;
+    }
+
+    const skip = (page - 1) * limit;
+
+    const jobs = await JobPost.find(query)
+      .populate("employer", "first_name last_name email business")
+      .populate("escrow_id", "status agreed_amount escrow_balance")
+      .populate("profession", "name")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    const total = await JobPost.countDocuments(query);
+
+    res.status(200).json({
+      success: true,
+      jobs,
+      pagination: {
+        total,
+        page: parseInt(page),
+        pages: Math.ceil(total / limit),
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching contractor jobs:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error fetching jobs",
+      error: error.message,
+    });
+  }
+};
+
+// ============================================
+// GET CONTRACTOR'S ASSIGNED JOBS
+// ============================================
+exports.getContractorAssignedJobs = async (req, res) => {
+  try {
+    const contractorId = req.userid;
+    const { status, escrowOnly, page = 1, limit = 10 } = req.query;
+
+    // Query for jobs ASSIGNED to this contractor
     let query = { selected_contractor_id: contractorId };
 
     if (status) {
@@ -444,7 +496,7 @@ exports.getContractorJobs = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error fetching contractor jobs:", error);
+    console.error("Error fetching contractor assigned jobs:", error);
     res.status(500).json({
       success: false,
       message: "Error fetching jobs",
