@@ -875,3 +875,59 @@ exports.delete_prof_jobs = async (req, res) => {
     res.status(500).json({ success: false, message: "Error deleting job", error: error.message });
   }
 };
+
+// ============================================
+// CONTRACTOR APPLIES FOR JOB (with escrow)
+// ============================================
+exports.applyForJobWithEscrow = async (req, res) => {
+  try {
+    const jobId = req.params.jobId;
+    const contractorId = req.userid;
+    const { notes, document } = req.body;
+
+    const jobPost = await JobPost.findById(jobId);
+    if (!jobPost) {
+      return res.status(404).json({ success: false, message: "Job not found" });
+    }
+
+    if (jobPost.contract_status !== "open") {
+      return res.status(400).json({ success: false, message: "This job is no longer accepting applications" });
+    }
+
+    // Check for duplicate application
+    const existingApplication = await AppliedJobs.findOne({ contractorId, jobId });
+    if (existingApplication) {
+      return res.status(400).json({ success: false, message: "You have already applied for this job" });
+    }
+
+    // Create the application record
+    const application = new AppliedJobs({
+      contractorId,
+      clientId: jobPost.employer,
+      jobId,
+      document: document || "",
+      notes: notes || "",
+      status: "pending",
+    });
+
+    await application.save();
+
+    // Populate for response
+    const populated = await AppliedJobs.findById(application._id)
+      .populate("contractorId", "first_name last_name email tel_num profile_pic profession")
+      .populate("clientId", "first_name last_name email_address")
+      .populate("jobId", "job_title job_description project_fees");
+
+    return res.status(200).json({
+      success: true,
+      message: "Application submitted successfully. Escrow is pending employer deposit.",
+      application: populated,
+      contractorFetched: {
+        escrowUpdated: false,
+      },
+    });
+  } catch (error) {
+    console.error("Error applying for job:", error);
+    res.status(500).json({ success: false, message: "Error submitting application", error: error.message });
+  }
+};

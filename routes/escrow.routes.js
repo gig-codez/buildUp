@@ -42,7 +42,7 @@ router.post("/jobs/:jobId/create-escrow", authMiddleware, jobsController.createJ
 router.get("/jobs/:jobId/escrow", authMiddleware, jobsController.getJobWithEscrow);
 
 // Accept job and auto-fetch contractor ID (links contractor to escrow)
-router.post("/jobs/:jobId/accept", authMiddleware, jobsController.acceptJob);
+router.post("/jobs/:jobId/accept", authMiddleware, jobsController.applyForJobWithEscrow);
 
 // // Update escrow status when job progress changes
 // router.patch("/jobs/:jobId/escrow/status", authMiddleware, jobsController.updateEscrowStatus);
