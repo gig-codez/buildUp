@@ -6,6 +6,7 @@ const employerModel = require("../models/employer.model");
 const mailSender = require("../utils/mailSender");
 const Xyle = require("../services/payments/xyle");
 const { v4: uuidv4 } = require("uuid");
+const AdminRevenueController = require("./adminRevenue.controller");
 
 const SERVICE_FEE_RATE = 0.10; // 10%
 const MIN_DEPOSIT_RATE = 0.60; // 60% minimum
@@ -139,6 +140,9 @@ class EscrowController {
       // Calculate escrow_balance = initial_deposit - service_fee
       // (service_fee stays with platform, escrow_balance goes to contractor on completion)
       const escrow_balance = escrow.initial_deposit - escrow.service_fee;
+
+      // ── Credit admin revenue wallet with the service fee ──────────────────
+      await AdminRevenueController.creditFee(escrow_id, escrow.service_fee);
 
       await escrowModel.findByIdAndUpdate(escrow_id, {
         status: "active",
