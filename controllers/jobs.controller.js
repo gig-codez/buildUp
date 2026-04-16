@@ -66,7 +66,7 @@ exports.createJobWithEscrow = async (req, res) => {
     let escrowId = null;
 
     if (escrow_enabled) {
-      const serviceFee = escrowAmount * 0.1;
+      const serviceFee = project_fees * 0.1;
       const netAmount = escrowAmount - serviceFee;
 
       const escrow = new Escrow({
