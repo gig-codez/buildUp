@@ -13,6 +13,10 @@ router.post("/deposit/:escrow_id", EscrowController.initiateDeposit);
 // Confirm deposit after Xyle confirms payment
 router.post("/confirm-deposit/:escrow_id", EscrowController.confirmDeposit);
 
+// Employer deposits remaining balance on an active escrow (60/40 split)
+router.post("/deposit-remaining/:escrow_id", EscrowController.initiateRemainingDeposit);
+router.post("/confirm-remaining/:escrow_id", EscrowController.confirmRemainingDeposit);
+
 // Contractor submits completion proof
 router.post("/submit-completion/:escrow_id", EscrowController.submitCompletion);
 

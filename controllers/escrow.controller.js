@@ -248,21 +248,18 @@ class EscrowController {
 
       const contractor = escrow.contractor_id;
 
-      // Determine if remaining balance needs to be collected
-      const remaining = escrow.net_amount - escrow.escrow_balance;
-      let totalRelease = escrow.escrow_balance;
-
-      if (!escrow.full_payment_upfront && remaining > 0) {
-        // The remaining 40% minus its share of service fee was NOT yet collected.
-        // The service fee was already taken from the initial deposit proportionally.
-        // We just release everything in escrow (escrow_balance) + collect remaining via Xyle if needed.
-        // For simplicity: net_amount is already net of service fee (10% taken from agreed).
-        // escrow_balance = initial_deposit - service_fee. 
-        // If not full upfront: initial_deposit = 60%, service_fee = 10% of 100% taken upfront.
-        // So escrow_balance = 60% - 10% = 50% of agreed.
-        // Remaining release = net_amount - escrow_balance = (agreed - 10%) - 50% = 40% of agreed.
-        totalRelease = escrow.net_amount; // full net amount
+      // Enforce: employer must have deposited the full agreed amount before releasing.
+      // remaining = agreed_amount - initial_deposit (what employer still owes)
+      const remainingOwed = escrow.agreed_amount - escrow.initial_deposit;
+      if (!escrow.full_payment_upfront && remainingOwed > 0) {
+        return res.status(400).json({
+          message: `You must deposit the remaining balance of UGX ${remainingOwed.toLocaleString()} before confirming completion. Use the "Deposit Remaining Balance" option.`,
+          remaining_balance: remainingOwed,
+        });
       }
+
+      // Release the full net amount (agreed - service_fee); escrow_balance holds it all now.
+      const totalRelease = escrow.escrow_balance;
 
       // Get/create contractor wallet
       let wallet = await walletModel.findOne({ owner_id: contractor._id, owner_type: "freelancer" });
@@ -314,6 +311,112 @@ class EscrowController {
       return res.status(200).json({
         message: "Completion confirmed. Funds released to contractor wallet.",
         released: totalRelease,
+      });
+    } catch (error) {
+      return res.status(500).json({ message: error.message });
+    }
+  }
+
+  // ─── DEPOSIT REMAINING BALANCE (employer tops up active escrow) ─────────────
+  static async initiateRemainingDeposit(req, res) {
+    try {
+      const { escrow_id } = req.params;
+      const { phone_number, provider } = req.body;
+
+      const escrow = await escrowModel.findById(escrow_id)
+        .populate("employer_id")
+        .populate("contractor_id");
+
+      if (!escrow) return res.status(404).json({ message: "Escrow not found." });
+      if (!["active", "completion_requested"].includes(escrow.status)) {
+        return res.status(400).json({ message: "Escrow is not active." });
+      }
+      if (escrow.full_payment_upfront) {
+        return res.status(400).json({ message: "Full payment was already made upfront." });
+      }
+
+      // Remaining = agreed_amount - initial_deposit (what was not yet paid by employer)
+      const remaining = escrow.agreed_amount - escrow.initial_deposit;
+      if (remaining <= 0) {
+        return res.status(400).json({ message: "No remaining balance to deposit." });
+      }
+
+      const phone = Xyle.normalizePhone(phone_number);
+      const detectedProvider = provider || Xyle.detectProvider(phone);
+
+      const xyleResult = await Xyle.initiateDeposit(phone, remaining, detectedProvider);
+
+      await escrowModel.findByIdAndUpdate(escrow_id, {
+        xyle_remaining_reference: xyleResult.reference || xyleResult.id,
+      });
+
+      return res.status(200).json({
+        message: "Remaining deposit initiated. Please approve the USSD prompt on your phone.",
+        xyle_reference: xyleResult.reference || xyleResult.id,
+        amount: remaining,
+        provider: detectedProvider,
+      });
+    } catch (error) {
+      return res.status(500).json({ message: error.message });
+    }
+  }
+
+  static async confirmRemainingDeposit(req, res) {
+    try {
+      const { escrow_id } = req.params;
+      const { xyle_reference } = req.body;
+
+      const escrow = await escrowModel.findById(escrow_id)
+        .populate("employer_id")
+        .populate("contractor_id");
+
+      if (!escrow) return res.status(404).json({ message: "Escrow not found." });
+      if (!["active", "completion_requested"].includes(escrow.status)) {
+        return res.status(400).json({ message: "Escrow is not active." });
+      }
+      if (escrow.full_payment_upfront) {
+        return res.status(400).json({ message: "Full payment was already made upfront." });
+      }
+
+      const remaining = escrow.agreed_amount - escrow.initial_deposit;
+      if (remaining <= 0) {
+        return res.status(400).json({ message: "No remaining balance to deposit." });
+      }
+
+      // The remaining amount goes entirely into the escrow balance
+      // (service fee was already collected on the full agreed_amount during initial deposit)
+      const newEscrowBalance = escrow.escrow_balance + remaining;
+      const newInitialDeposit = escrow.agreed_amount; // now fully deposited
+
+      await escrowModel.findByIdAndUpdate(escrow_id, {
+        initial_deposit: newInitialDeposit,
+        escrow_balance: newEscrowBalance,
+        xyle_remaining_reference: xyle_reference || escrow.xyle_remaining_reference,
+      });
+
+      // System message in task chat
+      await new taskChatModel({
+        escrow_id,
+        sender_id: escrow.employer_id._id,
+        sender_role: "employer",
+        sender_name: `${escrow.employer_id.first_name} ${escrow.employer_id.last_name}`,
+        message: `✅ Remaining balance of UGX ${remaining.toLocaleString()} deposited into escrow. Total escrow balance is now UGX ${newEscrowBalance.toLocaleString()}.`,
+        is_system_message: true,
+      }).save();
+
+      // Notify contractor
+      await mailSender(
+        escrow.contractor_id.email,
+        "Remaining Escrow Balance Deposited",
+        `<p>Hi ${escrow.contractor_id.first_name},</p>
+         <p>The remaining balance of <b>UGX ${remaining.toLocaleString()}</b> has been deposited into the escrow for task: <b>${escrow.title}</b></p>
+         <p>Total escrow balance: <b>UGX ${newEscrowBalance.toLocaleString()}</b></p>
+         <p>You will receive the full net amount upon completion confirmation.</p>`
+      );
+
+      return res.status(200).json({
+        message: "Remaining deposit confirmed. Escrow balance updated.",
+        new_escrow_balance: newEscrowBalance,
       });
     } catch (error) {
       return res.status(500).json({ message: error.message });

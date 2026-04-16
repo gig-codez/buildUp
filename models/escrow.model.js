@@ -116,6 +116,11 @@ const escrowSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    // Xyle payment reference for the remaining balance deposit
+    xyle_remaining_reference: {
+      type: String,
+      default: null,
+    },
     // Whether full 100% was paid upfront
     full_payment_upfront: {
       type: Boolean,
