@@ -138,14 +138,14 @@ class WalletController {
 
       // Notify user
       if (email) {
-        await mailSender(
-          email,
-          "Withdrawal Processed",
-          `<p>Hi ${name},</p>
-           <p>Your withdrawal of <b>UGX ${amt.toLocaleString()}</b> has been sent to ${phone}.</p>
-           <p>Reference: ${xyleResult.reference || xyleResult.transactionId}</p>
-           <p>Remaining wallet balance: <b>UGX ${wallet.available_balance.toLocaleString()}</b></p>`
-        );
+        // await mailSender(
+        //   email,
+        //   "Withdrawal Processed",
+        //   `<p>Hi ${name},</p>
+        //    <p>Your withdrawal of <b>UGX ${amt.toLocaleString()}</b> has been sent to ${phone}.</p>
+        //    <p>Reference: ${xyleResult.reference || xyleResult.transactionId}</p>
+        //    <p>Remaining wallet balance: <b>UGX ${wallet.available_balance.toLocaleString()}</b></p>`
+        // );
       }
 
       return res.status(200).json({

@@ -52,14 +52,14 @@ class EscrowController {
       const contractor = await freelancerModel.findById(contractor_id);
       const employer = await employerModel.findById(employer_id);
       if (contractor && employer) {
-        await mailSender(
-          contractor.email,
-          "New Task Escrow Created",
-          `<p>Hi ${contractor.first_name},</p>
-           <p><b>${employer.first_name} ${employer.last_name}</b> has created an escrow for the task: <b>${title}</b></p>
-           <p>Agreed Amount: <b>UGX ${agreed.toLocaleString()}</b></p>
-           <p>They will deposit funds shortly. You will be notified once the escrow is funded.</p>`
-        );
+        // await mailSender(
+        //   contractor.email,
+        //   "New Task Escrow Created",
+        //   `<p>Hi ${contractor.first_name},</p>
+        //    <p><b>${employer.first_name} ${employer.last_name}</b> has created an escrow for the task: <b>${title}</b></p>
+        //    <p>Agreed Amount: <b>UGX ${agreed.toLocaleString()}</b></p>
+        //    <p>They will deposit funds shortly. You will be notified once the escrow is funded.</p>`
+        // );
       }
 
       return res.status(201).json({ message: "Escrow created successfully.", escrow });
@@ -161,14 +161,14 @@ class EscrowController {
       }).save();
 
       // Notify contractor
-      await mailSender(
-        escrow.contractor_id.email,
-        "Escrow Funded — Start Work!",
-        `<p>Hi ${escrow.contractor_id.first_name},</p>
-         <p>The escrow for task <b>${escrow.title}</b> has been funded.</p>
-         <p>Amount in Escrow: <b>UGX ${escrow_balance.toLocaleString()}</b></p>
-         <p>You can now start working. Submit proof of completion when done.</p>`
-      );
+      // await mailSender(
+      //   escrow.contractor_id.email,
+      //   "Escrow Funded — Start Work!",
+      //   `<p>Hi ${escrow.contractor_id.first_name},</p>
+      //    <p>The escrow for task <b>${escrow.title}</b> has been funded.</p>
+      //    <p>Amount in Escrow: <b>UGX ${escrow_balance.toLocaleString()}</b></p>
+      //    <p>You can now start working. Submit proof of completion when done.</p>`
+      // );
 
       return res.status(200).json({ message: "Deposit confirmed. Escrow is now active.", escrow_balance });
     } catch (error) {
@@ -213,14 +213,14 @@ class EscrowController {
       }).save();
 
       // Notify employer
-      await mailSender(
-        escrow.employer_id.email_address,
-        "Task Completion Submitted",
-        `<p>Hi ${escrow.employer_id.first_name},</p>
-         <p><b>${escrow.contractor_id.first_name} ${escrow.contractor_id.last_name}</b> has submitted completion proof for task: <b>${escrow.title}</b></p>
-         <p>Note: ${note || "None"}</p>
-         <p>Please log in to review and confirm.</p>`
-      );
+      // await mailSender(
+      //   escrow.employer_id.email_address,
+      //   "Task Completion Submitted",
+      //   `<p>Hi ${escrow.employer_id.first_name},</p>
+      //    <p><b>${escrow.contractor_id.first_name} ${escrow.contractor_id.last_name}</b> has submitted completion proof for task: <b>${escrow.title}</b></p>
+      //    <p>Note: ${note || "None"}</p>
+      //    <p>Please log in to review and confirm.</p>`
+      // );
 
       return res.status(200).json({ message: "Completion proof submitted successfully." });
     } catch (error) {
@@ -300,13 +300,13 @@ class EscrowController {
       }).save();
 
       // Notify contractor
-      await mailSender(
-        contractor.email,
-        "Payment Released to Your Wallet!",
-        `<p>Hi ${contractor.first_name},</p>
-         <p><b>UGX ${totalRelease.toLocaleString()}</b> has been released to your BuildUp wallet for task: <b>${escrow.title}</b></p>
-         <p>You can now withdraw to your mobile money account from the Payments section.</p>`
-      );
+      // await mailSender(
+      //   contractor.email,
+      //   "Payment Released to Your Wallet!",
+      //   `<p>Hi ${contractor.first_name},</p>
+      //    <p><b>UGX ${totalRelease.toLocaleString()}</b> has been released to your BuildUp wallet for task: <b>${escrow.title}</b></p>
+      //    <p>You can now withdraw to your mobile money account from the Payments section.</p>`
+      // );
 
       return res.status(200).json({
         message: "Completion confirmed. Funds released to contractor wallet.",
@@ -405,14 +405,14 @@ class EscrowController {
       }).save();
 
       // Notify contractor
-      await mailSender(
-        escrow.contractor_id.email,
-        "Remaining Escrow Balance Deposited",
-        `<p>Hi ${escrow.contractor_id.first_name},</p>
-         <p>The remaining balance of <b>UGX ${remaining.toLocaleString()}</b> has been deposited into the escrow for task: <b>${escrow.title}</b></p>
-         <p>Total escrow balance: <b>UGX ${newEscrowBalance.toLocaleString()}</b></p>
-         <p>You will receive the full net amount upon completion confirmation.</p>`
-      );
+      // await mailSender(
+      //   escrow.contractor_id.email,
+      //   "Remaining Escrow Balance Deposited",
+      //   `<p>Hi ${escrow.contractor_id.first_name},</p>
+      //    <p>The remaining balance of <b>UGX ${remaining.toLocaleString()}</b> has been deposited into the escrow for task: <b>${escrow.title}</b></p>
+      //    <p>Total escrow balance: <b>UGX ${newEscrowBalance.toLocaleString()}</b></p>
+      //    <p>You will receive the full net amount upon completion confirmation.</p>`
+      // );
 
       return res.status(200).json({
         message: "Remaining deposit confirmed. Escrow balance updated.",
@@ -452,14 +452,14 @@ class EscrowController {
       }).save();
 
       // Notify admin
-      await mailSender(
-        process.env.ADMIN_MAIL,
-        "Escrow Dispute Raised",
-        `<p>Dispute raised on escrow <b>${escrow.title}</b> (ID: ${escrow_id})</p>
-         <p>Raised by: ${raised_by_role} — ${raised_by}</p>
-         <p>Reason: ${reason}</p>
-         <p>Amount at stake: UGX ${escrow.escrow_balance.toLocaleString()}</p>`
-      );
+      // await mailSender(
+      //   process.env.ADMIN_MAIL,
+      //   "Escrow Dispute Raised",
+      //   `<p>Dispute raised on escrow <b>${escrow.title}</b> (ID: ${escrow_id})</p>
+      //    <p>Raised by: ${raised_by_role} — ${raised_by}</p>
+      //    <p>Reason: ${reason}</p>
+      //    <p>Amount at stake: UGX ${escrow.escrow_balance.toLocaleString()}</p>`
+      // );
 
       return res.status(200).json({ message: "Dispute raised. Admin has been notified." });
     } catch (error) {
