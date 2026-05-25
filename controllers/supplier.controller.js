@@ -411,5 +411,117 @@ class SupplierController {
       res.status(500).json({ message: error.message });
     }
   }
+
+  // GET /stock/search?q=name&minPrice=&maxPrice=&location=
+  static async search_stock(req, res) {
+    try {
+      const { q, minPrice, maxPrice, location } = req.query;
+      const stockFilter = {};
+      if (q) stockFilter.product_name = { $regex: q, $options: "i" };
+      if (minPrice) stockFilter.product_price = { $gte: Number(minPrice) };
+      if (maxPrice) {
+        stockFilter.product_price = {
+          ...(stockFilter.product_price || {}),
+          $lte: Number(maxPrice),
+        };
+      }
+
+      // If location filter, first find matching supplier IDs
+      let supplierIds = null;
+      if (location) {
+        const matchingSuppliers = await supplierModel.find({
+          $or: [
+            { business_address: { $regex: location, $options: "i" } },
+            { business_name: { $regex: location, $options: "i" } },
+          ],
+        }).select("_id");
+        supplierIds = matchingSuppliers.map((s) => s._id);
+        stockFilter.supplier_id = { $in: supplierIds };
+      }
+
+      const stock = await supplierStockModel
+        .find(stockFilter)
+        .populate("supplier_id", "business_name business_address")
+        .sort({ createdAt: -1 })
+        .limit(100);
+
+      // Reshape to include supplier info at top level
+      const results = stock.map((s) => ({
+        _id: s._id,
+        productName: s.product_name,
+        productPrice: s.product_price,
+        productQuantity: s.product_quantity,
+        productImage: s.product_image,
+        status: s.status,
+        supplierId: s.supplier_id?._id,
+        supplierName: s.supplier_id?.business_name || "",
+        supplierAddress: s.supplier_id?.business_address || "",
+      }));
+
+      return res.status(200).json({ data: results });
+    } catch (error) {
+      return res.status(500).json({ message: error.message });
+    }
+  }
+
+  // GET /stock/analytics/:supplierId
+  static async supplier_analytics(req, res) {
+    try {
+      const Order = require("../models/order.model");
+      const supplierId = req.params.supplierId;
+
+      const [stockItems, orders] = await Promise.all([
+        supplierStockModel.find({ supplier_id: supplierId }),
+        Order.find({ supplierId }),
+      ]);
+
+      const totalProducts = stockItems.length;
+      const totalOrders = orders.length;
+      const pendingOrders = orders.filter((o) => o.status === "pending").length;
+      const deliveredOrders = orders.filter((o) => o.status === "delivered").length;
+      const totalEarnings = orders
+        .filter((o) => o.status === "delivered")
+        .reduce((sum, o) => sum + o.totalAmount, 0);
+      const lowStockCount = stockItems.filter((s) => s.product_quantity <= 5).length;
+
+      // Monthly earnings (current calendar month)
+      const now = new Date();
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      const monthlyEarnings = orders
+        .filter((o) => o.status === "delivered" && new Date(o.createdAt) >= monthStart)
+        .reduce((sum, o) => sum + o.totalAmount, 0);
+
+      // Top products by order count
+      const productCount = {};
+      const productRevenue = {};
+      const productMeta = {};
+      for (const order of orders) {
+        for (const item of order.items) {
+          productCount[item.productId] = (productCount[item.productId] || 0) + item.quantity;
+          productRevenue[item.productId] = (productRevenue[item.productId] || 0) + item.unitPrice * item.quantity;
+          productMeta[item.productId] = { productName: item.productName, productImage: item.productImage };
+        }
+      }
+      const topProducts = Object.entries(productCount)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+        .map(([productId, orderCount]) => ({
+          productId,
+          productName: productMeta[productId]?.productName || "",
+          productImage: productMeta[productId]?.productImage || "",
+          orderCount,
+          revenue: productRevenue[productId] || 0,
+        }));
+
+      return res.status(200).json({
+        data: {
+          totalProducts, totalOrders, pendingOrders, deliveredOrders,
+          totalEarnings, monthlyEarnings, lowStockCount, topProducts,
+        },
+      });
+    } catch (error) {
+      return res.status(500).json({ message: error.message });
+    }
+  }
 }
 module.exports = SupplierController;

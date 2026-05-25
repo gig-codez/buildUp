@@ -6,4 +6,6 @@ router.post("/add_stock",uploader().single("image"),SupplierController.create_st
 router.get("/get_stock/:id",SupplierController.stock);
 router.patch("/update_stock/:id",uploader().single("image"),SupplierController.update_stock);
 router.delete("/delete_stock/:id",SupplierController.delete_stock);
+router.get("/search", SupplierController.search_stock);
+router.get("/analytics/:supplierId", SupplierController.supplier_analytics);
 module.exports = router;

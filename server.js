@@ -69,6 +69,9 @@ app.use("/task-chat", require("./routes/taskChat.routes"));
 app.use("/role", require("./routes/roles.routes"));
 app.use("/auth", require("./helpers/verify_email"));
 app.use("/admin-revenue", require("./routes/adminRevenue.routes"));
+app.use("/orders",        require("./routes/order.routes"));
+app.use("/reviews",       require("./routes/review.routes"));
+app.use("/profile",       require("./routes/profile.routes"));
 // db connection
 const dbOptions = {
   useNewUrlParser: true,

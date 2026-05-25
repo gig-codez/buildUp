@@ -4,13 +4,23 @@ const reviewsRatingsSchema = new mongoose.Schema({
     type: mongoose.Types.ObjectId,
     required: true,
   },
+  reviewer_id: {
+    type: String,
+    default: "",
+  },
+  reviewed_role: {
+    type: String,
+    default: "",
+  },
   review_message: {
     type: String,
-    required: true,
+    default: "",
   },
   rating: {
     type: Number,
     required: true,
+    min: 1,
+    max: 5,
   },
-});
+}, { timestamps: true });
 module.exports = mongoose.model("reviewsRatings", reviewsRatingsSchema);
