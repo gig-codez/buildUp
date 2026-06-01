@@ -1,57 +1,61 @@
-const firebase = require("firebase-admin");
-/***
- * 
+const path = require("path");
+const fs = require("fs");
+const { v4: uuidv4 } = require("uuid");
+
+// Base upload directory — one level up from this file, into /uploads
+const UPLOAD_DIR = path.join(__dirname, "..", "uploads");
+
+// Base URL — set this in your .env as e.g. http://localhost:5000 or https://yourdomain.com
+const BASE_URL = process.env.BASE_URL || "http://192.168.100.201:4000";
+
+/**
+ * Ensures a directory exists, creating it recursively if needed.
+ */
+const ensureDir = (dirPath) => {
+  if (!fs.existsSync(dirPath)) {
+    fs.mkdirSync(dirPath, { recursive: true });
+  }
+};
+
+/**
+ * Saves a single file buffer to disk and returns its public URL.
+ */
+const saveFile = (fileBuffer, originalName, folder) => {
+  const ext = path.extname(originalName); // e.g. ".jpg"
+  const uniqueName = `${uuidv4()}${ext}`;
+  const folderPath = path.join(UPLOAD_DIR, folder);
+
+  ensureDir(folderPath);
+
+  const filePath = path.join(folderPath, uniqueName);
+  fs.writeFileSync(filePath, fileBuffer);
+
+  // Return a publicly accessible URL
+  return `${BASE_URL}/uploads/${folder}/${uniqueName}`;
+};
+
+/**
+ * Drop-in replacement for the Firebase fileStorageMiddleware.
+ * Saves files to local disk and returns accessible URLs.
+ *
+ * @param {import('express').Request} req
+ * @param {string} folder  - subfolder under /uploads, e.g. "supplier_stock"
+ * @returns {Promise<string|string[]>}
  */
 const fileStorageMiddleware = async (req, folder) => {
-    if (req.file) {
-        // Upload the image to Firebase Storage
-        const bucket = firebase.storage().bucket();
-        const file = bucket.file(`buildUp/${folder}/${req.file.originalname}`);
-        let x = req.file.originalname.split('.')
-        //    console.log()
-        const metadata = {
-            contentType: `image/${x[x.length - 1]}`,
-        };
-        await file.save(req.file.buffer, {
-            metadata: metadata,
-        });
-        // get signed image url
-        const imagePath = await file
-            .getSignedUrl({
-                action: 'read',
-                expires: '03-09-3024', // Replace with an appropriate expiration date
-            });
-        return imagePath[0];
-    } else {
-        console.log("files")
-        // handle uploading multiple files
-        const files = await Promise.all(
-            req.files.map(async (file) => {
-                const bucket = multiFileBucket(file, folder);
-                const signedUrl = await bucket.getSignedUrl({
-                    action: 'read',
-                    expires: '03-09-3000',
-                });
-                return signedUrl[0];
-            })
-        );
-        console.log(files); // This will now log the array of image URLs
-        return files; // Retur
-    }
-
+  if (req.file) {
+    // Single file
+    return saveFile(req.file.buffer, req.file.originalname, folder);
+  } else if (req.files && req.files.length > 0) {
+    // Multiple files
+    const urls = req.files.map((file) =>
+      saveFile(file.buffer, file.originalname, folder)
+    );
+    console.log("Uploaded files:", urls);
+    return urls;
+  } else {
+    throw new Error("No file(s) found on request");
+  }
 };
-const multiFileBucket = function (file, folder) {
-    // Upload the image to Firebase Storage
-    const bucket = firebase.storage().bucket();
-    const bucketFile = bucket.file(`buildUp/${folder}/${file.originalname}`);
-    let x = file.originalname.split('.')
-    const metadata = {
-        contentType: `image/${x[x.length - 1]}`,
-    };
-    bucketFile.save(file.buffer, {
-        metadata: metadata,
-    });
-    return bucketFile;
-}
 
 module.exports = fileStorageMiddleware;

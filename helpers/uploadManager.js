@@ -6,7 +6,7 @@ if (!firebase.apps.length) {
   firebase.initializeApp({
     credential: firebase.credential.cert(serviceAccount),
     databaseURL: "https://build-up-deb9a-default-rtdb.firebaseio.com",
-    storageBucket: "build-up-deb9a.appspot.com",
+    storageBucket: "build-up-deb9a.firebasestorage.app",//appspot.com",
   });
 }
 const uploaderManager = () => {
