@@ -6,7 +6,7 @@ const { v4: uuidv4 } = require("uuid");
 const UPLOAD_DIR = path.join(__dirname, "..", "uploads");
 
 // Base URL — set this in your .env as e.g. http://localhost:5000 or https://yourdomain.com
-const BASE_URL = process.env.BASE_URL || "http://192.168.100.201:4000";
+const BASE_URL = process.env.BASE_URL || "https://test-server.buildupuganda.com/"; //"http://192.168.100.201:4000";
 
 /**
  * Ensures a directory exists, creating it recursively if needed.
