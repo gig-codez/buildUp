@@ -160,6 +160,95 @@ class WalletController {
     }
   }
 
+  // ─── DEPOSIT FROM MOBILE MONEY ───────────────────────────────────────────────
+  static async deposit(req, res) {
+    try {
+      const { owner_id, owner_type } = req.params;
+      const { amount, phone_number, provider } = req.body;
+
+      const amt = parseFloat(amount);
+      if (isNaN(amt) || amt < 5000) {
+        return res.status(400).json({
+          message: `Minimum deposit is UGX 5,000.`
+        });
+      }
+
+      let wallet = await walletModel.findOne({ owner_id, owner_type });
+      if (!wallet) {
+        wallet = await new walletModel({ owner_id, owner_type }).save();
+      }
+
+      // Get user details
+      let user, email, name;
+      if (owner_type === "freelancer") {
+        user = await freelancerModel.findById(owner_id);
+        email = user?.email;
+        name = `${user?.first_name} ${user?.last_name}`;
+      } else {
+        user = await supplierModel.findById(owner_id);
+        email = user?.business_email_address;
+        name = user?.business_name;
+      }
+
+      const phone = Xyle.normalizePhone(phone_number || (owner_type === "freelancer" ? String(user?.tel_num) : String(user?.business_tel)));
+      const detectedProvider = provider || Xyle.detectProvider(phone);
+
+      // Create pending deposit transaction
+      const txRef = uuidv4();
+      wallet.transactions.push({
+        type: "credit",
+        amount: amt,
+        description: `Deposit from mobile money (${phone})`,
+        reference: txRef,
+        status: "pending",
+      });
+
+      // Initiate Xyle deposit
+      let xyleResult;
+      try {
+        xyleResult = await Xyle.initiateDeposit(phone, amt, detectedProvider);
+
+        // Update transaction and add funds
+        const tx = wallet.transactions.find(t => t.reference === txRef);
+        if (tx) {
+          tx.xyle_reference = xyleResult.reference || xyleResult.transactionId;
+          tx.status = "completed";
+        }
+        
+        wallet.available_balance += amt;
+        wallet.total_earned += amt;
+        await wallet.save();
+      } catch (xyleError) {
+        // Mark transaction as failed
+        const tx = wallet.transactions.find(t => t.reference === txRef);
+        if (tx) tx.status = "failed";
+        await wallet.save();
+        return res.status(400).json({ message: `Deposit failed: ${xyleError.message}` });
+      }
+
+      // Notify user
+      if (email) {
+        // await mailSender(
+        //   email,
+        //   "Deposit Received",
+        //   `<p>Hi ${name},</p>
+        //    <p>Your deposit of <b>UGX ${amt.toLocaleString()}</b> from ${phone} has been received.</p>
+        //    <p>Reference: ${xyleResult.reference || xyleResult.transactionId}</p>
+        //    <p>New wallet balance: <b>UGX ${wallet.available_balance.toLocaleString()}</b></p>`
+        // );
+      }
+
+      return res.status(200).json({
+        message: "Deposit initiated successfully.",
+        amount: amt,
+        xyle_reference: xyleResult.reference || xyleResult.transactionId,
+        new_balance: wallet.available_balance,
+      });
+    } catch (error) {
+      return res.status(500).json({ message: error.message });
+    }
+  }
+
   // ─── ADMIN: ALL WALLETS SUMMARY ───────────────────────────────────────────────
   static async adminWalletsSummary(req, res) {
     try {

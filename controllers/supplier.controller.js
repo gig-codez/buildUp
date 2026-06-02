@@ -389,7 +389,7 @@ class SupplierController {
           totalPages,
           currentPage: page,
           pageSize,
-          stock,
+          data: stock,
         });
       } else {
         res.status(400).json({ message: "Error fetching stock.." });
