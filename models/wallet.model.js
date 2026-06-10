@@ -24,7 +24,6 @@ const walletTransactionSchema = new mongoose.Schema(
       ref: "escrow",
       default: null,
     },
-    // xyle_reference for actual withdrawal payout
     xyle_reference: {
       type: String,
       default: null,
@@ -40,13 +39,22 @@ const walletTransactionSchema = new mongoose.Schema(
 
 const walletSchema = new mongoose.Schema(
   {
+    /**
+     * owner_id can reference:
+     *   - the unified "user" model  (owner_type = "user")
+     *   - legacy "freelancer" model (owner_type = "freelancer")   [backward compat]
+     *   - legacy "supplier"  model  (owner_type = "supplier")     [backward compat]
+     *
+     * For every new registration the owner_type should be "user".
+     * A single wallet is shared across all three roles.
+     */
     owner_id: {
       type: mongoose.Schema.Types.ObjectId,
       required: true,
     },
     owner_type: {
       type: String,
-      enum: ["freelancer", "supplier"],
+      enum: ["user", "freelancer", "supplier"],  // "user" = unified model
       required: true,
     },
     available_balance: {
@@ -69,5 +77,8 @@ const walletSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+// Unique wallet per owner
+walletSchema.index({ owner_id: 1, owner_type: 1 }, { unique: true });
 
 module.exports = mongoose.model("wallet", walletSchema);
