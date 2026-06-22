@@ -1,4 +1,5 @@
 const freelancerModel = require("../models/freelancer.model");
+const userModel = require("../models/user.model");
 // const otpModel = require("../models/otp.model");
 const bcrypt = require("bcrypt");
 const FreelancerLogin = require("../Auth/freelancerLogin");
@@ -15,23 +16,43 @@ const supplierModel = require("../models/supplier.model");
 class FreelancerController {
   static async index(req, res) {
     try {
-      // ADDING PAGINATION FUNCTIONALITY
-      const page = parseInt(req.query.page) || 1; // Default to page 1 if page query param is not provided
-      const pageSize = parseInt(req.query.pageSize) || 10; // Default page size to 10 if pageSize query param is not provided
-      const totalDocuments = await freelancerModel
-        .find({ role: "65c35d821f9b6742f96bbd96", })
-        .countDocuments();
-      const totalPages = Math.ceil(totalDocuments / pageSize);
-      // Calculate the number of documents to skip
+      const page = parseInt(req.query.page) || 1;
+      const pageSize = parseInt(req.query.pageSize) || 10;
       const skipDocuments = (page - 1) * pageSize;
-      const freelancerPayload = await freelancerModel.find({
+
+      // Legacy contractors (old registration flow)
+      const legacyContractors = await freelancerModel.find({
         role: "65c35d821f9b6742f96bbd96",
-      }).sort({ _id: -1 }).populate("profession", "name");
+      }).sort({ _id: -1 }).populate("profession", "name").lean();
+
+      // Unified-user contractors (new registration flow)
+      const unifiedContractors = await userModel.find({
+        roles: { $in: ["contractor"] },
+      }).select("first_name last_name email contractorProfile createdAt").lean();
+
+      // Normalise unified users into freelancer-like shape so the app can read them
+      const normalised = unifiedContractors.map((u) => ({
+        _id: u._id,
+        first_name: u.first_name,
+        last_name: u.last_name,
+        email: u.email,
+        profession: u.contractorProfile?.profession ?? null,
+        role: "contractor",
+        createdAt: u.createdAt,
+        _source: "unified",
+      }));
+
+      const combined = [...legacyContractors, ...normalised];
+      const totalDocuments = combined.length;
+      const totalPages = Math.ceil(totalDocuments / pageSize);
+      const page_data = combined.slice(skipDocuments, skipDocuments + pageSize);
+
       res.status(200).json({
         totalDocuments,
         totalPages,
         currentPage: page,
-        pageSize, data: freelancerPayload
+        pageSize,
+        data: page_data,
       });
     } catch (err) {
       res.status(500).json({ message: err.message });

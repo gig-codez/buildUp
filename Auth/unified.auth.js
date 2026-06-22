@@ -267,7 +267,7 @@ class UnifiedAuthController {
   static async switchRole(req, res) {
     try {
       const { role } = req.body;
-      const userId   = req.user?.id;    // set by auth middleware
+      const userId   = req.userid;    // set by auth middleware (verifytoken sets req.userid)
 
       if (!role) return res.status(400).json({ message: "role is required." });
 
@@ -306,7 +306,7 @@ class UnifiedAuthController {
   static async addRole(req, res) {
     try {
       const { role, profession, NIN_NUM, business_name, about_business, TIN, supplier_type } = req.body;
-      const userId = req.user?.id;
+      const userId = req.userid;
 
       if (!role) return res.status(400).json({ message: "role is required." });
 
@@ -360,7 +360,7 @@ class UnifiedAuthController {
    */
   static async getMe(req, res) {
     try {
-      const userId = req.user?.id;
+      const userId = req.userid;
       const user   = await userModel.findById(userId).select("-password -otp -otpToken");
       if (!user) return res.status(404).json({ message: "User not found." });
 
