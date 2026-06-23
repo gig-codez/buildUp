@@ -134,7 +134,7 @@ class UnifiedAuthController {
         supplierProfile,
         otp,
         otpToken,
-        active:        false,
+        active:        true,
         emailVerified: false,
       });
 
@@ -171,9 +171,9 @@ class UnifiedAuthController {
       // ── Try unified user first ───────────────────────────────────────────────
       const user = await userModel.findOne({ email: email.toLowerCase() });
       if (user) {
-        if (!user.active || !user.emailVerified) {
+        if (!user.active) {
           return res.status(401).json({
-            message: "Account is not activated. Please verify your email/OTP.",
+            message: "Account is not activated. Please contact support.",
           });
         }
         const isMatch = bcrypt.compareSync(password, user.password);
@@ -211,7 +211,7 @@ class UnifiedAuthController {
         });
       }
 
-      const employer = await employerModel.findOne({ email_address: email, emailVerified: true });
+      const employer = await employerModel.findOne({ email_address: email });
       if (employer) {
         if (!employer.active) return res.status(401).json({ message: "Account is not activated." });
         const isMatch = bcrypt.compareSync(password, employer.password);
@@ -231,8 +231,7 @@ class UnifiedAuthController {
 
       const supplier = await supplierModel.findOne({ business_email_address: email });
       if (supplier) {
-        if (!supplier.active)        return res.status(401).json({ message: "Account is inactive." });
-        if (!supplier.emailVerified) return res.status(401).json({ message: "Please verify your email." });
+        if (!supplier.active) return res.status(401).json({ message: "Account is inactive." });
         const isMatch = bcrypt.compareSync(password, supplier.password);
         if (!isMatch) return res.status(401).json({ message: "Invalid email or password." });
         const token = signToken(supplier._id);

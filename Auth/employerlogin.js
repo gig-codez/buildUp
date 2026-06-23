@@ -6,11 +6,11 @@ require("dotenv").config();
 class EmployerLogin {
   static async loginHelper(req) {
     const employer = await employerModel.findOne({
-      email_address: req.body.email, emailVerified: true,
+      email_address: req.body.email,
     });
     if (employer) {
-      if (employer.active === false || employer.emailVerified === false) {
-        let error = new Error("Account is not activated, please check your email for activation link.");
+      if (employer.active === false) {
+        let error = new Error("Account is not activated, please contact support.");
         error.code = 401;
         throw error;
       }
@@ -33,7 +33,7 @@ class EmployerLogin {
         throw error;
       }
     } else {
-      let error = new Error("Email not verified!!");
+      let error = new Error("Invalid email or password");
       error.code = 401;
       throw error;
     }
