@@ -6,6 +6,7 @@ const RoleController = require("../controllers/role.controller");
 const ContractorProfessionController = require("../controllers/contractorProfession.controller");
 const SupplierTypeController = require("../controllers/supplierType.controller");
 const ContactRequestController = require("../controllers/contactRequest.controller");
+const MessageController = require("../controllers/message.controller");
 
 router.get("/", AdminController.index);
 router.post("/admin/login", AdminLogin.login);
@@ -28,5 +29,10 @@ router.patch("/reactivate/:id", AdminController.reactivateUser);
 router.post("/contact-request", ContactRequestController.create);
 router.get("/contact-requests", ContactRequestController.getAll);
 router.patch("/contact-requests/:id/status", ContactRequestController.updateStatus);
+
+// ── Admin message inbox (all comms route through admin) ───────────────────
+router.get("/messages", MessageController.getAdminMessages);
+router.patch("/messages/:id/forward", MessageController.forwardMessage);
+router.patch("/messages/:id/reject", MessageController.rejectMessage);
 
 module.exports = router;
