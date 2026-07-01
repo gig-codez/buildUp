@@ -158,6 +158,7 @@ class EscrowController {
         sender_name: `${escrow.employer_id.first_name} ${escrow.employer_id.last_name}`,
         message: `✅ Deposit confirmed! UGX ${escrow.initial_deposit.toLocaleString()} deposited into escrow. Work can now begin. (Service fee of UGX ${escrow.service_fee.toLocaleString()} deducted — contractor will receive UGX ${escrow_balance.toLocaleString()} upon completion${escrow.full_payment_upfront ? "" : " + remaining UGX " + (escrow.net_amount - escrow_balance).toLocaleString() + " on completion"})`,
         is_system_message: true,
+        status: "forwarded", // system-generated lifecycle events skip admin moderation
       }).save();
 
       // Notify contractor
@@ -210,6 +211,7 @@ class EscrowController {
         message: `🏁 Completion submitted by contractor. Note: "${note || "No note provided"}"`,
         attachment_url: attachment_url || null,
         is_system_message: true,
+        status: "forwarded", // system-generated lifecycle events skip admin moderation
       }).save();
 
       // Notify employer
@@ -297,6 +299,7 @@ class EscrowController {
         sender_name: `${escrow.employer_id.first_name} ${escrow.employer_id.last_name}`,
         message: `💰 Work confirmed! UGX ${totalRelease.toLocaleString()} has been released to ${contractor.first_name}'s wallet.`,
         is_system_message: true,
+        status: "forwarded", // system-generated lifecycle events skip admin moderation
       }).save();
 
       // Notify contractor
@@ -402,6 +405,7 @@ class EscrowController {
         sender_name: `${escrow.employer_id.first_name} ${escrow.employer_id.last_name}`,
         message: `✅ Remaining balance of UGX ${remaining.toLocaleString()} deposited into escrow. Total escrow balance is now UGX ${newEscrowBalance.toLocaleString()}.`,
         is_system_message: true,
+        status: "forwarded", // system-generated lifecycle events skip admin moderation
       }).save();
 
       // Notify contractor
@@ -449,6 +453,7 @@ class EscrowController {
           : `${escrow.contractor_id.first_name} ${escrow.contractor_id.last_name}`,
         message: `⚠️ Dispute raised: ${reason}`,
         is_system_message: true,
+        status: "forwarded", // system-generated lifecycle events skip admin moderation
       }).save();
 
       // Notify admin
@@ -591,6 +596,7 @@ class EscrowController {
         sender_name: "BuildUp Admin",
         message: `⚖️ Dispute resolved. Funds released to ${release_to}. Resolution: ${resolution}`,
         is_system_message: true,
+        status: "forwarded", // system-generated lifecycle events skip admin moderation
       }).save();
 
       return res.status(200).json({ message: "Dispute resolved." });

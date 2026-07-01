@@ -38,6 +38,22 @@ const taskChatSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    // Admin-mediated communication flow (mirrors message.model.js).
+    // System messages are inserted with status "forwarded" directly (see
+    // escrow.controller.js) so they skip moderation; user-authored chat
+    // messages default to "pending" until an admin reviews them.
+    status: {
+      type: String,
+      enum: ["pending", "forwarded", "rejected"],
+      default: "pending",
+    },
+    admin_note: {
+      type: String,
+      default: "",
+    },
+    forwarded_at: {
+      type: Date,
+    },
   },
   { timestamps: true }
 );
