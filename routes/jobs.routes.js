@@ -2,6 +2,9 @@ const express = require("express");
 const router = express.Router();
 const jobsController = require("../controllers/jobs.controller");
 const authMiddleware = require("../middleware/auth.middleware");
+const { JOB_CATEGORIES } = require("../constants/categories");
+
+router.get("/categories", (req, res) => res.json({ data: JOB_CATEGORIES }));
 
 // ── JOB CREATION ────────────────────────────────────────────────────────────
 router.post("/create-with-escrow", authMiddleware, jobsController.createJobWithEscrow);

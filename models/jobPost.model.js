@@ -52,6 +52,15 @@ const jobPostSchema = new mongoose.Schema(
       required: true,
       index: true,
     },
+    job_category: {
+      type: String,
+      default: "General Construction",
+      index: true,
+    },
+    skills_required: {
+      type: [String],
+      default: [],
+    },
 
     // ============================================
     // NEW: ESCROW INTEGRATION FIELDS

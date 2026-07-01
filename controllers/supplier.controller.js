@@ -337,13 +337,21 @@ class SupplierController {
   // create stock
   static async create_stock(req, res) {
     try {
-      // console.log(req.body)
       if (req.file) {
         const imagePath = await fileStoreMiddleware(
           req,
           `${req.body.supplier}_stock`
         );
         req.body.product_image = imagePath;
+      }
+      // Parse variants if sent as JSON string
+      let variants = [];
+      if (req.body.variants) {
+        try {
+          variants = typeof req.body.variants === "string"
+            ? JSON.parse(req.body.variants)
+            : req.body.variants;
+        } catch (_) { variants = []; }
       }
       const stock = new supplierStockModel({
         supplier_id: req.body.supplier,
@@ -352,10 +360,14 @@ class SupplierController {
         product_price: req.body.product_price,
         status: req.body.status,
         product_image: req.body.product_image,
+        category: req.body.category || "Other",
+        description: req.body.description || "",
+        unit: req.body.unit || "piece",
+        variants,
       });
       await stock.save();
       if (stock) {
-        res.status(200).json({ message: `${req.body.product_name} created successfully` });
+        res.status(200).json({ message: `${req.body.product_name} created successfully`, data: stock });
       } else {
         res.status(400).json({ message: `${req.body.product_name} stock not created` });
       }
@@ -423,17 +435,21 @@ class SupplierController {
         );
         req.body.product_image = imagePath;
       } else {
-        const oldStock = await supplierStockModel.findOne({
-          _id: req.params.id,
-        });
+        const oldStock = await supplierStockModel.findOne({ _id: req.params.id });
         req.body.product_image = oldStock.product_image;
+      }
+      // Parse variants if sent as JSON string
+      if (req.body.variants && typeof req.body.variants === "string") {
+        try { req.body.variants = JSON.parse(req.body.variants); }
+        catch (_) { delete req.body.variants; }
       }
       const stock = await supplierStockModel.findByIdAndUpdate(
         req.params.id,
-        req.body
+        req.body,
+        { new: true }
       );
       if (stock) {
-        res.status(200).json({ message: "stock updated successfully" });
+        res.status(200).json({ message: "stock updated successfully", data: stock });
       } else {
         res.status(400).json({ message: "stock not updated" });
       }
@@ -442,12 +458,13 @@ class SupplierController {
     }
   }
 
-  // GET /stock/search?q=name&minPrice=&maxPrice=&location=
+  // GET /stock/search?q=name&minPrice=&maxPrice=&location=&category=
   static async search_stock(req, res) {
     try {
-      const { q, minPrice, maxPrice, location } = req.query;
+      const { q, minPrice, maxPrice, location, category } = req.query;
       const stockFilter = {};
       if (q) stockFilter.product_name = { $regex: q, $options: "i" };
+      if (category && category !== "All") stockFilter.category = category;
       if (minPrice) stockFilter.product_price = { $gte: Number(minPrice) };
       if (maxPrice) {
         stockFilter.product_price = {
@@ -457,7 +474,6 @@ class SupplierController {
       }
 
       // If location filter, first find matching supplier IDs
-      let supplierIds = null;
       if (location) {
         const matchingSuppliers = await supplierModel.find({
           $or: [
@@ -465,8 +481,7 @@ class SupplierController {
             { business_name: { $regex: location, $options: "i" } },
           ],
         }).select("_id");
-        supplierIds = matchingSuppliers.map((s) => s._id);
-        stockFilter.supplier_id = { $in: supplierIds };
+        stockFilter.supplier_id = { $in: matchingSuppliers.map((s) => s._id) };
       }
 
       const stock = await supplierStockModel
@@ -475,7 +490,6 @@ class SupplierController {
         .sort({ createdAt: -1 })
         .limit(100);
 
-      // Reshape to include supplier info at top level
       const results = stock.map((s) => ({
         _id: s._id,
         productName: s.product_name,
@@ -483,6 +497,10 @@ class SupplierController {
         productQuantity: s.product_quantity,
         productImage: s.product_image,
         status: s.status,
+        category: s.category || "Other",
+        description: s.description || "",
+        unit: s.unit || "piece",
+        variants: s.variants || [],
         supplierId: s.supplier_id?._id,
         supplierName: s.supplier_id?.business_name || "",
         supplierAddress: s.supplier_id?.business_address || "",

@@ -22,6 +22,8 @@ exports.createJobWithEscrow = async (req, res) => {
       application_deadline,
       job_duration,
       profession,
+      job_category,
+      skills_required,
       escrow_enabled,
       escrow_type = "partial_60_40",
     } = req.body;
@@ -44,6 +46,16 @@ exports.createJobWithEscrow = async (req, res) => {
       }
     }
 
+    // Parse skills_required if sent as JSON string
+    let parsedSkills = [];
+    if (skills_required) {
+      try {
+        parsedSkills = typeof skills_required === "string"
+          ? JSON.parse(skills_required)
+          : skills_required;
+      } catch (_) { parsedSkills = []; }
+    }
+
     const jobPost = new JobPost({
       employer: employerId,
       job_title,
@@ -55,6 +67,8 @@ exports.createJobWithEscrow = async (req, res) => {
       application_deadline,
       job_duration,
       profession,
+      job_category: job_category || "General Construction",
+      skills_required: parsedSkills,
       escrow_enabled,
       escrow_type: escrow_enabled ? escrow_type : null,
       escrow_amount: escrowAmount,
@@ -433,7 +447,7 @@ exports.client_jobs = async (req, res) => {
 exports.getContractorJobs = async (req, res) => {
   try {
     const contractorId = req.userid;
-    const { status, escrowOnly, page = 1, limit = 10 } = req.query;
+    const { status, escrowOnly, category, page = 1, limit = 10 } = req.query;
 
     // Find IDs of jobs this contractor has already applied to
     const myApplications = await AppliedJobs.find(
@@ -450,6 +464,7 @@ exports.getContractorJobs = async (req, res) => {
 
     if (status) query.contract_status = status;
     if (escrowOnly === "true") query.escrow_enabled = true;
+    if (category && category !== "All") query.job_category = category;
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
@@ -549,13 +564,14 @@ exports.getEmployerJobs = async (req, res) => {
 // ============================================
 exports.get_all_jobs = async (req, res) => {
   try {
-    const { status, profession, employerId, contractorId, page = 1, limit = 10 } = req.query;
+    const { status, profession, employerId, contractorId, category, page = 1, limit = 10 } = req.query;
 
     const query = {};
     if (status) query.contract_status = status;
     if (profession) query.profession = profession;
     if (employerId) query.employer = employerId;
     if (contractorId) query.selected_contractor_id = contractorId;
+    if (category && category !== "All") query.job_category = category;
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
     const jobs = await JobPost.find(query)
