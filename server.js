@@ -74,6 +74,7 @@ app.use("/admin-revenue", require("./routes/adminRevenue.routes"));
 app.use("/orders",        require("./routes/order.routes"));
 app.use("/cart",          require("./routes/cart.routes"));
 app.use("/reviews",       require("./routes/review.routes"));
+app.use("/notifications", require("./routes/notifications.routes"));
 app.use("/profile",       require("./routes/profile.routes"));
 app.use("/auth", require("./routes/auth.routes"));
 // db connection

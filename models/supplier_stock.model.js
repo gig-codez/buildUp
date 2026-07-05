@@ -2,8 +2,9 @@ const { default: mongoose } = require("mongoose");
 
 const productVariantSchema = new mongoose.Schema(
   {
-    name: { type: String, required: true },  // e.g. "Size", "Color", "Grade"
-    value: { type: String, required: true }, // e.g. "50kg", "Grey", "OPC 42.5"
+    name:  { type: String, required: true },  // e.g. "Size", "Color", "Grade"
+    value: { type: String, required: true },  // e.g. "50kg", "Grey", "OPC 42.5"
+    price: { type: Number, default: 0 },      // surcharge added to base product_price
   },
   { _id: false }
 );

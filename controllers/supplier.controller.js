@@ -52,6 +52,8 @@ class SupplierController {
       const skipDocuments = (page - 1) * pageSize;
       let Supplier = await supplierStockModel
         .find()
+        .skip(skipDocuments)
+        .limit(pageSize);
         // .populate("supplier_type", "name");
       res.status(200).json({
         totalDocuments,
