@@ -78,9 +78,9 @@ class UnifiedAuthController {
         return res.status(400).json({ message: "Missing required fields." });
       }
 
-      const validRoles = ["contractor", "client", "supplier"];
+      const validRoles = ["contractor", "client", "supplier", "consultant"];
       if (!validRoles.includes(initialRole)) {
-        return res.status(400).json({ message: "Invalid initialRole. Must be contractor, client, or supplier." });
+        return res.status(400).json({ message: "Invalid initialRole. Must be contractor, client, supplier, or consultant." });
       }
 
       // Check uniqueness
@@ -95,12 +95,20 @@ class UnifiedAuthController {
       let contractorProfile = null;
       let clientProfile     = null;
       let supplierProfile   = null;
+      let consultantProfile = null;
 
       if (initialRole === "contractor") {
         if (!profession) {
           return res.status(400).json({ message: "profession is required for contractor registration." });
         }
         contractorProfile = { profession, NIN_NUM: NIN_NUM || "" };
+      }
+
+      if (initialRole === "consultant") {
+        if (!profession) {
+          return res.status(400).json({ message: "profession is required for consultant registration." });
+        }
+        consultantProfile = { profession, NIN_NUM: NIN_NUM || "" };
       }
 
       if (initialRole === "supplier") {
@@ -132,6 +140,7 @@ class UnifiedAuthController {
         contractorProfile,
         clientProfile,
         supplierProfile,
+        consultantProfile,
         otp,
         otpToken,
         active:        true,
@@ -309,7 +318,7 @@ class UnifiedAuthController {
 
       if (!role) return res.status(400).json({ message: "role is required." });
 
-      const validRoles = ["contractor", "client", "supplier"];
+      const validRoles = ["contractor", "client", "supplier", "consultant"];
       if (!validRoles.includes(role)) {
         return res.status(400).json({ message: "Invalid role." });
       }
@@ -325,6 +334,11 @@ class UnifiedAuthController {
       if (role === "contractor") {
         if (!profession) return res.status(400).json({ message: "profession is required to add contractor role." });
         user.contractorProfile = { profession, NIN_NUM: NIN_NUM || "" };
+      }
+
+      if (role === "consultant") {
+        if (!profession) return res.status(400).json({ message: "profession is required to add consultant role." });
+        user.consultantProfile = { profession, NIN_NUM: NIN_NUM || "" };
       }
 
       if (role === "supplier") {

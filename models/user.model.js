@@ -52,6 +52,20 @@ const supplierProfileSchema = new mongoose.Schema(
   { _id: false }
 );
 
+// ─── Consultant profile sub-document ─────────────────────────────────────────
+const consultantProfileSchema = new mongoose.Schema(
+  {
+    profession: { type: mongoose.Types.ObjectId, ref: "contractorProfession" },
+    NIN_NUM: { type: String, default: "" },
+    bio: { type: String, default: "" },
+    yearsOfExperience: { type: Number, default: 0 },
+    skills: { type: [String], default: [] },
+    certifications: { type: [String], default: [] },
+    profileCompleted: { type: Boolean, default: false },
+  },
+  { _id: false }
+);
+
 // ─── Main user schema ─────────────────────────────────────────────────────────
 const userSchema = new mongoose.Schema(
   {
@@ -83,7 +97,7 @@ const userSchema = new mongoose.Schema(
      */
     roles: {
       type: [String],
-      enum: ["contractor", "client", "supplier"],
+      enum: ["contractor", "client", "supplier", "consultant"],
       default: [],
     },
     /**
@@ -92,7 +106,7 @@ const userSchema = new mongoose.Schema(
      */
     activeRole: {
       type: String,
-      enum: ["contractor", "client", "supplier"],
+      enum: ["contractor", "client", "supplier", "consultant"],
       required: true,
     },
 
@@ -100,6 +114,7 @@ const userSchema = new mongoose.Schema(
     contractorProfile: { type: contractorProfileSchema, default: null },
     clientProfile: { type: clientProfileSchema, default: null },
     supplierProfile: { type: supplierProfileSchema, default: null },
+    consultantProfile: { type: consultantProfileSchema, default: null },
 
     // ── Password reset ─────────────────────────────────────────────────────────
     passwordChangedAt: Date,
