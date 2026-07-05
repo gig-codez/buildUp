@@ -8,8 +8,11 @@
  *  4. Add role  (POST  /auth/add-role)      – enables an additional role.
  */
 
-const userModel   = require("../models/user.model");
-const walletModel = require("../models/wallet.model");
+const userModel       = require("../models/user.model");
+const walletModel     = require("../models/wallet.model");
+const freelancerModel = require("../models/freelancer.model");
+const employerModel   = require("../models/employer.model");
+const supplierModel   = require("../models/supplier.model");
 const bcrypt      = require("bcrypt");
 const jwt         = require("jsonwebtoken");
 const crypto      = require("crypto");
@@ -18,6 +21,10 @@ require("dotenv").config();
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
 const SALT_ROUNDS = 12;
+
+// The freelancer collection stores both contractors and consultants,
+// distinguished only by this role ObjectId (see Auth/freelancerLogin.js).
+const CONTRACTOR_ROLE_ID = "6970599784638dd58abdb554";
 
 function signToken(userId) {
   return jwt.sign({ id: userId }, process.env.SECRET_KEY, { expiresIn: "24h" });
@@ -45,6 +52,120 @@ async function ensureWallet(userId) {
     wallet = await walletModel.create({ owner_id: userId, owner_type: "user" });
   }
   return wallet;
+}
+
+/**
+ * Re-point a legacy wallet (owner_type "freelancer" | "supplier") at the
+ * newly-migrated unified account so the user doesn't lose their existing
+ * balance/transaction history. No-op if the legacy account never had one.
+ */
+async function migrateWallet(userId, legacyOwnerType) {
+  await walletModel.updateOne(
+    { owner_id: userId, owner_type: legacyOwnerType },
+    { $set: { owner_type: "user" } }
+  );
+}
+
+/**
+ * Legacy accounts (created via /post/create/freelancer|employer|supplier)
+ * live outside the unified `User` collection. A JWT issued for one of them
+ * carries that legacy document's _id, so addRole/switchRole (which only
+ * look in `userModel`) would 404 for every existing account.
+ *
+ * This migrates the matching legacy record into the unified model on first
+ * use, keeping the SAME _id (so the already-issued JWT stays valid) and the
+ * SAME password hash (no re-hashing — bcrypt hashes are self-describing).
+ * Returns the new unified user doc, or null if no legacy account matches.
+ */
+async function migrateLegacyUser(userId) {
+  const freelancer = await freelancerModel.findById(userId);
+  if (freelancer) {
+    const role = freelancer.role?.toString() === CONTRACTOR_ROLE_ID
+      ? "contractor"
+      : "consultant";
+    const profile = {
+      profession:        freelancer.profession,
+      NIN_NUM:           freelancer.NIN_NUM || "",
+      bio:               freelancer.bio || "",
+      yearsOfExperience: freelancer.yearsOfExperience || 0,
+      skills:            freelancer.skills || [],
+      certifications:    freelancer.certifications || [],
+      profileCompleted:  freelancer.profileCompleted || false,
+    };
+    const user = await userModel.create({
+      _id:           freelancer._id,
+      first_name:    freelancer.first_name,
+      last_name:     freelancer.last_name,
+      email:         freelancer.email.toLowerCase(),
+      password:      freelancer.password,
+      tel_num:       String(freelancer.tel_num),
+      country:       freelancer.country || "",
+      address:       freelancer.address || "",
+      gender:        freelancer.gender || "Male",
+      location:      freelancer.location || "",
+      active:        freelancer.active,
+      emailVerified: freelancer.emailVerified || false,
+      otp:           freelancer.otp || "",
+      otpToken:      freelancer.otpToken || "",
+      roles:         [role],
+      activeRole:    role,
+      contractorProfile: role === "contractor" ? profile : null,
+      consultantProfile: role === "consultant" ? profile : null,
+    });
+    await migrateWallet(user._id, "freelancer");
+    return user;
+  }
+
+  const employer = await employerModel.findById(userId);
+  if (employer) {
+    const user = await userModel.create({
+      _id:           employer._id,
+      first_name:    employer.first_name,
+      last_name:     employer.last_name,
+      email:         employer.email_address.toLowerCase(),
+      password:      employer.password,
+      tel_num:       employer.phone || "",
+      country:       employer.country || "",
+      active:        employer.active,
+      emailVerified: employer.emailVerified || false,
+      otp:           employer.otp || "",
+      roles:         ["client"],
+      activeRole:    "client",
+      clientProfile: {
+        business:              employer.business || null,
+        subscription_expired:  employer.subscription_expired || false,
+      },
+    });
+    return user;
+  }
+
+  const supplier = await supplierModel.findById(userId);
+  if (supplier) {
+    const user = await userModel.create({
+      _id:           supplier._id,
+      first_name:    supplier.business_name,
+      last_name:     "",
+      email:         supplier.business_email_address.toLowerCase(),
+      password:      supplier.password,
+      tel_num:       supplier.business_tel || "",
+      country:       supplier.country || "",
+      active:        supplier.active,
+      emailVerified: supplier.emailVerified || false,
+      otp:           supplier.otp || "",
+      roles:         ["supplier"],
+      activeRole:    "supplier",
+      supplierProfile: {
+        business_name:  supplier.business_name,
+        about_business: supplier.about_business || "",
+        TIN:            supplier.TIN,
+        supplier_type:  supplier.supplier_type,
+      },
+    });
+    await migrateWallet(user._id, "supplier");
+    return user;
+  }
+
+  return null;
 }
 
 // ─── Controller ───────────────────────────────────────────────────────────────
@@ -279,7 +400,8 @@ class UnifiedAuthController {
 
       if (!role) return res.status(400).json({ message: "role is required." });
 
-      const user = await userModel.findById(userId);
+      let user = await userModel.findById(userId);
+      if (!user) user = await migrateLegacyUser(userId);
       if (!user) return res.status(404).json({ message: "User not found." });
 
       if (!user.roles.includes(role)) {
@@ -323,7 +445,8 @@ class UnifiedAuthController {
         return res.status(400).json({ message: "Invalid role." });
       }
 
-      const user = await userModel.findById(userId);
+      let user = await userModel.findById(userId);
+      if (!user) user = await migrateLegacyUser(userId);
       if (!user) return res.status(404).json({ message: "User not found." });
 
       if (user.roles.includes(role)) {
