@@ -75,10 +75,14 @@ const userSchema = new mongoose.Schema(
       default: "https://via.placeholder.com/100",
     },
     first_name: { type: String, required: true },
-    last_name: { type: String, required: true },
+    // Not required: business-style accounts (e.g. suppliers migrated from
+    // the legacy schema, which only has a business_name) have no last name.
+    last_name: { type: String, default: "" },
     email: { type: String, required: true, unique: true, lowercase: true },
     password: { type: String, required: true },
-    tel_num: { type: String, required: true },
+    // Not required: some legacy employer/supplier records never captured a
+    // phone number, so this can't be guaranteed non-empty on migration.
+    tel_num: { type: String, default: "" },
     country: { type: String, default: "" },
     address: { type: String, default: "" },
     gender: { type: String, enum: ["Male", "Female", "Other"], default: "Male" },
