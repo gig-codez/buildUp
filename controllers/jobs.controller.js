@@ -192,6 +192,46 @@ exports.createJobWithEscrow = async (req, res) => {
 };
 
 // ============================================
+// UPDATE JOB (client edits their own job post)
+// Only allowed while the job is still "open" — once a contractor is hired
+// or escrow is active, the core terms shouldn't shift underneath them.
+// ============================================
+exports.updateJob = async (req, res) => {
+  try {
+    const { jobId } = req.params;
+    const employerId = req.userid;
+
+    const jobPost = await JobPost.findById(jobId);
+    if (!jobPost) {
+      return res.status(404).json({ success: false, message: "Job not found" });
+    }
+    if (jobPost.employer.toString() !== employerId.toString()) {
+      return res.status(403).json({ success: false, message: "Only the job owner can edit this job" });
+    }
+    if (jobPost.contract_status !== "open") {
+      return res.status(400).json({ success: false, message: "Only open jobs can be edited" });
+    }
+
+    const editableFields = [
+      "job_title", "job_description", "project_fees", "experience",
+      "address", "contact", "application_deadline", "job_duration",
+      "profession", "job_category",
+    ];
+    for (const field of editableFields) {
+      if (req.body[field] !== undefined) {
+        jobPost[field] = req.body[field];
+      }
+    }
+
+    await jobPost.save();
+    return res.status(200).json({ success: true, message: "Job updated successfully", data: jobPost });
+  } catch (error) {
+    console.error("Error updating job:", error);
+    res.status(500).json({ success: false, message: "Error updating job", error: error.message });
+  }
+};
+
+// ============================================
 // CREATE JOB WITHOUT ESCROW
 // ============================================
 exports.addJobs = async (req, res) => {
@@ -613,6 +653,31 @@ exports.getContractorAssignedJobs = async (req, res) => {
   } catch (error) {
     console.error("Error fetching contractor assigned jobs:", error);
     res.status(500).json({ success: false, message: "Error fetching jobs", error: error.message });
+  }
+};
+
+// ============================================
+// GET CONTRACTOR JOB STATS
+// Public trust signals for an arbitrary contractor (e.g. shown to a client
+// viewing an applicant's details) — completed/active job counts.
+// ============================================
+exports.getContractorStats = async (req, res) => {
+  try {
+    const { contractorId } = req.params;
+    const [completedJobs, activeJobs, totalApplications] = await Promise.all([
+      JobPost.countDocuments({ selected_contractor_id: contractorId, contract_status: "completed" }),
+      JobPost.countDocuments({ selected_contractor_id: contractorId, contract_status: "in_progress" }),
+      AppliedJobs.countDocuments({ contractorId }),
+    ]);
+    return res.status(200).json({
+      success: true,
+      completedJobs,
+      activeJobs,
+      totalApplications,
+    });
+  } catch (error) {
+    console.error("Error fetching contractor stats:", error);
+    res.status(500).json({ success: false, message: "Error fetching contractor stats", error: error.message });
   }
 };
 

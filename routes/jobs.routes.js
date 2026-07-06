@@ -9,11 +9,17 @@ router.get("/categories", (req, res) => res.json({ data: JOB_CATEGORIES }));
 // ── JOB CREATION ────────────────────────────────────────────────────────────
 router.post("/create-with-escrow", authMiddleware, jobsController.createJobWithEscrow);
 
+// ── JOB EDITING (client edits their own open job post) ───────────────────────
+router.patch("/:jobId", authMiddleware, jobsController.updateJob);
+
 // ── JOB FEED (available jobs for contractor, excluding already-applied) ──────
 router.get("/contractor/my-jobs", authMiddleware, jobsController.getContractorJobs);
 
 // ── CONTRACTOR ASSIGNED JOBS ─────────────────────────────────────────────────
 router.get("/contractor/assigned-jobs", authMiddleware, jobsController.getContractorAssignedJobs);
+
+// ── CONTRACTOR PUBLIC STATS (shown to a client viewing an applicant) ─────────
+router.get("/contractor/:contractorId/stats", jobsController.getContractorStats);
 
 // ── EMPLOYER JOBS ─────────────────────────────────────────────────────────────
 router.get("/employer/my-jobs", authMiddleware, jobsController.getEmployerJobs);
