@@ -80,6 +80,14 @@ async function resolveClientInfo(clientId) {
   };
 }
 
+// Wallets are keyed by owner_type "user" (unified accounts) or "freelancer"
+// (legacy accounts) — crediting the wrong bucket means the recipient never
+// sees the money in their wallet UI. Resolve which one actually applies.
+async function resolveWalletOwnerType(userId) {
+  const isUnified = await UserModel.exists({ _id: userId });
+  return isUnified ? "user" : "freelancer";
+}
+
 // ============================================
 // CREATE JOB WITH ESCROW
 // ============================================
@@ -153,8 +161,12 @@ exports.createJobWithEscrow = async (req, res) => {
     let escrowId = null;
 
     if (escrow_enabled) {
+      // Mirror EscrowController.createEscrow's math exactly: service_fee and
+      // net_amount are computed off the FULL agreed amount (not the initial
+      // deposit slice), and escrow_balance only ever reflects money that has
+      // actually been deposited — never pre-funded at creation time.
       const serviceFee = project_fees * 0.1;
-      const netAmount = escrowAmount - serviceFee;
+      const netAmount = project_fees - serviceFee;
 
       const escrow = new Escrow({
         employer_id: employerId,
@@ -166,9 +178,9 @@ exports.createJobWithEscrow = async (req, res) => {
         initial_deposit: escrowAmount,
         service_fee: serviceFee,
         net_amount: netAmount,
-        escrow_balance: netAmount,
+        escrow_balance: 0,
         status: "pending_deposit",
-        full_payment_upfront: escrow_type === "full_payment",
+        full_payment_upfront: escrow_type !== "partial_60_40",
       });
 
       await escrow.save();
@@ -384,7 +396,9 @@ exports.acceptApplication = async (req, res) => {
     jobPost.work_start_date = new Date();
     await jobPost.save();
 
-    // Update linked escrow with contractor
+    // Link the hired contractor to the escrow. Status is deliberately left
+    // untouched here — an escrow only becomes "active" once the employer
+    // actually funds it via the deposit endpoints, never just from hiring.
     let escrowUpdated = false;
     if (jobPost.escrow_id) {
       const escrow = await Escrow.findById(jobPost.escrow_id);
@@ -392,7 +406,6 @@ exports.acceptApplication = async (req, res) => {
         escrow.contractor_id = contractorId;
         escrow.job_accepted_at = new Date();
         escrow.work_start_date = new Date();
-        escrow.status = "active";
         await escrow.save();
         escrowUpdated = true;
       }
@@ -935,9 +948,6 @@ exports.confirmJobCompletion = async (req, res) => {
       return res.status(400).json({ success: false, message: "Contractor has not marked this job as complete yet" });
     }
 
-    jobPost.employer_confirmed = true;
-    await jobPost.save();
-
     let fundsReleased = false;
     let releasedAmount = 0;
 
@@ -948,15 +958,28 @@ exports.confirmJobCompletion = async (req, res) => {
         .populate("employer_id", "first_name last_name");
 
       if (escrow && escrow.status === "completion_requested") {
+        // Employer must have fully funded the escrow before release — same
+        // gate as the generic EscrowController.confirmAndRelease flow.
+        const remainingOwed = escrow.agreed_amount - escrow.initial_deposit;
+        if (!escrow.full_payment_upfront && remainingOwed > 0) {
+          return res.status(400).json({
+            success: false,
+            message: `You must deposit the remaining balance of UGX ${remainingOwed.toLocaleString()} before confirming completion.`,
+            remainingBalance: remainingOwed,
+          });
+        }
+
         const contractorId = jobPost.selected_contractor_id;
 
-        // Determine total release amount
-        const totalRelease = escrow.net_amount; // Full net (agreed - 10% fee)
+        // Release only what has actually been deposited into escrow — never
+        // a pre-computed net amount that may not reflect real funding.
+        const totalRelease = escrow.escrow_balance;
 
-        // Credit contractor wallet
-        let wallet = await Wallet.findOne({ owner_id: contractorId, owner_type: "freelancer" });
+        // Credit contractor wallet (resolving legacy vs. unified account).
+        const ownerType = await resolveWalletOwnerType(contractorId);
+        let wallet = await Wallet.findOne({ owner_id: contractorId, owner_type: ownerType });
         if (!wallet) {
-          wallet = new Wallet({ owner_id: contractorId, owner_type: "freelancer" });
+          wallet = new Wallet({ owner_id: contractorId, owner_type: ownerType });
         }
 
         wallet.available_balance += totalRelease;
@@ -998,6 +1021,9 @@ exports.confirmJobCompletion = async (req, res) => {
         }
       }
     }
+
+    jobPost.employer_confirmed = true;
+    await jobPost.save();
 
     return res.status(200).json({
       success: true,

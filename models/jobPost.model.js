@@ -46,10 +46,13 @@ const jobPostSchema = new mongoose.Schema(
       required: false,
       default: false,
     },
+    // Not required: job_category already covers classification, and
+    // profession selection was removed from the "Post Job" screen as
+    // redundant friction.
     profession: {
       type: mongoose.Types.ObjectId,
       ref: "contractorProfession",
-      required: true,
+      default: null,
       index: true,
     },
     job_category: {

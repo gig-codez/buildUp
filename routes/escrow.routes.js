@@ -13,9 +13,13 @@ router.post("/deposit/:escrow_id", EscrowController.initiateDeposit);
 // Confirm deposit after Xyle confirms payment
 router.post("/confirm-deposit/:escrow_id", EscrowController.confirmDeposit);
 
+// Deposit instantly from wallet balance (no mobile money involved)
+router.post("/deposit-wallet/:escrow_id", EscrowController.depositFromWallet);
+
 // Employer deposits remaining balance on an active escrow (60/40 split)
 router.post("/deposit-remaining/:escrow_id", EscrowController.initiateRemainingDeposit);
 router.post("/confirm-remaining/:escrow_id", EscrowController.confirmRemainingDeposit);
+router.post("/deposit-remaining-wallet/:escrow_id", EscrowController.depositRemainingFromWallet);
 
 // Contractor submits completion proof
 router.post("/submit-completion/:escrow_id", EscrowController.submitCompletion);
