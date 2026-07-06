@@ -4,8 +4,77 @@ const Escrow = require("../models/escrow.model");
 const Wallet = require("../models/wallet.model");
 const Contractor = require("../models/freelancer.model");
 const Employer = require("../models/employer.model");
+const UserModel = require("../models/user.model");
 const mailSender = require("../utils/mailSender");
 const { v4: uuidv4 } = require("uuid");
+
+// ============================================
+// RESOLVE APPLICANT INFO ACROSS LEGACY + UNIFIED MODELS
+//
+// AppliedJobs.contractorId only refs the legacy `freelancer` collection,
+// but contractors registered via /auth/register (or migrated on first
+// role-switch/add-role) live in the unified `user` collection instead.
+// Mongoose's schema-level `.populate("contractorId", ...)` only ever looks
+// in `freelancer`, so any unified-model contractor comes back unresolved
+// and renders as "Unknown Applicant" client-side. Resolve against whichever
+// collection actually has the document, normalized to one shape.
+// ============================================
+async function resolveContractorInfo(contractorId) {
+  if (!contractorId) return null;
+
+  const freelancer = await Contractor.findById(contractorId)
+    .select("first_name last_name email tel_num profile_pic profession gender address")
+    .populate("profession", "name")
+    .lean();
+  if (freelancer) return freelancer;
+
+  const user = await UserModel.findById(contractorId)
+    .select("first_name last_name email tel_num profile_pic gender address contractorProfile consultantProfile")
+    .populate("contractorProfile.profession consultantProfile.profession", "name")
+    .lean();
+  if (!user) return null;
+
+  const profile = user.contractorProfile || user.consultantProfile || {};
+  return {
+    _id: user._id,
+    first_name: user.first_name,
+    last_name: user.last_name,
+    email: user.email,
+    tel_num: user.tel_num,
+    profile_pic: user.profile_pic,
+    gender: user.gender,
+    address: user.address,
+    profession: profile.profession || null,
+  };
+}
+
+// ============================================
+// RESOLVE CLIENT INFO ACROSS LEGACY + UNIFIED MODELS
+//
+// Same gap as resolveContractorInfo() above, but for AppliedJobs.clientId,
+// which only refs the legacy `employer` collection.
+// ============================================
+async function resolveClientInfo(clientId) {
+  if (!clientId) return null;
+
+  const employer = await Employer.findById(clientId)
+    .select("first_name last_name email_address business")
+    .lean();
+  if (employer) return employer;
+
+  const user = await UserModel.findById(clientId)
+    .select("first_name last_name email clientProfile")
+    .lean();
+  if (!user) return null;
+
+  return {
+    _id: user._id,
+    first_name: user.first_name,
+    last_name: user.last_name,
+    email_address: user.email,
+    business: user.clientProfile?.business || null,
+  };
+}
 
 // ============================================
 // CREATE JOB WITH ESCROW
@@ -206,9 +275,12 @@ exports.store_applied_jobs = async (req, res) => {
 
     // Populate for response
     const populated = await AppliedJobs.findById(application._id)
-      .populate("contractorId", "first_name last_name email tel_num profile_pic profession gender address")
-      .populate("clientId", "first_name last_name email_address")
-      .populate("jobId", "job_title job_description project_fees address application_deadline job_duration");
+      .populate("jobId", "job_title job_description project_fees address application_deadline job_duration")
+      .lean();
+    [populated.contractorId, populated.clientId] = await Promise.all([
+      resolveContractorInfo(populated.contractorId),
+      resolveClientInfo(populated.clientId),
+    ]);
 
     return res.status(200).json({
       success: true,
@@ -232,7 +304,6 @@ exports.acceptApplication = async (req, res) => {
     const employerId = req.userid;
 
     const application = await AppliedJobs.findById(applicationId)
-      .populate("contractorId", "first_name last_name email tel_num")
       .populate("jobId");
 
     if (!application) {
@@ -263,7 +334,7 @@ exports.acceptApplication = async (req, res) => {
     );
 
     // Update the job post
-    const contractorId = application.contractorId._id;
+    const contractorId = application.contractorId;
     jobPost.selected_contractor_id = contractorId;
     jobPost.contract_status = "in_progress";
     jobPost.work_start_date = new Date();
@@ -285,16 +356,19 @@ exports.acceptApplication = async (req, res) => {
 
     // Notify contractor via email
     try {
-      const employer = await Employer.findById(employerId);
-      await mailSender(
-        application.contractorId.email,
-        "Congratulations! Your application was accepted",
-        `<p>Hi ${application.contractorId.first_name},</p>
-         <p><b>${employer ? employer.first_name + " " + employer.last_name : "A client"}</b> has accepted your application for the job: <b>${jobPost.job_title}</b>.</p>
-         <p>The job is now in progress. Please log in to view your active contract.</p>
-         ${jobPost.escrow_id ? "<p>An escrow has been set up to protect your payment.</p>" : ""}
-         <p>Good luck!</p>`
-      );
+      const contractorInfo = await resolveContractorInfo(contractorId);
+      if (contractorInfo && contractorInfo.email) {
+        const employer = await Employer.findById(employerId);
+        await mailSender(
+          contractorInfo.email,
+          "Congratulations! Your application was accepted",
+          `<p>Hi ${contractorInfo.first_name},</p>
+           <p><b>${employer ? employer.first_name + " " + employer.last_name : "A client"}</b> has accepted your application for the job: <b>${jobPost.job_title}</b>.</p>
+           <p>The job is now in progress. Please log in to view your active contract.</p>
+           ${jobPost.escrow_id ? "<p>An escrow has been set up to protect your payment.</p>" : ""}
+           <p>Good luck!</p>`
+        );
+      }
     } catch (mailErr) {
       console.error("Failed to send acceptance email:", mailErr);
     }
@@ -325,7 +399,6 @@ exports.declineApplication = async (req, res) => {
     const employerId = req.userid;
 
     const application = await AppliedJobs.findById(applicationId)
-      .populate("contractorId", "first_name last_name email")
       .populate("jobId", "job_title employer");
 
     if (!application) {
@@ -345,13 +418,16 @@ exports.declineApplication = async (req, res) => {
 
     // Notify contractor
     try {
-      await mailSender(
-        application.contractorId.email,
-        "Application Update",
-        `<p>Hi ${application.contractorId.first_name},</p>
-         <p>Unfortunately, your application for <b>${application.jobId.job_title}</b> was not selected at this time.</p>
-         <p>Keep applying — there are many more opportunities on BuildUp!</p>`
-      );
+      const contractorInfo = await resolveContractorInfo(application.contractorId);
+      if (contractorInfo && contractorInfo.email) {
+        await mailSender(
+          contractorInfo.email,
+          "Application Update",
+          `<p>Hi ${contractorInfo.first_name},</p>
+           <p>Unfortunately, your application for <b>${application.jobId.job_title}</b> was not selected at this time.</p>
+           <p>Keep applying — there are many more opportunities on BuildUp!</p>`
+        );
+      }
     } catch (mailErr) {
       console.error("Failed to send decline email:", mailErr);
     }
@@ -380,10 +456,18 @@ exports.contractor_applied_jobs = async (req, res) => {
         select: "job_title job_description project_fees address application_deadline job_duration profession employer escrow_enabled contract_status",
         populate: { path: "profession", select: "name" },
       })
-      .populate("clientId", "first_name last_name email_address business")
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(parseInt(limit));
+      .limit(parseInt(limit))
+      .lean();
+
+    // AppliedJobs.clientId only refs the legacy `employer` collection, so
+    // clients on the unified `user` model resolve separately here.
+    await Promise.all(
+      applications.map(async (application) => {
+        application.clientId = await resolveClientInfo(application.clientId);
+      })
+    );
 
     const total = await AppliedJobs.countDocuments({ contractorId: contractor_id });
 
@@ -412,17 +496,21 @@ exports.client_jobs = async (req, res) => {
 
     const applications = await AppliedJobs.find(query)
       .populate({
-        path: "contractorId",
-        select: "first_name last_name email tel_num profile_pic profession gender address",
-        populate: { path: "profession", select: "name" },
-      })
-      .populate({
         path: "jobId",
         select: "job_title job_description project_fees application_deadline escrow_enabled contract_status",
       })
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(parseInt(limit));
+      .limit(parseInt(limit))
+      .lean();
+
+    // AppliedJobs.contractorId only refs the legacy `freelancer` collection,
+    // so contractors on the unified `user` model resolve separately here.
+    await Promise.all(
+      applications.map(async (application) => {
+        application.contractorId = await resolveContractorInfo(application.contractorId);
+      })
+    );
 
     const total = await AppliedJobs.countDocuments(query);
 
@@ -930,9 +1018,12 @@ exports.applyForJobWithEscrow = async (req, res) => {
 
     // Populate for response
     const populated = await AppliedJobs.findById(application._id)
-      .populate("contractorId", "first_name last_name email tel_num profile_pic profession")
-      .populate("clientId", "first_name last_name email_address")
-      .populate("jobId", "job_title job_description project_fees");
+      .populate("jobId", "job_title job_description project_fees")
+      .lean();
+    [populated.contractorId, populated.clientId] = await Promise.all([
+      resolveContractorInfo(populated.contractorId),
+      resolveClientInfo(populated.clientId),
+    ]);
 
     return res.status(200).json({
       success: true,

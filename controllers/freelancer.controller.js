@@ -244,10 +244,43 @@ class FreelancerController {
     try {
       const freelancer = await freelancerModel.findById(req.params.id);
       if (freelancer) {
-        res.status(200).json(freelancer);
-      } else {
-        res.status(400).json({ message: "Contractor not found" });
+        return res.status(200).json(freelancer);
       }
+
+      // Fall back to the unified user model — contractors/consultants who
+      // registered via /auth/register (or were migrated on role-switch)
+      // live there instead of the legacy freelancer collection.
+      const user = await userModel
+        .findById(req.params.id)
+        .populate("contractorProfile.profession consultantProfile.profession", "name")
+        .lean();
+
+      const isContractorOrConsultant =
+        user && (user.roles?.includes("contractor") || user.roles?.includes("consultant"));
+
+      if (isContractorOrConsultant) {
+        const profile = user.contractorProfile || user.consultantProfile || {};
+        return res.status(200).json({
+          _id: user._id,
+          profile_pic: user.profile_pic,
+          email: user.email,
+          password: user.password,
+          category: "",
+          first_name: user.first_name,
+          last_name: user.last_name,
+          tel_num: parseInt(user.tel_num, 10) || 0,
+          profession: profile.profession || null,
+          balance: 0,
+          address: user.address,
+          gender: user.gender,
+          role: user.activeRole,
+          createdAt: user.createdAt,
+          updatedAt: user.updatedAt,
+          __v: user.__v,
+        });
+      }
+
+      return res.status(400).json({ message: "Contractor not found" });
     } catch (err) {
       res.status(500).json({ message: err.message });
     }
