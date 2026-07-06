@@ -40,7 +40,11 @@ async function resolveContractorInfo(contractorId) {
     first_name: user.first_name,
     last_name: user.last_name,
     email: user.email,
-    tel_num: user.tel_num,
+    // The legacy freelancer model stores tel_num as a Number, and the
+    // Flutter app's ContractorId.telNum field is typed as a non-nullable
+    // int — the unified model's String tel_num must be coerced here or
+    // JSON parsing crashes client-side.
+    tel_num: parseInt(user.tel_num, 10) || 0,
     profile_pic: user.profile_pic,
     gender: user.gender,
     address: user.address,
