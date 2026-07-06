@@ -88,6 +88,25 @@ async function resolveWalletOwnerType(userId) {
   return isUnified ? "user" : "freelancer";
 }
 
+// A job with escrow enabled shouldn't be applyable/browsable until the
+// client actually funds it — otherwise a contractor could apply/be hired
+// on a job whose money was never deposited. Returns a query clause that
+// excludes jobs sitting on an unfunded ("pending_deposit") escrow.
+async function excludeUnfundedEscrowJobsClause() {
+  const pendingEscrows = await Escrow.find(
+    { status: "pending_deposit" },
+    { _id: 1 }
+  ).lean();
+  const pendingEscrowIds = pendingEscrows.map((e) => e._id);
+  if (pendingEscrowIds.length === 0) return {};
+  return {
+    $or: [
+      { escrow_enabled: { $ne: true } },
+      { escrow_enabled: true, escrow_id: { $nin: pendingEscrowIds } },
+    ],
+  };
+}
+
 // ============================================
 // CREATE JOB WITH ESCROW
 // ============================================
@@ -309,6 +328,13 @@ exports.store_applied_jobs = async (req, res) => {
 
     if (jobPost.contract_status !== "open") {
       return res.status(400).json({ success: false, message: "This job is no longer accepting applications" });
+    }
+
+    if (jobPost.escrow_enabled && jobPost.escrow_id) {
+      const escrow = await Escrow.findById(jobPost.escrow_id).select("status").lean();
+      if (escrow && escrow.status === "pending_deposit") {
+        return res.status(400).json({ success: false, message: "This job's escrow deposit hasn't been made yet — applications aren't open until it's funded" });
+      }
     }
 
     // Check for duplicate application
@@ -605,6 +631,7 @@ exports.getContractorJobs = async (req, res) => {
       contract_status: "open",
       selected_contractor_id: null,
       _id: { $nin: appliedJobIds },
+      ...(await excludeUnfundedEscrowJobsClause()),
     };
 
     if (status) query.contract_status = status;
@@ -736,7 +763,7 @@ exports.get_all_jobs = async (req, res) => {
   try {
     const { status, profession, employerId, contractorId, category, page = 1, limit = 10 } = req.query;
 
-    const query = {};
+    const query = { ...(await excludeUnfundedEscrowJobsClause()) };
     if (status) query.contract_status = status;
     if (profession) query.profession = profession;
     if (employerId) query.employer = employerId;
@@ -772,7 +799,11 @@ exports.getJobsByProfession = async (req, res) => {
   try {
     const { professionId } = req.params;
     const { page = 1, limit = 10 } = req.query;
-    const query = { profession: professionId, contract_status: "open" };
+    const query = {
+      profession: professionId,
+      contract_status: "open",
+      ...(await excludeUnfundedEscrowJobsClause()),
+    };
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
     const jobs = await JobPost.find(query)
@@ -1091,6 +1122,13 @@ exports.applyForJobWithEscrow = async (req, res) => {
 
     if (jobPost.contract_status !== "open") {
       return res.status(400).json({ success: false, message: "This job is no longer accepting applications" });
+    }
+
+    if (jobPost.escrow_enabled && jobPost.escrow_id) {
+      const escrow = await Escrow.findById(jobPost.escrow_id).select("status").lean();
+      if (escrow && escrow.status === "pending_deposit") {
+        return res.status(400).json({ success: false, message: "This job's escrow deposit hasn't been made yet — applications aren't open until it's funded" });
+      }
     }
 
     // Check for duplicate application
