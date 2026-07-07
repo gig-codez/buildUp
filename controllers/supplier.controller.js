@@ -41,33 +41,34 @@ class SupplierController {
 
   static async getAllStocks(req, res) {
     try {
-      // ADDING PAGINATION FUNCTIONALITY
-      const page = parseInt(req.query.page) || 1; // Default to page 1 if page query param is not provided
-      const pageSize = parseInt(req.query.pageSize) || 10; // Default page size to 10 if pageSize query param is not provided
-      const totalDocuments = await supplierStockModel
-        .find()
-        .countDocuments();
+      const page = parseInt(req.query.page) || 1;
+      const pageSize = parseInt(req.query.pageSize) || 10;
+      const { search, category } = req.query;
+
+      // Build filter
+      const filter = {};
+      if (search) filter.product_name = { $regex: search, $options: "i" };
+      if (category && category !== "All") filter.category = category;
+
+      const totalDocuments = await supplierStockModel.find(filter).countDocuments();
       const totalPages = Math.ceil(totalDocuments / pageSize);
-      // Calculate the number of documents to skip
       const skipDocuments = (page - 1) * pageSize;
-      let Supplier = await supplierStockModel
-        .find()
+
+      const stocks = await supplierStockModel
+        .find(filter)
+        .sort({ createdAt: -1 })
         .skip(skipDocuments)
         .limit(pageSize);
-        // .populate("supplier_type", "name");
+
       res.status(200).json({
         totalDocuments,
         totalPages,
         currentPage: page,
-        pageSize, data: Supplier
+        pageSize,
+        data: stocks,
       });
     } catch (error) {
-      res.status(500).json({
-        totalDocuments,
-        totalPages,
-        currentPage: page,
-        pageSize, message: error.message
-      });
+      res.status(500).json({ message: error.message });
     }
   }
 

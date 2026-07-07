@@ -28,6 +28,11 @@ const orderSchema = new mongoose.Schema({
     enum: ["pending", "approved", "delivered", "cancelled"],
     default: "pending",
   },
+  paymentMethod: {
+    type: String,
+    enum: ["cash_on_delivery", "wallet"],
+    default: "cash_on_delivery",
+  },
 }, { timestamps: true });
 
 module.exports = mongoose.model("Order", orderSchema);

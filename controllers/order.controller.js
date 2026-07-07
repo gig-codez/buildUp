@@ -4,12 +4,13 @@ class OrderController {
   // POST /orders/create  — client places an order
   static async create(req, res) {
     try {
-      const { supplierId, supplierName, clientId, deliveryAddress, items, totalAmount } = req.body;
+      const { supplierId, supplierName, clientId, deliveryAddress, items, totalAmount, paymentMethod } = req.body;
       if (!supplierId || !clientId || !deliveryAddress || !items?.length) {
         return res.status(400).json({ message: "Missing required order fields" });
       }
       const order = await Order.create({
         supplierId, supplierName, clientId, deliveryAddress, items, totalAmount,
+        paymentMethod: paymentMethod || "cash_on_delivery",
       });
       return res.status(201).json({ message: "Order created", data: order });
     } catch (err) {
