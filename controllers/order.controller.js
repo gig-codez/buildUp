@@ -1,4 +1,5 @@
-const Order = require("../models/order.model");
+const Order      = require("../models/order.model");
+const walletModel = require("../models/wallet.model");
 
 class OrderController {
   // POST /orders/create  — client places an order
@@ -8,9 +9,59 @@ class OrderController {
       if (!supplierId || !clientId || !deliveryAddress || !items?.length) {
         return res.status(400).json({ message: "Missing required order fields" });
       }
+
+      const method = paymentMethod || "cash_on_delivery";
+
+      // ── Wallet payment: verify balance, then transfer ────────────────────
+      if (method === "wallet") {
+        const buyerWallet = await walletModel.findOne({ owner_id: clientId, owner_type: "user" });
+        if (!buyerWallet || buyerWallet.available_balance < totalAmount) {
+          const balance = buyerWallet?.available_balance ?? 0;
+          return res.status(400).json({
+            message: `Insufficient wallet balance. Available: UGX ${balance.toLocaleString()}, required: UGX ${Number(totalAmount).toLocaleString()}.`,
+          });
+        }
+
+        // Create the order
+        const order = await Order.create({
+          supplierId, supplierName, clientId, deliveryAddress, items, totalAmount,
+          paymentMethod: method,
+        });
+
+        // Deduct from buyer
+        buyerWallet.available_balance -= totalAmount;
+        buyerWallet.transactions.push({
+          type:        "debit",
+          amount:      totalAmount,
+          description: `Order payment to ${supplierName}`,
+          reference:   order._id.toString(),
+          status:      "completed",
+        });
+        await buyerWallet.save();
+
+        // Credit supplier — auto-create wallet if they don't have one yet
+        let supplierWallet = await walletModel.findOne({ owner_id: supplierId, owner_type: "supplier" });
+        if (!supplierWallet) {
+          supplierWallet = await walletModel.create({ owner_id: supplierId, owner_type: "supplier" });
+        }
+        supplierWallet.available_balance += totalAmount;
+        supplierWallet.total_earned      += totalAmount;
+        supplierWallet.transactions.push({
+          type:        "credit",
+          amount:      totalAmount,
+          description: `Order payment received`,
+          reference:   order._id.toString(),
+          status:      "completed",
+        });
+        await supplierWallet.save();
+
+        return res.status(201).json({ message: "Order created", data: order });
+      }
+
+      // ── Cash on delivery — no wallet changes ────────────────────────────
       const order = await Order.create({
         supplierId, supplierName, clientId, deliveryAddress, items, totalAmount,
-        paymentMethod: paymentMethod || "cash_on_delivery",
+        paymentMethod: method,
       });
       return res.status(201).json({ message: "Order created", data: order });
     } catch (err) {
