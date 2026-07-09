@@ -1,18 +1,9 @@
 const mongoose = require("mongoose");
 
-// Mirrors cart.model.js's selectedVariantSchema — preserves the exact
-// variant combination (e.g. Size=Large + Color=Red) the buyer ordered.
-const selectedVariantSchema = new mongoose.Schema({
-  name:  { type: String, required: true },
-  value: { type: String, required: true },
-  price: { type: Number, default: 0 },
-}, { _id: false });
-
 const orderItemSchema = new mongoose.Schema({
   productId:    { type: String, required: true },
   productName:  { type: String, required: true },
   productImage: { type: String, default: "" },
-  selectedVariants: { type: [selectedVariantSchema], default: [] },
   quantity:     { type: Number, required: true, min: 1 },
   unitPrice:    { type: Number, required: true },
 }, { _id: false });
