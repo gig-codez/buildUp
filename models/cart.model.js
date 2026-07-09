@@ -1,5 +1,14 @@
 const mongoose = require('mongoose');
 
+// Records the specific combination of variant options a buyer picked for
+// this cart line (e.g. Size=Large + Color=Red on a single t-shirt line),
+// one entry per variant group/axis on the product.
+const selectedVariantSchema = new mongoose.Schema({
+  name:  { type: String, required: true },  // group name, e.g. "Size"
+  value: { type: String, required: true },  // chosen option, e.g. "Large"
+  price: { type: Number, default: 0 },      // that option's surcharge
+}, { _id: false });
+
 const cartItemSchema = new mongoose.Schema({
   productId: {
     type: String,
@@ -15,6 +24,15 @@ const cartItemSchema = new mongoose.Schema({
   productPrice: {
     type: Number,
     required: true,
+  },
+  selectedVariants: {
+    type: [selectedVariantSchema],
+    default: [],
+  },
+  // Sum of selectedVariants' surcharges — cached so unitPrice = productPrice + variantPrice.
+  variantPrice: {
+    type: Number,
+    default: 0,
   },
   quantity: {
     type: Number,
@@ -54,7 +72,7 @@ const cartSchema = new mongoose.Schema({
 // Middleware to calculate totals before saving
 cartSchema.pre('save', function(next) {
   this.totalAmount = this.items.reduce((sum, item) => {
-    item.subtotal = item.productPrice * item.quantity;
+    item.subtotal = (item.productPrice + (item.variantPrice || 0)) * item.quantity;
     return sum + item.subtotal;
   }, 0);
   this.totalItems = this.items.reduce((sum, item) => sum + item.quantity, 0);
