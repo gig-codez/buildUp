@@ -12,10 +12,18 @@ const AdminRevenueController = require("./adminRevenue.controller");
 const SERVICE_FEE_RATE = 0.10; // 10%
 const MIN_DEPOSIT_RATE = 0.60; // 60% minimum
 
-// Wallets are keyed by owner_type "user" (unified accounts) or "freelancer"
-// (legacy accounts) — crediting the wrong bucket means the recipient never
-// sees the money in their wallet UI. Resolve which one actually applies.
+// Resolve the wallet owner_type for a given userId.
+// Strategy: find whichever wallet already exists (avoids "wrong bucket" misses
+// for legacy accounts whose wallets were created before migration). Falls back
+// to "user" for unified accounts with no wallet yet, or "freelancer" for truly
+// legacy accounts not yet in userModel.
 async function resolveWalletOwnerType(userId) {
+  const existing = await walletModel.findOne(
+    { owner_id: userId },
+    { owner_type: 1 }
+  ).lean();
+  if (existing) return existing.owner_type;
+  // No wallet yet — pick the right type based on which collection owns this id
   const isUnified = await userModel.exists({ _id: userId });
   return isUnified ? "user" : "freelancer";
 }

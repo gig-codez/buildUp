@@ -136,6 +136,10 @@ async function migrateLegacyUser(userId) {
         subscription_expired:  employer.subscription_expired || false,
       },
     });
+    // Employer wallets were created as owner_type "freelancer" by the Flutter app
+    // (AuthenticatedUser.walletOwnerType returns "freelancer" for single-role clients).
+    // Migrate them to "user" so all wallet lookups are consistent going forward.
+    await migrateWallet(user._id, "freelancer");
     return user;
   }
 
