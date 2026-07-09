@@ -5,16 +5,19 @@ class OrderController {
   // POST /orders/create  — client places an order
   static async create(req, res) {
     try {
-      const { supplierId, supplierName, clientId, deliveryAddress, items, totalAmount, paymentMethod } = req.body;
+      const { supplierId, supplierName, clientId, deliveryAddress, items, totalAmount, paymentMethod, buyerWalletOwnerType } = req.body;
       if (!supplierId || !clientId || !deliveryAddress || !items?.length) {
         return res.status(400).json({ message: "Missing required order fields" });
       }
 
       const method = paymentMethod || "cash_on_delivery";
+      // buyerWalletOwnerType comes from the Flutter app (user.walletOwnerType)
+      // Falls back to "user" for new unified accounts
+      const buyerOwnerType = buyerWalletOwnerType || "user";
 
       // ── Wallet payment: verify balance, then transfer ────────────────────
       if (method === "wallet") {
-        const buyerWallet = await walletModel.findOne({ owner_id: clientId, owner_type: "user" });
+        const buyerWallet = await walletModel.findOne({ owner_id: clientId, owner_type: buyerOwnerType });
         if (!buyerWallet || buyerWallet.available_balance < totalAmount) {
           const balance = buyerWallet?.available_balance ?? 0;
           return res.status(400).json({
