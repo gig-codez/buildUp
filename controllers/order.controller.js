@@ -1,5 +1,6 @@
-const Order      = require("../models/order.model");
+const Order       = require("../models/order.model");
 const walletModel = require("../models/wallet.model");
+const userModel   = require("../models/user.model");
 
 class OrderController {
   // POST /orders/create  — client places an order
@@ -42,10 +43,19 @@ class OrderController {
         });
         await buyerWallet.save();
 
-        // Credit supplier — auto-create wallet if they don't have one yet
-        let supplierWallet = await walletModel.findOne({ owner_id: supplierId, owner_type: "supplier" });
+        // Credit supplier — find their wallet regardless of account type
+        // (unified suppliers use owner_type "user", legacy suppliers use "supplier")
+        let supplierWallet = await walletModel.findOne({
+          owner_id:   supplierId,
+          owner_type: { $in: ["user", "supplier"] },
+        });
         if (!supplierWallet) {
-          supplierWallet = await walletModel.create({ owner_id: supplierId, owner_type: "supplier" });
+          // Determine the correct type: unified user or legacy supplier
+          const isUnified = await userModel.exists({ _id: supplierId });
+          supplierWallet = await walletModel.create({
+            owner_id:   supplierId,
+            owner_type: isUnified ? "user" : "supplier",
+          });
         }
         supplierWallet.available_balance += totalAmount;
         supplierWallet.total_earned      += totalAmount;
