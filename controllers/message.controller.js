@@ -1,6 +1,6 @@
 const messageModel = require("../models/message.model");
 const { _sendMessage } = require("../global");
-const { fileStorageMiddleware } = require("../helpers/file_helper");
+const fileStorageMiddleware = require("../helpers/file_helper");
 
 // Special admin WebSocket channel ID — admin dashboard must register with this ID
 const ADMIN_CHANNEL_ID = "admin";
