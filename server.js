@@ -88,6 +88,7 @@ app.use("/reviews",       require("./routes/review.routes"));
 app.use("/notifications", require("./routes/notifications.routes"));
 app.use("/profile",       require("./routes/profile.routes"));
 app.use("/auth", require("./routes/auth.routes"));
+console.log("[BuildUp] Server booted — wallet fix + chat media support deployed");
 // db connection
 const dbOptions = {
   useNewUrlParser: true,
