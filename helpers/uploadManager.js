@@ -12,7 +12,7 @@ if (!firebase.apps.length) {
 const uploaderManager = () => {
   return multer({
     storage: multer.memoryStorage(),
-  })
+  });
 };
 
 module.exports = uploaderManager;

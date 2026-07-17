@@ -290,4 +290,3 @@ jobs:
       #     done
       #     echo "ERROR: Health check failed after 5 attempts."
       #     cat /tmp/health.json 2>/dev/null || true
-      #     exit 1
