@@ -256,15 +256,22 @@ jobs:
           # Make sure the uploads directory exists and is writable. The app
           # will also create it on boot, but doing it here means permissions
           # are deterministic from day one.
-          #   mkdir -p uploads
-          #   chmod 755 uploads
+          mkdir -p uploads
+          chmod 755 uploads
 
           echo "==> Installing production dependencies..."
-          npm ci 
+          npm ci --omit=dev
 
           # Reload if the app is already running (zero-downtime in cluster
           # mode); otherwise bootstrap it from the ecosystem file.
-          pm2 restart test-backend
+          if pm2 describe buildup-backend-staging >/dev/null 2>&1; then
+            echo "==> Reloading pm2 process buildup-backend-staging..."
+            pm2 reload ecosystem.config.js --only buildup-backend-staging --update-env
+          else
+            echo "==> Starting pm2 process buildup-backend-staging for the first time..."
+            pm2 start ecosystem.config.js --only buildup-backend-staging
+          fi
+
           pm2 save
           echo "==> Deployment completed"
           ENDSSH
@@ -290,3 +297,4 @@ jobs:
       #     done
       #     echo "ERROR: Health check failed after 5 attempts."
       #     cat /tmp/health.json 2>/dev/null || true
+      #     exit 1
