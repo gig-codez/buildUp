@@ -144,7 +144,7 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -p ${{ vars.VPS_PORT }} -H ${{ vars.VPS_HOST }} >> ~/.ssh/known_hosts
+          ssh-keyscan -p ${{ vars.VPS_PORT }}   ${{ vars.VPS_HOST }} >> ~/.ssh/known_hosts
 
       - name: Prepare remote directories and network
         run: |
@@ -212,7 +212,7 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -p ${{ vars.VPS_PORT }} -H ${{ vars.VPS_HOST }} >> ~/.ssh/known_hosts
+          ssh-keyscan -p ${{ vars.VPS_PORT }}  ${{ vars.VPS_HOST }} >> ~/.ssh/known_hosts
 
       - name: Copy compose file to server
         run: |
@@ -307,7 +307,7 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -p ${{ vars.VPS_PORT }} -H ${{ vars.VPS_HOST }} >> ~/.ssh/known_hosts
+          ssh-keyscan -p ${{ vars.VPS_PORT }}   ${{ vars.VPS_HOST }} >> ~/.ssh/known_hosts
 
       - name: Copy compose file to server
         run: |
