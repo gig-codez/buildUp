@@ -1,0 +1,25 @@
+services:
+  buildup-backend:
+    image: ${IMAGE}
+    container_name: ${CONTAINER_NAME:-buildup-backend}
+    restart: unless-stopped
+    env_file:
+      - .env
+    # No host ports published — nginx reaches this container over the
+    # shared "buildup-net" network below and proxies to it by container
+    # name, so the app is never directly exposed on the host.
+    networks:
+      - buildup-net
+    volumes:
+      - uploads_data:/app/uploads
+
+networks:
+  buildup-net:
+    # Created once on the VPS with `docker network create buildup-net`
+    # (the deploy workflow also does this idempotently). Shared with the
+    # nginx-proxy stack so it can reach both the prod and staging
+    # containers by name.
+    external: true
+
+volumes:
+  uploads_data:

@@ -1,19 +1,37 @@
 name: Deploy BuildUp Backend
 
-# Deploys the backend on every push that passes the `checks` job:
-#   - `main`        → production VPS at ${PROJECT_PATH}
-#   - `escrow-dev`  → staging  VPS at ${TEST_PROJECT_PATH}
+# Builds a Docker image on every push that passes the `checks` job, pushes it
+# to GitHub Container Registry, then has the VPS pull and run it:
+#   - `main`        → production VPS at ${PROJECT_PATH}      (image tag: latest / sha)
+#   - `escrow-dev`  → staging  VPS at ${TEST_PROJECT_PATH}   (image tag: staging  / staging-sha)
 # Also supports manual dispatch from the Actions tab.
 #
-# One-time setup required:
+# This replaces the previous pm2 + rsync pipeline. The VPS no longer needs a
+# checkout of the repo, node_modules, or pm2 — only Docker and a small
+# docker-compose.yml (deployed automatically below) plus its own .env file.
+#
+# One-time setup required on each VPS:
+#   - Docker + the Compose plugin installed
+#   - ${PROJECT_PATH} / ${TEST_PROJECT_PATH} exist and contain a `.env` file
+#     with this app's runtime secrets (DB_URL, JWT_SECRET_KEY, etc.) — same
+#     as before, still managed out-of-band, never written by this pipeline.
+#   - The VPS user can run `docker` (in the `docker` group) and reach
+#     ghcr.io outbound.
+#   - The nginx-proxy stack (see nginx-proxy/) is deployed separately and
+#     shares the "buildup-net" Docker network with both app containers —
+#     it's the only thing that publishes ports 80/443 on the host. This
+#     workflow creates "buildup-net" if it doesn't exist yet, but the
+#     nginx-proxy stack itself is set up manually, once (see the setup
+#     notes at the bottom of nginx-proxy/buildup-backend.conf).
+#
+# One-time setup required in GitHub:
 #   Secrets:  SSH_KEY
 #   Vars:     VPS_HOST, VPS_USER, VPS_PORT, PROJECT_PATH, TEST_PROJECT_PATH
 #             HEALTH_URL (prod, optional), STAGING_HEALTH_URL (staging, optional)
+#   Repo settings → Actions → General → Workflow permissions:
+#             "Read and write permissions" (needed to push to GHCR)
 #
-# The `.env` files are NOT managed by this pipeline — they live on the
-# server at ${PROJECT_PATH}/.env and ${TEST_PROJECT_PATH}/.env and are
-# preserved across deploys via rsync exclusion. Update them out-of-band
-# when secrets change.
+# Images are pushed to: ghcr.io/<owner>/<repo>
 
 on:
   push:
@@ -23,11 +41,12 @@ on:
   workflow_dispatch:
 
 env:
-  NODE_VERSION: "22"
+  NODE_VERSION: "20"
+  REGISTRY: ghcr.io
 
 concurrency:
   # Only one deploy at a time per environment. Newer commits queue behind
-  # the running deploy so we don't race pm2 reloads.
+  # the running deploy so we don't race container restarts.
   group: deploy-${{ github.ref }}
   cancel-in-progress: false
 
@@ -57,13 +76,65 @@ jobs:
             -not -path "./.git/*" \
             -print0 | xargs -0 -n1 node --check
 
-  deploy:
-    name: Deploy to Production
+  build-and-push:
+    name: Build & Push Image
     needs: checks
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/escrow-dev'
     runs-on: ubuntu-latest
-    environment: production
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image: ${{ steps.tags.outputs.image }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
+      - name: Compute image name and tags
+        id: tags
+        run: |
+          IMAGE_NAME="${REGISTRY}/$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')"
+          SHA_SHORT="${GITHUB_SHA::12}"
+
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            PRIMARY_TAG="latest"
+          else
+            PRIMARY_TAG="staging"
+          fi
+
+          {
+            echo "image_name=${IMAGE_NAME}"
+            echo "primary_tag=${PRIMARY_TAG}"
+            echo "sha_tag=${PRIMARY_TAG}-${SHA_SHORT}"
+            echo "image=${IMAGE_NAME}:${PRIMARY_TAG}-${SHA_SHORT}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ steps.tags.outputs.image_name }}:${{ steps.tags.outputs.primary_tag }}
+            ${{ steps.tags.outputs.image_name }}:${{ steps.tags.outputs.sha_tag }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  sync-nginx:
+    name: Sync Nginx Proxy Config
+    needs: checks
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/escrow-dev'
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -75,31 +146,23 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -p ${{ vars.VPS_PORT }} -H ${{ vars.VPS_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Build rsync exclude list
+      - name: Prepare remote directories and network
         run: |
-          cat > .rsync-exclude << 'EOF'
-          .git/
-          .github/
-          .gitignore
-          .vscode/
-          .DS_Store
-          .env
-          .env.*
-          node_modules/
-          uploads/
-          .rsync-exclude
-          test.js
-          EOF
+          ssh -p ${{ vars.VPS_PORT }} -o StrictHostKeyChecking=no \
+            ${{ vars.VPS_USER }}@${{ vars.VPS_HOST }} << 'ENDSSH'
+          set -euo pipefail
+          mkdir -p /opt/nginx-proxy /var/www/certbot
+          docker network inspect buildup-net >/dev/null 2>&1 || docker network create buildup-net
+          ENDSSH
 
-      - name: Sync code to server
+      - name: Copy nginx-proxy files to server
         run: |
-          rsync -avz --delete \
-            -e "ssh -p ${{ vars.VPS_PORT }} -o StrictHostKeyChecking=no" \
-            --exclude-from=.rsync-exclude \
-            --chmod=D755,F644 \
-            ./ ${{ vars.VPS_USER }}@${{ vars.VPS_HOST }}:${{ vars.PROJECT_PATH }}/
+          scp -P ${{ vars.VPS_PORT }} -o StrictHostKeyChecking=no \
+            nginx-proxy/docker-compose.yml \
+            nginx-proxy/buildup-backend.conf \
+            ${{ vars.VPS_USER }}@${{ vars.VPS_HOST }}:/opt/nginx-proxy/
 
-      - name: Install dependencies and reload pm2
+      - name: Bring up / reload nginx
         run: |
           ssh -p ${{ vars.VPS_PORT }} \
             -o StrictHostKeyChecking=no \
@@ -107,82 +170,134 @@ jobs:
             -o ServerAliveInterval=60 \
             ${{ vars.VPS_USER }}@${{ vars.VPS_HOST }} << 'ENDSSH'
           set -euo pipefail
+          cd /opt/nginx-proxy
 
-          cd ${{ vars.PROJECT_PATH }}
+          # First-ever run: certs won't exist yet, and nginx refuses to
+          # start with ssl_certificate paths pointing at nothing. That
+          # bootstrap step stays manual — see the notes at the bottom of
+          # buildup-backend.conf (comment out the two "listen 443 ssl"
+          # blocks, bring nginx up on :80 only, run certbot, uncomment,
+          # then re-run this workflow).
+          if [ ! -f /etc/letsencrypt/live/api.buildupuganda.com/fullchain.pem ] || \
+             [ ! -f /etc/letsencrypt/live/dev-api.buildupuganda.com/fullchain.pem ]; then
+            echo "ERROR: TLS certs not found for one or both domains."
+            echo "       This looks like the first-ever nginx-proxy run on this host."
+            echo "       Follow the one-time bootstrap notes at the bottom of"
+            echo "       nginx-proxy/buildup-backend.conf, then re-run this workflow."
+            exit 1
+          fi
+
+          echo "==> Starting nginx-proxy (no-op if already running)..."
+          docker compose up -d
+
+          echo "==> Validating and reloading nginx config..."
+          docker compose exec -T nginx nginx -t
+          docker compose exec -T nginx nginx -s reload
+
+          echo "==> nginx-proxy synced"
+          ENDSSH
+
+  deploy:
+    name: Deploy to Production
+    needs: [build-and-push, sync-nginx]
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -p ${{ vars.VPS_PORT }} -H ${{ vars.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Copy compose file to server
+        run: |
+          scp -P ${{ vars.VPS_PORT }} -o StrictHostKeyChecking=no \
+            docker-compose.deploy.yml \
+            ${{ vars.VPS_USER }}@${{ vars.VPS_HOST }}:${{ vars.PROJECT_PATH }}/docker-compose.yml
+
+      - name: Pull image and restart container
+        env:
+          IMAGE: ${{ needs.build-and-push.outputs.image }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GHCR_ACTOR: ${{ github.actor }}
+        run: |
+          ssh -p ${{ vars.VPS_PORT }} \
+            -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=30 \
+            -o ServerAliveInterval=60 \
+            ${{ vars.VPS_USER }}@${{ vars.VPS_HOST }} \
+            "IMAGE='${IMAGE}' GHCR_TOKEN='${GHCR_TOKEN}' GHCR_ACTOR='${GHCR_ACTOR}' PROJECT_PATH='${{ vars.PROJECT_PATH }}' CONTAINER_NAME='buildup-backend' bash -s" << 'ENDSSH'
+          set -euo pipefail
+
+          cd "${PROJECT_PATH}"
           echo "==> Working directory: $(pwd)"
 
           # Fail loudly if the production .env is missing rather than
           # silently booting with wrong values.
           if [ ! -f .env ]; then
-            echo "ERROR: ${{ vars.PROJECT_PATH }}/.env is missing on the server."
+            echo "ERROR: ${PROJECT_PATH}/.env is missing on the server."
             echo "       Create it manually before deploying — this pipeline"
             echo "       intentionally does NOT write .env (secrets live on"
             echo "       the server only)."
             exit 1
           fi
 
-          # Ensure node/pm2 are installed. These are idempotent — they
-          # install on the first deploy and become no-ops afterward.
-          if ! command -v node >/dev/null 2>&1; then
-            echo "==> Installing Node.js 22..."
-            curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
-            sudo apt-get install -y nodejs
-          fi
-          if ! command -v pm2 >/dev/null 2>&1; then
-            echo "==> Installing pm2..."
-            sudo npm install -g pm2
-          fi
-          echo "==> node $(node --version) / npm $(npm --version) / pm2 $(pm2 --version)"
+          echo "==> Ensuring shared network exists..."
+          docker network inspect buildup-net >/dev/null 2>&1 || docker network create buildup-net
 
-          # Make sure the uploads directory exists and is writable. The app
-          # will also create it on boot, but doing it here means permissions
-          # are deterministic from day one.
-          # mkdir -p uploads
-          chmod 755 uploads
+          echo "==> Logging in to ${REGISTRY:-ghcr.io}..."
+          echo "${GHCR_TOKEN}" | docker login ghcr.io -u "${GHCR_ACTOR}" --password-stdin
 
-          echo "==> Installing production dependencies..."
-          npm install --omit=dev
+          echo "==> Pulling ${IMAGE}..."
+          IMAGE="${IMAGE}" CONTAINER_NAME="${CONTAINER_NAME}" docker compose pull
 
-          # Reload if the app is already running (zero-downtime in cluster
-          # mode); otherwise bootstrap it from the ecosystem file.
-          pm2 restart buildup-backend
-          pm2 save
+          echo "==> Starting container..."
+          IMAGE="${IMAGE}" CONTAINER_NAME="${CONTAINER_NAME}" docker compose up -d --remove-orphans
+
+          echo "==> Pruning old images..."
+          docker image prune -f
+
+          docker compose ps
           echo "==> Deployment completed"
           ENDSSH
 
-      # - name: Health check
-      #   # Hits the /health endpoint through the server's public URL (set via
-      #   # vars.HEALTH_URL, e.g. https://server.buildupuganda.com/health).
-      #   # Retries briefly to absorb the pm2 reload gap.
-      #   run: |
-      #     URL="${{ vars.HEALTH_URL }}"
-      #     if [ -z "$URL" ]; then
-      #       echo "HEALTH_URL var not set — skipping health check."
-      #       exit 0
-      #     fi
+      - name: Health check
+        # Hits the /health endpoint through the server's public URL (set via
+        # vars.HEALTH_URL, e.g. https://api.buildupuganda.com/health).
+        # Retries briefly to absorb the container restart gap.
+        run: |
+          URL="${{ vars.HEALTH_URL }}"
+          if [ -z "$URL" ]; then
+            echo "HEALTH_URL var not set — skipping health check."
+            exit 0
+          fi
 
-      #     echo "==> Probing $URL"
-      #     for i in 1 2 3 4 5; do
-      #       STATUS=$(curl -sS -o /tmp/health.json -w "%{http_code}" "$URL" || echo "000")
-      #       if [ "$STATUS" = "200" ]; then
-      #         echo "==> Health OK:"
-      #         cat /tmp/health.json
-      #         exit 0
-      #       fi
-      #       echo "Attempt $i: HTTP $STATUS — retrying in 3s"
-      #       sleep 3
-      #     done
-      #     echo "ERROR: Health check failed after 5 attempts."
-      #     cat /tmp/health.json 2>/dev/null || true
-      #     exit 1
+          echo "==> Probing $URL"
+          for i in 1 2 3 4 5; do
+            STATUS=$(curl -sS -o /tmp/health.json -w "%{http_code}" "$URL" || echo "000")
+            if [ "$STATUS" = "200" ]; then
+              echo "==> Health OK:"
+              cat /tmp/health.json
+              exit 0
+            fi
+            echo "Attempt $i: HTTP $STATUS — retrying in 3s"
+            sleep 3
+          done
+          echo "ERROR: Health check failed after 5 attempts."
+          cat /tmp/health.json 2>/dev/null || true
+          exit 1
 
   deploy-staging:
     name: Deploy to Staging
-    needs: checks
+    needs: [build-and-push, sync-nginx]
     if: github.ref == 'refs/heads/escrow-dev'
     runs-on: ubuntu-latest
     environment: staging
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -194,107 +309,85 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -p ${{ vars.VPS_PORT }} -H ${{ vars.VPS_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Build rsync exclude list
+      - name: Copy compose file to server
         run: |
-          cat > .rsync-exclude << 'EOF'
-          .git/
-          .github/
-          .gitignore
-          .vscode/
-          .DS_Store
-          .env
-          .env.*
-          node_modules/
-          uploads/
-          .rsync-exclude
-          test.js
-          EOF
+          scp -P ${{ vars.VPS_PORT }} -o StrictHostKeyChecking=no \
+            docker-compose.deploy.yml \
+            ${{ vars.VPS_USER }}@${{ vars.VPS_HOST }}:${{ vars.TEST_PROJECT_PATH }}/docker-compose.yml
 
-      - name: Sync code to server
-        run: |
-          rsync -avz --delete \
-            -e "ssh -p ${{ vars.VPS_PORT }} -o StrictHostKeyChecking=no" \
-            --exclude-from=.rsync-exclude \
-            --chmod=D755,F644 \
-            ./ ${{ vars.VPS_USER }}@${{ vars.VPS_HOST }}:${{ vars.TEST_PROJECT_PATH }}/
-
-      - name: Install dependencies and reload pm2
+      - name: Pull image and restart container
+        env:
+          IMAGE: ${{ needs.build-and-push.outputs.image }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GHCR_ACTOR: ${{ github.actor }}
         run: |
           ssh -p ${{ vars.VPS_PORT }} \
             -o StrictHostKeyChecking=no \
             -o ConnectTimeout=30 \
             -o ServerAliveInterval=60 \
-            ${{ vars.VPS_USER }}@${{ vars.VPS_HOST }} << 'ENDSSH'
+            ${{ vars.VPS_USER }}@${{ vars.VPS_HOST }} \
+            "IMAGE='${IMAGE}' GHCR_TOKEN='${GHCR_TOKEN}' GHCR_ACTOR='${GHCR_ACTOR}' PROJECT_PATH='${{ vars.TEST_PROJECT_PATH }}' CONTAINER_NAME='buildup-backend-staging' bash -s" << 'ENDSSH'
           set -euo pipefail
 
-          cd ${{ vars.TEST_PROJECT_PATH }}
+          cd "${PROJECT_PATH}"
           echo "==> Working directory: $(pwd)"
 
           # Fail loudly if the staging .env is missing rather than
           # silently booting with wrong values.
           if [ ! -f .env ]; then
-            echo "ERROR: ${{ vars.TEST_PROJECT_PATH }}/.env is missing on the server."
+            echo "ERROR: ${PROJECT_PATH}/.env is missing on the server."
             echo "       Create it manually before deploying — this pipeline"
             echo "       intentionally does NOT write .env (secrets live on"
             echo "       the server only)."
             exit 1
           fi
 
-          # Ensure node/pm2 are installed. These are idempotent — they
-          # install on the first deploy and become no-ops afterward.
-          if ! command -v node >/dev/null 2>&1; then
-            echo "==> Installing Node.js 22..."
-            curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
-            sudo apt-get install -y nodejs
-          fi
-          if ! command -v pm2 >/dev/null 2>&1; then
-            echo "==> Installing pm2..."
-            sudo npm install -g pm2
-          fi
-          echo "==> node $(node --version) / npm $(npm --version) / pm2 $(pm2 --version)"
-
-          # Make sure the uploads directory exists and is writable. The app
-          # will also create it on boot, but doing it here means permissions
-          # are deterministic from day one.
-          mkdir -p uploads
-          chmod 755 uploads
-
-          echo "==> Installing production dependencies..."
-          npm install --omit=dev
-
-          # Reload if the app is already running (zero-downtime in cluster
-          # mode); otherwise bootstrap it from the ecosystem file.
-          if pm2 describe buildup-backend-staging >/dev/null 2>&1; then
-            echo "==> Reloading pm2 process buildup-backend-staging..."
-            pm2 reload ecosystem.config.js --only buildup-backend-staging --update-env
-          else
-            echo "==> Starting pm2 process buildup-backend-staging for the first time..."
-            pm2 start ecosystem.config.js --only buildup-backend-staging
+          # Staging must not collide with prod on the same host. Pin the
+          # port here (mirrors the old pm2 env_staging PORT=5001) unless
+          # this VPS's staging .env already sets its own PORT.
+          if ! grep -q '^PORT=' .env; then
+            echo "==> No PORT in staging .env — defaulting to 5001"
+            export PORT=5001
           fi
 
-          pm2 save
+          echo "==> Ensuring shared network exists..."
+          docker network inspect buildup-net >/dev/null 2>&1 || docker network create buildup-net
+
+          echo "==> Logging in to ${REGISTRY:-ghcr.io}..."
+          echo "${GHCR_TOKEN}" | docker login ghcr.io -u "${GHCR_ACTOR}" --password-stdin
+
+          echo "==> Pulling ${IMAGE}..."
+          IMAGE="${IMAGE}" CONTAINER_NAME="${CONTAINER_NAME}" docker compose pull
+
+          echo "==> Starting container..."
+          IMAGE="${IMAGE}" CONTAINER_NAME="${CONTAINER_NAME}" docker compose up -d --remove-orphans
+
+          echo "==> Pruning old images..."
+          docker image prune -f
+
+          docker compose ps
           echo "==> Deployment completed"
           ENDSSH
 
-      # - name: Health check
-      #   run: |
-      #     URL="${{ vars.STAGING_HEALTH_URL }}"
-      #     if [ -z "$URL" ]; then
-      #       echo "STAGING_HEALTH_URL var not set — skipping health check."
-      #       exit 0
-      #     fi
+      - name: Health check
+        run: |
+          URL="${{ vars.STAGING_HEALTH_URL }}"
+          if [ -z "$URL" ]; then
+            echo "STAGING_HEALTH_URL var not set — skipping health check."
+            exit 0
+          fi
 
-      #     echo "==> Probing $URL"
-      #     for i in 1 2 3 4 5; do
-      #       STATUS=$(curl -sS -o /tmp/health.json -w "%{http_code}" "$URL" || echo "000")
-      #       if [ "$STATUS" = "200" ]; then
-      #         echo "==> Health OK:"
-      #         cat /tmp/health.json
-      #         exit 0
-      #       fi
-      #       echo "Attempt $i: HTTP $STATUS — retrying in 3s"
-      #       sleep 3
-      #     done
-      #     echo "ERROR: Health check failed after 5 attempts."
-      #     cat /tmp/health.json 2>/dev/null || true
-      #     exit 1
+          echo "==> Probing $URL"
+          for i in 1 2 3 4 5; do
+            STATUS=$(curl -sS -o /tmp/health.json -w "%{http_code}" "$URL" || echo "000")
+            if [ "$STATUS" = "200" ]; then
+              echo "==> Health OK:"
+              cat /tmp/health.json
+              exit 0
+            fi
+            echo "Attempt $i: HTTP $STATUS — retrying in 3s"
+            sleep 3
+          done
+          echo "ERROR: Health check failed after 5 attempts."
+          cat /tmp/health.json 2>/dev/null || true
+          exit 1
