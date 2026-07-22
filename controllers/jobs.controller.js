@@ -737,7 +737,7 @@ exports.getEmployerJobs = async (req, res) => {
 
     const jobs = await JobPost.find(query)
       .populate("selected_contractor_id", "first_name last_name email avatar")
-      .populate("escrow_id", "status contractor_id agreed_amount")
+      .populate("escrow_id", "status contractor_id agreed_amount initial_deposit escrow_balance net_amount released_amount full_payment_upfront")
       .populate("profession", "name")
       .sort({ createdAt: -1 })
       .skip(skip)
