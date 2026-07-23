@@ -15,64 +15,61 @@ const MeetingController = require("../controllers/meetings.controller");
 const ShortListedController = require("../controllers/shortlisted.controller");
 const MessageController = require("../controllers/message.controller");
 const UserController = require("../controllers/user.controller");
-// routes to fetch system users except employers and admins
+
+// users
 router.get("/allUsers", UserController.get_users);
 router.get("/admin", AdminController.index);
-// router.get("/verifyToken/:id", AccountVerification.verifyToken);
 router.get("/roles", RoleController.index);
-//freelancers
+
+// freelancers / contractors
 router.get("/contractors", FreelancerController.index);
 router.get("/contractor/:id", FreelancerController.show);
-router.get(
-  "/contractor-applied-jobs/:contractor_id",
-  JobsController.contractor_applied_jobs
-);
+// GET contractor's applied jobs (returns AppliedJobs records, not JobPost)
+router.get("/contractor-applied-jobs/:contractor_id", JobsController.contractor_applied_jobs);
+
 // consultants
 router.get("/consultants", FreelancerController.consultants);
 router.get("/consultant/:id", FreelancerController.show);
 
-
-//employers
+// employers
 router.get("/employers", EmployerController.getAll);
 router.get("/employers-not-paginated", EmployerController.notPaginated);
 router.get("/employer/:id", EmployerController.getEmployerById);
+// GET client's received applications (for Applications tab)
 router.get("/client-jobs/:client_id", JobsController.client_jobs);
-//business
+
+// business
 router.get("/business", BusinessController.getAll);
 router.get("/business/:id", BusinessController.getBusinessById);
-//suppliers
+
+// suppliers
 router.get("/suppliers", SupplierController.getAll);
 router.get("/supplier/:id", SupplierController.show);
 router.get("/deals", SupplierController.deals);
-// deals by category
 router.get("/deals/:id", SupplierController.deals_by_category);
 router.get("/supplier-deals", SupplierController.supplier_deals);
 router.get("/supplier-deals/deals/:supplierId", SupplierController.supplier_deals_by_supplierId);
 router.get("/supplier-deals/suppliers/:dealId", SupplierController.supplier_deals_by_dealId);
+
+// professions & types
 router.get("/admin/profession", ContractorProfessionController.index);
 router.get("/profession/:id", ContractorProfessionController.findProfById);
 router.get("/admin/supplier-type", SupplierTypeController.index);
-router.get("/jobs", jobscontroller.get_all_jobs);
-router.get(
-  "/profession-jobs/:professionId",
-  jobscontroller.getJobsByProfession
-);
 
+// jobs
+router.get("/jobs", jobscontroller.get_all_jobs);
+router.get("/profession-jobs/:professionId", jobscontroller.getJobsByProfession);
 router.get("/employer-jobs/:employerId", jobscontroller.getJobsByEmployer);
+
 // meetings
 router.get("/meetings/:id", MeetingController.get_meetings);
+
 // shortlisted
-router.get(
-  "/shortlisted/:id",
-  ShortListedController.fetch_short_listed_contractors
-);
+router.get("/shortlisted/:id", ShortListedController.fetch_short_listed_contractors);
+
+// messages
 router.get("/messages", MessageController.getAll);
-router.get(
-  "/messages/:role_user_id/:page/:limitPerPage",
-  MessageController.getUserMessages
-);
-router.get(
-  "/messages/:role_user_id/:id",
-  MessageController.getUserMsgGreaterByIdReq
-);
+router.get("/messages/:role_user_id/:page/:limitPerPage", MessageController.getUserMessages);
+router.get("/messages/:role_user_id/:id", MessageController.getUserMsgGreaterByIdReq);
+
 module.exports = router;

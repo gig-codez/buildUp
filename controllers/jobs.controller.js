@@ -1,272 +1,1173 @@
-const jobsModel = require("../models/jobPost.model");
-const appliedJobs = require("../models/applied_jobs.model");
-const date = require("../global");
-const fileStorageMiddleware = require("../helpers/file_helper");
-const employerModel = require("../models/employer.model");
+const JobPost = require("../models/jobPost.model");
+const AppliedJobs = require("../models/applied_jobs.model");
+const Escrow = require("../models/escrow.model");
+const Wallet = require("../models/wallet.model");
+const Contractor = require("../models/freelancer.model");
+const Employer = require("../models/employer.model");
+const UserModel = require("../models/user.model");
+const mailSender = require("../utils/mailSender");
+const { v4: uuidv4 } = require("uuid");
 
-class JobsController {
-  static async addJobs(req, res) {
-    try {
-      if (!req.body.employer) {
-        req.body.employer = req.params.employerId;
-        // add contact and address details from employer model
-        const employer = await employerModel.findOne({
-          _id: req.body.employer,
-        }).populate("business");
-        // attach contact
-        req.body.contact = employer.business.business_tel;
-        req.body.address = employer.business.address;
-      }
-      if (!req.body.job_title || !req.body.job_description) {
-        return res.status(400).json({
-          message: "Title, description, and employer are required fields.",
-        });
-      }
+// ============================================
+// RESOLVE APPLICANT INFO ACROSS LEGACY + UNIFIED MODELS
+//
+// AppliedJobs.contractorId only refs the legacy `freelancer` collection,
+// but contractors registered via /auth/register (or migrated on first
+// role-switch/add-role) live in the unified `user` collection instead.
+// Mongoose's schema-level `.populate("contractorId", ...)` only ever looks
+// in `freelancer`, so any unified-model contractor comes back unresolved
+// and renders as "Unknown Applicant" client-side. Resolve against whichever
+// collection actually has the document, normalized to one shape.
+// ============================================
+async function resolveContractorInfo(contractorId) {
+  if (!contractorId) return null;
 
-      const newJob = new jobsModel(req.body);
-      // Save the new job
-      const savedJob = await newJob.save();
+  const freelancer = await Contractor.findById(contractorId)
+    .select("first_name last_name email tel_num profile_pic profession gender address")
+    .populate("profession", "name")
+    .lean();
+  if (freelancer) return freelancer;
 
-      // Send a success response
-      if (savedJob) {
-        res.status(200).json({
-          message: "Job added successfully.",
-          data: savedJob,
-        });
-      } else {
-        res.status(400).json({
-          message: "Error creating job.",
-        });
-      }
-    } catch (error) {
-      // Send an error response with a meaningful message
-      res.status(500).json({
-        message: `Error ${error.message}.`,
-      });
-    }
-  }
+  const user = await UserModel.findById(contractorId)
+    .select("first_name last_name email tel_num profile_pic gender address contractorProfile consultantProfile")
+    .populate("contractorProfile.profession consultantProfile.profession", "name")
+    .lean();
+  if (!user) return null;
 
-  static async get_all_jobs(req, res) {
-    try {
-      // ADDING PAGINATION FUNCTIONALITY
-      const page = parseInt(req.query.page) || 1; // Default to page 1 if page query param is not provided
-      const pageSize = parseInt(req.query.pageSize) || 10; // Default page size to 10 if pageSize query param is not provided
-
-      const totalDocuments = await jobsModel.find({ is_applied: false }).countDocuments();
-      const totalPages = Math.ceil(totalDocuments / pageSize);
-
-      // Calculate the number of documents to skip
-      const skipDocuments = (page - 1) * pageSize;
-      const jobs = await jobsModel.find({ is_applied: false }).skip(skipDocuments)
-        .limit(pageSize);
-      res.status(200).json({
-        totalDocuments,
-        totalPages,
-        currentPage: page,
-        pageSize,
-        jobs,
-      });
-    } catch (error) {
-      res.status(500).json({
-        message: `Error: ${error.message}`,
-      });
-    }
-  }
-
-  static async getJobsByProfession(req, res) {
-    try {
-      const jobs = await jobsModel
-        .find({
-          profession: req.params.professionId,
-          is_applied: false
-        })
-        .populate({
-          path: "employer",
-          select: "first_name last_name",
-          populate: {
-            path: "business",
-            select:
-              "business_name business_email business_tel address year_of_foundation",
-          },
-        })
-        .populate("profession", "name");
-      res.status(200).json(jobs);
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: "An error occured while getting the jobs",
-        error: error.message,
-      });
-    }
-  }
-
-  static async getJobsByEmployer(req, res) {
-    try {
-      // ADDING PAGINATION FUNCTIONALITY
-      const page = parseInt(req.query.page) || 1; // Default to page 1 if page query param is not provided
-      const pageSize = parseInt(req.query.pageSize) || 10; // Default page size to 10 if pageSize query param is not provided
-
-      const totalDocuments = await jobsModel
-        .find({ employer: req.params.employerId })
-        .countDocuments();
-      const totalPages = Math.ceil(totalDocuments / pageSize);
-
-      // Calculate the number of documents to skip
-      const skipDocuments = (page - 1) * pageSize;
-      const jobs = await jobsModel
-        .find({ employer: req.params.employerId })
-        .populate({
-          path: "employer",
-          select: "first_name last_name",
-          populate: {
-            path: "business",
-            select:
-              "business_name business_email business_tel address year_of_foundation",
-          },
-        })
-        .skip(skipDocuments)
-        .limit(pageSize)
-        .populate("profession", "name");
-
-      res.status(200).json({
-        totalDocuments,
-        totalPages,
-        currentPage: page,
-        pageSize,
-        jobs,
-      });
-    } catch (error) {
-      res.status(500).json({
-        message: "An error occured while getting the jobs",
-        error: error.message,
-      });
-    }
-  }
-  static async contractor_applied_jobs(req, res) {
-    try {
-      const id = req.params.contractor_id;
-      const jobs = await appliedJobs
-        .find({ contractorId: id })
-        .populate("clientId")
-        .populate("contractorId")
-        .populate("jobId")
-        .sort({ createdAt: -1 });
-      if (jobs) {
-        res.status(200).json(jobs);
-      } else {
-        res.status(400).json({ message: "Jobs not found" });
-      }
-    } catch (error) {
-      res.status(500).json({ message: error.message });
-    }
-  }
-  static async client_jobs(req, res) {
-    try {
-      const id = req.params.client_id;
-      // ADDING PAGINATION FUNCTIONALITY
-      const page = parseInt(req.query.page) || 1; // Default to page 1 if page query param is not provided
-      const pageSize = parseInt(req.query.pageSize) || 10; // Default page size to 10 if pageSize query param is not provided
-
-      const totalDocuments = await appliedJobs
-        .find({ clientId: id })
-        .countDocuments();
-      const totalPages = Math.ceil(totalDocuments / pageSize);
-
-      // Calculate the number of documents to skip
-      const skipDocuments = (page - 1) * pageSize;
-
-      const jobs = await appliedJobs
-        .find({ clientId: id })
-        .populate("clientId")
-        .populate({
-          path: "contractorId",
-          populate: {
-            path: "profession"
-          }
-        })
-        // .populate("profession")
-        .populate("jobId")
-        .skip(skipDocuments)
-        .limit(pageSize)
-        .sort({ createdAt: -1 });
-      if (jobs) {
-        res.status(200).json({
-          totalDocuments,
-          // schools,
-          totalPages,
-          currentPage: page,
-          pageSize,
-          jobs,
-        });
-      } else {
-        res.status(400).json({ message: "Jobs not found" });
-      }
-    } catch (error) {
-      res.status(500).json({ message: error.message });
-    }
-  }
-  static async store_applied_jobs(req, res) {
-    let docUrl = "";
-    if (req.file) {
-      docUrl = await fileStorageMiddleware(req, "docs");
-    }
-    try {
-      const jobs = new appliedJobs({
-        clientId: req.body.client,
-        contractorId: req.body.contractor,
-        jobId: req.body.job,
-        document: docUrl,
-        // `https://buildup-resources.s3.amazonaws.com/buildUp-${req.params.name}/docs/${date}-${req.file.originalname}`,
-      });
-      await jobs.save();
-      if (jobs) {
-        // update jobs model
-        const job = await jobsModel.findByIdAndUpdate(
-          req.body.job,
-          { $set: { is_applied: true } },
-          { new: true }
-        );
-        await job.save();
-        res.status(200).json({ message: "New applied saved successfully" });
-      } else {
-        res.status(400).json({ message: "Failed to add a new application." });
-      }
-    } catch (error) {
-      res.status(500).json({ message: error.message });
-    }
-  }
-  // delete jobs by prof
-  static async delete_prof_jobs(req, res) {
-    try {
-      const jobs = await jobsModel.findByIdAndDelete(req.params.id);
-
-      if (jobs) {
-        res.status(200).json({ message: "Job deleted successfully" });
-      } else {
-        res.status(400).json({ message: "Failed to delete a job." });
-      }
-    } catch (error) {
-      res.status(500).json({ message: error.message });
-    }
-  }
-  // delete applied jobs
-  static async delete_applied_jobs(req, res) {
-
-    try {
-      const jobs = await appliedJobs.findByIdAndDelete(req.params.id);
-
-      if (jobs) {
-        res.status(200).json({ message: "Applied job deleted successfully" });
-      } else {
-        ''
-        res
-          .status(400)
-          .json({ message: "Failed to delete a new application." });
-      }
-    } catch (error) {
-      res.status(500).json({ message: error.message });
-    }
-  }
+  const profile = user.contractorProfile || user.consultantProfile || {};
+  return {
+    _id: user._id,
+    first_name: user.first_name,
+    last_name: user.last_name,
+    email: user.email,
+    // The legacy freelancer model stores tel_num as a Number, and the
+    // Flutter app's ContractorId.telNum field is typed as a non-nullable
+    // int — the unified model's String tel_num must be coerced here or
+    // JSON parsing crashes client-side.
+    tel_num: parseInt(user.tel_num, 10) || 0,
+    profile_pic: user.profile_pic,
+    gender: user.gender,
+    address: user.address,
+    profession: profile.profession || null,
+  };
 }
 
-module.exports = JobsController;
+// ============================================
+// RESOLVE CLIENT INFO ACROSS LEGACY + UNIFIED MODELS
+//
+// Same gap as resolveContractorInfo() above, but for AppliedJobs.clientId,
+// which only refs the legacy `employer` collection.
+// ============================================
+async function resolveClientInfo(clientId) {
+  if (!clientId) return null;
+
+  const employer = await Employer.findById(clientId)
+    .select("first_name last_name email_address business")
+    .lean();
+  if (employer) return employer;
+
+  const user = await UserModel.findById(clientId)
+    .select("first_name last_name email clientProfile")
+    .lean();
+  if (!user) return null;
+
+  return {
+    _id: user._id,
+    first_name: user.first_name,
+    last_name: user.last_name,
+    email_address: user.email,
+    business: user.clientProfile?.business || null,
+  };
+}
+
+// Wallets are keyed by owner_type "user" (unified accounts) or "freelancer"
+// (legacy accounts) — crediting the wrong bucket means the recipient never
+// sees the money in their wallet UI. Resolve which one actually applies.
+async function resolveWalletOwnerType(userId) {
+  const isUnified = await UserModel.exists({ _id: userId });
+  return isUnified ? "user" : "freelancer";
+}
+
+// A job with escrow enabled shouldn't be applyable/browsable until the
+// client actually funds it — otherwise a contractor could apply/be hired
+// on a job whose money was never deposited. Returns a query clause that
+// excludes jobs sitting on an unfunded ("pending_deposit") escrow.
+async function excludeUnfundedEscrowJobsClause() {
+  const pendingEscrows = await Escrow.find(
+    { status: "pending_deposit" },
+    { _id: 1 }
+  ).lean();
+  const pendingEscrowIds = pendingEscrows.map((e) => e._id);
+  if (pendingEscrowIds.length === 0) return {};
+  return {
+    $or: [
+      { escrow_enabled: { $ne: true } },
+      { escrow_enabled: true, escrow_id: { $nin: pendingEscrowIds } },
+    ],
+  };
+}
+
+// ============================================
+// CREATE JOB WITH ESCROW
+// ============================================
+exports.createJobWithEscrow = async (req, res) => {
+  try {
+    const {
+      job_title,
+      job_description,
+      project_fees,
+      experience,
+      address,
+      contact,
+      application_deadline,
+      job_duration,
+      profession,
+      job_category,
+      skills_required,
+      escrow_enabled,
+      escrow_type = "partial_60_40",
+    } = req.body;
+
+    const employerId = req.userid;
+
+    if (!job_title || !project_fees) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing required fields: job_title, project_fees",
+      });
+    }
+
+    let escrowAmount = project_fees;
+    if (escrow_enabled) {
+      if (escrow_type === "partial_60_40") {
+        escrowAmount = project_fees * 0.6;
+      } else if (escrow_type === "full_payment") {
+        escrowAmount = project_fees;
+      }
+    }
+
+    // Parse skills_required if sent as JSON string
+    let parsedSkills = [];
+    if (skills_required) {
+      try {
+        parsedSkills = typeof skills_required === "string"
+          ? JSON.parse(skills_required)
+          : skills_required;
+      } catch (_) { parsedSkills = []; }
+    }
+
+    const jobPost = new JobPost({
+      employer: employerId,
+      job_title,
+      job_description,
+      project_fees,
+      experience,
+      address,
+      contact,
+      application_deadline,
+      job_duration,
+      profession,
+      job_category: job_category || "General Construction",
+      skills_required: parsedSkills,
+      escrow_enabled,
+      escrow_type: escrow_enabled ? escrow_type : null,
+      escrow_amount: escrowAmount,
+      contract_status: "open",
+    });
+
+    await jobPost.save();
+
+    let escrowId = null;
+
+    if (escrow_enabled) {
+      // Mirror EscrowController.createEscrow's math exactly: service_fee and
+      // net_amount are computed off the FULL agreed amount (not the initial
+      // deposit slice), and escrow_balance only ever reflects money that has
+      // actually been deposited — never pre-funded at creation time.
+      const serviceFee = project_fees * 0.1;
+      const netAmount = project_fees - serviceFee;
+
+      const escrow = new Escrow({
+        employer_id: employerId,
+        contractor_id: null,
+        job_post_id: jobPost._id,
+        title: job_title,
+        description: job_description,
+        agreed_amount: project_fees,
+        initial_deposit: escrowAmount,
+        service_fee: serviceFee,
+        net_amount: netAmount,
+        escrow_balance: 0,
+        status: "pending_deposit",
+        full_payment_upfront: escrow_type !== "partial_60_40",
+      });
+
+      await escrow.save();
+      escrowId = escrow._id;
+
+      jobPost.escrow_id = escrowId;
+      await jobPost.save();
+    }
+
+    res.status(201).json({
+      success: true,
+      message: "Job post created successfully",
+      jobPost,
+      escrowId,
+      escrowStatus: escrow_enabled ? "pending_deposit" : null,
+    });
+  } catch (error) {
+    console.error("Error creating job with escrow:", error);
+    res.status(500).json({ success: false, message: "Error creating job post", error: error.message });
+  }
+};
+
+// ============================================
+// UPDATE JOB (client edits their own job post)
+// Only allowed while the job is still "open" — once a contractor is hired
+// or escrow is active, the core terms shouldn't shift underneath them.
+// ============================================
+exports.updateJob = async (req, res) => {
+  try {
+    const { jobId } = req.params;
+    const employerId = req.userid;
+
+    const jobPost = await JobPost.findById(jobId);
+    if (!jobPost) {
+      return res.status(404).json({ success: false, message: "Job not found" });
+    }
+    if (jobPost.employer.toString() !== employerId.toString()) {
+      return res.status(403).json({ success: false, message: "Only the job owner can edit this job" });
+    }
+    if (jobPost.contract_status !== "open") {
+      return res.status(400).json({ success: false, message: "Only open jobs can be edited" });
+    }
+
+    const editableFields = [
+      "job_title", "job_description", "project_fees", "experience",
+      "address", "contact", "application_deadline", "job_duration",
+      "profession", "job_category",
+    ];
+    for (const field of editableFields) {
+      if (req.body[field] !== undefined) {
+        jobPost[field] = req.body[field];
+      }
+    }
+
+    await jobPost.save();
+    return res.status(200).json({ success: true, message: "Job updated successfully", data: jobPost });
+  } catch (error) {
+    console.error("Error updating job:", error);
+    res.status(500).json({ success: false, message: "Error updating job", error: error.message });
+  }
+};
+
+// ============================================
+// CREATE JOB WITHOUT ESCROW
+// ============================================
+exports.addJobs = async (req, res) => {
+  try {
+    const { employerId } = req.params;
+    const {
+      job_title,
+      job_description,
+      project_fees,
+      experience,
+      address,
+      contact,
+      application_deadline,
+      job_duration,
+      profession,
+    } = req.body;
+
+    if (!job_title || !job_description || !project_fees || !experience || !application_deadline || !job_duration || !profession) {
+      return res.status(400).json({ success: false, message: "Missing required fields for job creation" });
+    }
+
+    const jobPost = new JobPost({
+      employer: employerId,
+      job_title,
+      job_description,
+      project_fees,
+      experience,
+      address,
+      contact,
+      application_deadline,
+      job_duration,
+      profession,
+      contract_status: "open",
+    });
+
+    await jobPost.save();
+    return res.status(201).json({ success: true, message: "Job created successfully", jobPost });
+  } catch (error) {
+    console.error("Error adding job:", error);
+    res.status(500).json({ success: false, message: "Error creating job", error: error.message });
+  }
+};
+
+// ============================================
+// STORE JOB APPLICATION (contractor applies)
+// Creates an AppliedJobs record with status="pending"
+// Job stays open; contractor can see it in Applied Jobs
+// Job disappears from feed (filtered in getContractorJobs)
+// ============================================
+exports.store_applied_jobs = async (req, res) => {
+  try {
+    const { job_id, contractor_id, notes } = req.body;
+    const document = req.file ? req.file.path : null;
+
+    if (!job_id || !contractor_id) {
+      return res.status(400).json({ success: false, message: "job_id and contractor_id are required" });
+    }
+
+    const jobPost = await JobPost.findById(job_id);
+    if (!jobPost) {
+      return res.status(404).json({ success: false, message: "Job not found" });
+    }
+
+    if (jobPost.contract_status !== "open") {
+      return res.status(400).json({ success: false, message: "This job is no longer accepting applications" });
+    }
+
+    if (jobPost.escrow_enabled && jobPost.escrow_id) {
+      const escrow = await Escrow.findById(jobPost.escrow_id).select("status").lean();
+      if (escrow && escrow.status === "pending_deposit") {
+        return res.status(400).json({ success: false, message: "This job's escrow deposit hasn't been made yet — applications aren't open until it's funded" });
+      }
+    }
+
+    // Check for duplicate application
+    const existingApplication = await AppliedJobs.findOne({ contractorId: contractor_id, jobId: job_id });
+    if (existingApplication) {
+      return res.status(400).json({ success: false, message: "You have already applied for this job" });
+    }
+
+    // Create the application record (pending approval from client)
+    const application = new AppliedJobs({
+      contractorId: contractor_id,
+      clientId: jobPost.employer,
+      jobId: job_id,
+      document: document || "",
+      notes: notes || "",
+      status: "pending",
+    });
+
+    await application.save();
+
+    // Populate for response
+    const populated = await AppliedJobs.findById(application._id)
+      .populate("jobId", "job_title job_description project_fees address application_deadline job_duration")
+      .lean();
+    [populated.contractorId, populated.clientId] = await Promise.all([
+      resolveContractorInfo(populated.contractorId),
+      resolveClientInfo(populated.clientId),
+    ]);
+
+    return res.status(200).json({
+      success: true,
+      message: "Application submitted successfully. Awaiting client review.",
+      application: populated,
+    });
+  } catch (error) {
+    console.error("Error storing applied jobs:", error);
+    res.status(500).json({ success: false, message: "Error recording application", error: error.message });
+  }
+};
+
+// ============================================
+// CLIENT ACCEPTS APPLICATION -> hires contractor
+// Sets selected_contractor_id, moves job to in_progress,
+// links contractor to escrow
+// ============================================
+exports.acceptApplication = async (req, res) => {
+  try {
+    const { applicationId } = req.params;
+    const employerId = req.userid;
+
+    const application = await AppliedJobs.findById(applicationId)
+      .populate("jobId");
+
+    if (!application) {
+      return res.status(404).json({ success: false, message: "Application not found" });
+    }
+
+    if (application.clientId.toString() !== employerId.toString()) {
+      return res.status(403).json({ success: false, message: "Only the job owner can accept applications" });
+    }
+
+    if (application.status !== "pending") {
+      return res.status(400).json({ success: false, message: "This application has already been processed" });
+    }
+
+    const jobPost = application.jobId;
+    if (jobPost.selected_contractor_id) {
+      return res.status(400).json({ success: false, message: "This job already has a hired contractor" });
+    }
+
+    // Mark application as accepted
+    application.status = "accepted";
+    await application.save();
+
+    // Decline all other pending applications for this job
+    await AppliedJobs.updateMany(
+      { jobId: jobPost._id, _id: { $ne: applicationId }, status: "pending" },
+      { $set: { status: "declined" } }
+    );
+
+    // Update the job post
+    const contractorId = application.contractorId;
+    jobPost.selected_contractor_id = contractorId;
+    jobPost.contract_status = "in_progress";
+    jobPost.work_start_date = new Date();
+    await jobPost.save();
+
+    // Link the hired contractor to the escrow. Status is deliberately left
+    // untouched here — an escrow only becomes "active" once the employer
+    // actually funds it via the deposit endpoints, never just from hiring.
+    let escrowUpdated = false;
+    if (jobPost.escrow_id) {
+      const escrow = await Escrow.findById(jobPost.escrow_id);
+      if (escrow && !escrow.contractor_id) {
+        escrow.contractor_id = contractorId;
+        escrow.job_accepted_at = new Date();
+        escrow.work_start_date = new Date();
+        await escrow.save();
+        escrowUpdated = true;
+      }
+    }
+
+    // Notify contractor via email
+    try {
+      const contractorInfo = await resolveContractorInfo(contractorId);
+      if (contractorInfo && contractorInfo.email) {
+        const employer = await Employer.findById(employerId);
+        await mailSender(
+          contractorInfo.email,
+          "Congratulations! Your application was accepted",
+          `<p>Hi ${contractorInfo.first_name},</p>
+           <p><b>${employer ? employer.first_name + " " + employer.last_name : "A client"}</b> has accepted your application for the job: <b>${jobPost.job_title}</b>.</p>
+           <p>The job is now in progress. Please log in to view your active contract.</p>
+           ${jobPost.escrow_id ? "<p>An escrow has been set up to protect your payment.</p>" : ""}
+           <p>Good luck!</p>`
+        );
+      }
+    } catch (mailErr) {
+      console.error("Failed to send acceptance email:", mailErr);
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Application accepted. Contractor has been hired.",
+      jobPost: {
+        id: jobPost._id,
+        title: jobPost.job_title,
+        contractStatus: jobPost.contract_status,
+        selectedContractorId: contractorId,
+      },
+      escrowUpdated,
+    });
+  } catch (error) {
+    console.error("Error accepting application:", error);
+    res.status(500).json({ success: false, message: "Error accepting application", error: error.message });
+  }
+};
+
+// ============================================
+// CLIENT DECLINES APPLICATION
+// ============================================
+exports.declineApplication = async (req, res) => {
+  try {
+    const { applicationId } = req.params;
+    const employerId = req.userid;
+
+    const application = await AppliedJobs.findById(applicationId)
+      .populate("jobId", "job_title employer");
+
+    if (!application) {
+      return res.status(404).json({ success: false, message: "Application not found" });
+    }
+
+    if (application.clientId.toString() !== employerId.toString()) {
+      return res.status(403).json({ success: false, message: "Only the job owner can decline applications" });
+    }
+
+    if (application.status !== "pending") {
+      return res.status(400).json({ success: false, message: "This application has already been processed" });
+    }
+
+    application.status = "declined";
+    await application.save();
+
+    // Notify contractor
+    try {
+      const contractorInfo = await resolveContractorInfo(application.contractorId);
+      if (contractorInfo && contractorInfo.email) {
+        await mailSender(
+          contractorInfo.email,
+          "Application Update",
+          `<p>Hi ${contractorInfo.first_name},</p>
+           <p>Unfortunately, your application for <b>${application.jobId.job_title}</b> was not selected at this time.</p>
+           <p>Keep applying — there are many more opportunities on BuildUp!</p>`
+        );
+      }
+    } catch (mailErr) {
+      console.error("Failed to send decline email:", mailErr);
+    }
+
+    return res.status(200).json({ success: true, message: "Application declined." });
+  } catch (error) {
+    console.error("Error declining application:", error);
+    res.status(500).json({ success: false, message: "Error declining application", error: error.message });
+  }
+};
+
+// ============================================
+// GET CONTRACTOR APPLIED JOBS
+// Returns all applications for this contractor (with status)
+// ============================================
+exports.contractor_applied_jobs = async (req, res) => {
+  try {
+    const { contractor_id } = req.params;
+    const { page = 1, limit = 10 } = req.query;
+
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    const applications = await AppliedJobs.find({ contractorId: contractor_id })
+      .populate({
+        path: "jobId",
+        select: "job_title job_description project_fees address application_deadline job_duration profession employer escrow_enabled contract_status",
+        populate: { path: "profession", select: "name" },
+      })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit))
+      .lean();
+
+    // AppliedJobs.clientId only refs the legacy `employer` collection, so
+    // clients on the unified `user` model resolve separately here.
+    await Promise.all(
+      applications.map(async (application) => {
+        application.clientId = await resolveClientInfo(application.clientId);
+      })
+    );
+
+    const total = await AppliedJobs.countDocuments({ contractorId: contractor_id });
+
+    return res.status(200).json({
+      success: true,
+      applications,
+      pagination: { total, page: parseInt(page), pages: Math.ceil(total / limit) },
+    });
+  } catch (error) {
+    console.error("Error fetching contractor applied jobs:", error);
+    res.status(500).json({ success: false, message: "Error fetching applications", error: error.message });
+  }
+};
+
+// ============================================
+// GET CLIENT APPLICATIONS (applications for a client's jobs)
+// ============================================
+exports.client_jobs = async (req, res) => {
+  try {
+    const { client_id } = req.params;
+    const { page = 1, limit = 10, status } = req.query;
+
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const query = { clientId: client_id };
+    if (status) query.status = status;
+
+    const applications = await AppliedJobs.find(query)
+      .populate({
+        path: "jobId",
+        select: "job_title job_description project_fees application_deadline escrow_enabled contract_status",
+      })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit))
+      .lean();
+
+    // AppliedJobs.contractorId only refs the legacy `freelancer` collection,
+    // so contractors on the unified `user` model resolve separately here.
+    await Promise.all(
+      applications.map(async (application) => {
+        application.contractorId = await resolveContractorInfo(application.contractorId);
+      })
+    );
+
+    const total = await AppliedJobs.countDocuments(query);
+
+    return res.status(200).json({
+      success: true,
+      totalDocuments: total,
+      totalPages: Math.ceil(total / limit),
+      currentPage: parseInt(page),
+      pageSize: parseInt(limit),
+      jobs: applications,
+    });
+  } catch (error) {
+    console.error("Error fetching client applications:", error);
+    res.status(500).json({ success: false, message: "Error fetching applications", error: error.message });
+  }
+};
+
+// ============================================
+// GET ALL AVAILABLE JOBS FOR CONTRACTOR
+// Excludes jobs they've already applied for
+// ============================================
+exports.getContractorJobs = async (req, res) => {
+  try {
+    const contractorId = req.userid;
+    const { status, escrowOnly, category, page = 1, limit = 10 } = req.query;
+
+    // Find IDs of jobs this contractor has already applied to
+    const myApplications = await AppliedJobs.find(
+      { contractorId },
+      { jobId: 1 }
+    ).lean();
+    const appliedJobIds = myApplications.map((a) => a.jobId.toString());
+
+    let query = {
+      contract_status: "open",
+      selected_contractor_id: null,
+      _id: { $nin: appliedJobIds },
+      ...(await excludeUnfundedEscrowJobsClause()),
+    };
+
+    if (status) query.contract_status = status;
+    if (escrowOnly === "true") query.escrow_enabled = true;
+    if (category && category !== "All") query.job_category = category;
+
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    const jobs = await JobPost.find(query)
+      .populate("employer", "first_name last_name email business")
+      .populate("escrow_id", "status agreed_amount escrow_balance")
+      .populate("profession", "name")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    const total = await JobPost.countDocuments(query);
+
+    return res.status(200).json({
+      success: true,
+      jobs,
+      pagination: { total, page: parseInt(page), pages: Math.ceil(total / limit) },
+    });
+  } catch (error) {
+    console.error("Error fetching contractor jobs:", error);
+    res.status(500).json({ success: false, message: "Error fetching jobs", error: error.message });
+  }
+};
+
+// ============================================
+// GET CONTRACTOR ASSIGNED JOBS (accepted/in_progress)
+// ============================================
+exports.getContractorAssignedJobs = async (req, res) => {
+  try {
+    const contractorId = req.userid;
+    const { status, escrowOnly, page = 1, limit = 10 } = req.query;
+
+    let query = { selected_contractor_id: contractorId };
+    if (status) query.contract_status = status;
+    if (escrowOnly === "true") query.escrow_enabled = true;
+
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    const jobs = await JobPost.find(query)
+      .populate("employer", "first_name last_name email business")
+      .populate("escrow_id", "status agreed_amount escrow_balance")
+      .populate("profession", "name")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    const total = await JobPost.countDocuments(query);
+
+    return res.status(200).json({
+      success: true,
+      jobs,
+      pagination: { total, page: parseInt(page), pages: Math.ceil(total / limit) },
+    });
+  } catch (error) {
+    console.error("Error fetching contractor assigned jobs:", error);
+    res.status(500).json({ success: false, message: "Error fetching jobs", error: error.message });
+  }
+};
+
+// ============================================
+// GET CONTRACTOR JOB STATS
+// Public trust signals for an arbitrary contractor (e.g. shown to a client
+// viewing an applicant's details) — completed/active job counts.
+// ============================================
+exports.getContractorStats = async (req, res) => {
+  try {
+    const { contractorId } = req.params;
+    const [completedJobs, activeJobs, totalApplications] = await Promise.all([
+      JobPost.countDocuments({ selected_contractor_id: contractorId, contract_status: "completed" }),
+      JobPost.countDocuments({ selected_contractor_id: contractorId, contract_status: "in_progress" }),
+      AppliedJobs.countDocuments({ contractorId }),
+    ]);
+    return res.status(200).json({
+      success: true,
+      completedJobs,
+      activeJobs,
+      totalApplications,
+    });
+  } catch (error) {
+    console.error("Error fetching contractor stats:", error);
+    res.status(500).json({ success: false, message: "Error fetching contractor stats", error: error.message });
+  }
+};
+
+// ============================================
+// GET EMPLOYER JOBS
+// ============================================
+exports.getEmployerJobs = async (req, res) => {
+  try {
+    const employerId = req.userid;
+    const { status, escrowOnly, page = 1, limit = 10 } = req.query;
+
+    let query = { employer: employerId };
+    if (status) query.contract_status = status;
+    if (escrowOnly === "true") query.escrow_enabled = true;
+
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    const jobs = await JobPost.find(query)
+      .populate("selected_contractor_id", "first_name last_name email avatar")
+      .populate("escrow_id", "status contractor_id agreed_amount initial_deposit escrow_balance net_amount released_amount full_payment_upfront")
+      .populate("profession", "name")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    const total = await JobPost.countDocuments(query);
+
+    return res.status(200).json({
+      success: true,
+      jobs,
+      pagination: { total, page: parseInt(page), pages: Math.ceil(total / limit) },
+    });
+  } catch (error) {
+    console.error("Error fetching employer jobs:", error);
+    res.status(500).json({ success: false, message: "Error fetching jobs", error: error.message });
+  }
+};
+
+// ============================================
+// GET ALL JOBS (public listing)
+// ============================================
+exports.get_all_jobs = async (req, res) => {
+  try {
+    const { status, profession, employerId, contractorId, category, page = 1, limit = 10 } = req.query;
+
+    const query = { ...(await excludeUnfundedEscrowJobsClause()) };
+    if (status) query.contract_status = status;
+    if (profession) query.profession = profession;
+    if (employerId) query.employer = employerId;
+    if (contractorId) query.selected_contractor_id = contractorId;
+    if (category && category !== "All") query.job_category = category;
+
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const jobs = await JobPost.find(query)
+      .populate("employer", "first_name last_name email business")
+      .populate("escrow_id", "status agreed_amount escrow_balance")
+      .populate("profession", "name")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    const total = await JobPost.countDocuments(query);
+
+    return res.status(200).json({
+      success: true,
+      jobs,
+      pagination: { total, page: parseInt(page), pages: Math.ceil(total / limit) },
+    });
+  } catch (error) {
+    console.error("Error fetching all jobs:", error);
+    res.status(500).json({ success: false, message: "Error fetching jobs", error: error.message });
+  }
+};
+
+// ============================================
+// GET JOBS BY PROFESSION
+// ============================================
+exports.getJobsByProfession = async (req, res) => {
+  try {
+    const { professionId } = req.params;
+    const { page = 1, limit = 10 } = req.query;
+    const query = {
+      profession: professionId,
+      contract_status: "open",
+      ...(await excludeUnfundedEscrowJobsClause()),
+    };
+
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const jobs = await JobPost.find(query)
+      .populate("employer", "first_name last_name email business")
+      .populate("escrow_id", "status agreed_amount escrow_balance")
+      .populate("profession", "name")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    const total = await JobPost.countDocuments(query);
+
+    return res.status(200).json({
+      success: true,
+      jobs,
+      pagination: { total, page: parseInt(page), pages: Math.ceil(total / limit) },
+    });
+  } catch (error) {
+    console.error("Error fetching jobs by profession:", error);
+    res.status(500).json({ success: false, message: "Error fetching jobs", error: error.message });
+  }
+};
+
+// ============================================
+// GET JOBS BY EMPLOYER ID
+// ============================================
+exports.getJobsByEmployer = async (req, res) => {
+  try {
+    const { employerId } = req.params;
+    const { page = 1, limit = 10 } = req.query;
+    const query = { employer: employerId };
+
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const jobs = await JobPost.find(query)
+      .populate("selected_contractor_id", "first_name last_name email avatar")
+      .populate("escrow_id", "status agreed_amount escrow_balance")
+      .populate("profession", "name")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    const total = await JobPost.countDocuments(query);
+
+    return res.status(200).json({
+      success: true,
+      jobs,
+      pagination: { total, page: parseInt(page), pages: Math.ceil(total / limit) },
+    });
+  } catch (error) {
+    console.error("Error fetching employer jobs by id:", error);
+    res.status(500).json({ success: false, message: "Error fetching jobs", error: error.message });
+  }
+};
+
+// ============================================
+// GET JOB WITH ESCROW DETAILS
+// ============================================
+exports.getJobWithEscrow = async (req, res) => {
+  try {
+    const { jobId } = req.params;
+
+    const jobPost = await JobPost.findById(jobId)
+      .populate("employer", "first_name last_name email business")
+      .populate("selected_contractor_id", "first_name last_name email avatar")
+      .populate({
+        path: "escrow_id",
+        select: "contractor_id employer_id status agreed_amount initial_deposit service_fee net_amount escrow_balance released_amount",
+        populate: [
+          { path: "contractor_id", select: "first_name last_name email avatar" },
+          { path: "employer_id", select: "first_name last_name" },
+        ],
+      })
+      .populate("profession", "name");
+
+    if (!jobPost) {
+      return res.status(404).json({ success: false, message: "Job post not found" });
+    }
+
+    return res.status(200).json({ success: true, jobPost });
+  } catch (error) {
+    console.error("Error fetching job:", error);
+    res.status(500).json({ success: false, message: "Error fetching job", error: error.message });
+  }
+};
+
+// ============================================
+// MARK JOB AS COMPLETED (contractor submits)
+// ============================================
+exports.completeJob = async (req, res) => {
+  try {
+    const { jobId } = req.params;
+    const { completionProof, notes } = req.body;
+    const contractorId = req.userid;
+
+    const jobPost = await JobPost.findById(jobId);
+    if (!jobPost) {
+      return res.status(404).json({ success: false, message: "Job post not found" });
+    }
+
+    if (!jobPost.selected_contractor_id || jobPost.selected_contractor_id.toString() !== contractorId.toString()) {
+      return res.status(403).json({ success: false, message: "Only assigned contractor can mark as complete" });
+    }
+
+    if (jobPost.contract_status !== "in_progress") {
+      return res.status(400).json({ success: false, message: "Job is not in progress" });
+    }
+
+    jobPost.contract_status = "completed";
+    jobPost.work_completion_date = new Date();
+    await jobPost.save();
+
+    if (jobPost.escrow_id) {
+      const escrow = await Escrow.findById(jobPost.escrow_id);
+      if (escrow && escrow.status === "active") {
+        escrow.status = "completion_requested";
+        escrow.completion_proof = {
+          url: completionProof || null,
+          note: notes || "",
+          submitted_at: new Date(),
+        };
+        escrow.actual_completion_date = new Date();
+        await escrow.save();
+      }
+    }
+
+    // Notify employer
+    try {
+      const employer = await Employer.findById(jobPost.employer);
+      const contractor = await Contractor.findById(contractorId);
+      if (employer && contractor) {
+        await mailSender(
+          employer.email_address,
+          "Job Completion Submitted",
+          `<p>Hi ${employer.first_name},</p>
+           <p><b>${contractor.first_name} ${contractor.last_name}</b> has submitted completion for the job: <b>${jobPost.job_title}</b>.</p>
+           <p>Please log in to review and confirm the work, then release payment.</p>`
+        );
+      }
+    } catch (mailErr) {
+      console.error("Failed to send completion email:", mailErr);
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Job marked as completed. Awaiting employer confirmation.",
+      jobPost: { id: jobPost._id, contractStatus: jobPost.contract_status, workCompletionDate: jobPost.work_completion_date },
+      escrowStatus: "completion_requested",
+    });
+  } catch (error) {
+    console.error("Error completing job:", error);
+    res.status(500).json({ success: false, message: "Error completing job", error: error.message });
+  }
+};
+
+// ============================================
+// EMPLOYER CONFIRMS JOB COMPLETION + RELEASES ESCROW FUNDS
+// ============================================
+exports.confirmJobCompletion = async (req, res) => {
+  try {
+    const { jobId } = req.params;
+    const employerId = req.userid;
+
+    const jobPost = await JobPost.findById(jobId);
+    if (!jobPost) {
+      return res.status(404).json({ success: false, message: "Job post not found" });
+    }
+
+    if (jobPost.employer.toString() !== employerId.toString()) {
+      return res.status(403).json({ success: false, message: "Only job owner can confirm completion" });
+    }
+
+    if (jobPost.contract_status !== "completed") {
+      return res.status(400).json({ success: false, message: "Contractor has not marked this job as complete yet" });
+    }
+
+    let fundsReleased = false;
+    let releasedAmount = 0;
+
+    // Release escrow funds to contractor wallet
+    if (jobPost.escrow_id) {
+      const escrow = await Escrow.findById(jobPost.escrow_id)
+        .populate("contractor_id", "first_name last_name email")
+        .populate("employer_id", "first_name last_name");
+
+      if (escrow && escrow.status === "completion_requested") {
+        // Employer must have fully funded the escrow before release — same
+        // gate as the generic EscrowController.confirmAndRelease flow.
+        const remainingOwed = escrow.agreed_amount - escrow.initial_deposit;
+        if (!escrow.full_payment_upfront && remainingOwed > 0) {
+          return res.status(400).json({
+            success: false,
+            message: `You must deposit the remaining balance of UGX ${remainingOwed.toLocaleString()} before confirming completion.`,
+            remainingBalance: remainingOwed,
+          });
+        }
+
+        const contractorId = jobPost.selected_contractor_id;
+
+        // Release only what has actually been deposited into escrow — never
+        // a pre-computed net amount that may not reflect real funding.
+        const totalRelease = escrow.escrow_balance;
+
+        // Credit contractor wallet (resolving legacy vs. unified account).
+        const ownerType = await resolveWalletOwnerType(contractorId);
+        let wallet = await Wallet.findOne({ owner_id: contractorId, owner_type: ownerType });
+        if (!wallet) {
+          wallet = new Wallet({ owner_id: contractorId, owner_type: ownerType });
+        }
+
+        wallet.available_balance += totalRelease;
+        wallet.total_earned += totalRelease;
+        wallet.transactions.push({
+          type: "credit",
+          amount: totalRelease,
+          description: `Payment released for job: ${jobPost.job_title}`,
+          reference: uuidv4(),
+          escrow_id: escrow._id,
+          status: "completed",
+        });
+        await wallet.save();
+
+        // Mark escrow as completed
+        escrow.status = "completed";
+        escrow.employer_confirmed = true;
+        escrow.employer_confirmed_at = new Date();
+        escrow.released_amount = totalRelease;
+        escrow.escrow_balance = 0;
+        await escrow.save();
+
+        fundsReleased = true;
+        releasedAmount = totalRelease;
+
+        // Notify contractor of payment
+        if (escrow.contractor_id) {
+          try {
+            await mailSender(
+              escrow.contractor_id.email,
+              "Payment Released to Your Wallet!",
+              `<p>Hi ${escrow.contractor_id.first_name},</p>
+               <p><b>UGX ${totalRelease.toLocaleString()}</b> has been released to your BuildUp wallet for job: <b>${jobPost.job_title}</b>.</p>
+               <p>You can now withdraw to your mobile money account from the Payments section.</p>`
+            );
+          } catch (mailErr) {
+            console.error("Failed to send payment release email:", mailErr);
+          }
+        }
+      }
+    }
+
+    jobPost.employer_confirmed = true;
+    await jobPost.save();
+
+    return res.status(200).json({
+      success: true,
+      message: fundsReleased
+        ? `Job confirmed. UGX ${releasedAmount.toLocaleString()} released to contractor wallet.`
+        : "Job completion confirmed.",
+      jobPost,
+      fundsReleased,
+      releasedAmount,
+      escrowStatus: fundsReleased ? "completed" : "unchanged",
+    });
+  } catch (error) {
+    console.error("Error confirming job completion:", error);
+    res.status(500).json({ success: false, message: "Error confirming job completion", error: error.message });
+  }
+};
+
+// ============================================
+// DELETE APPLIED JOB APPLICATION
+// ============================================
+exports.delete_applied_jobs = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const application = await AppliedJobs.findByIdAndDelete(id);
+    if (!application) {
+      return res.status(404).json({ success: false, message: "Application not found" });
+    }
+    return res.status(200).json({ success: true, message: "Application deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting applied job:", error);
+    res.status(500).json({ success: false, message: "Error deleting application", error: error.message });
+  }
+};
+
+// ============================================
+// DELETE JOB BY ID
+// ============================================
+exports.delete_prof_jobs = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const jobPost = await JobPost.findByIdAndDelete(id);
+    if (!jobPost) {
+      return res.status(404).json({ success: false, message: "Job not found" });
+    }
+    return res.status(200).json({ success: true, message: "Job deleted successfully", jobPost });
+  } catch (error) {
+    console.error("Error deleting prof job:", error);
+    res.status(500).json({ success: false, message: "Error deleting job", error: error.message });
+  }
+};
+
+// ============================================
+// CONTRACTOR APPLIES FOR JOB (with escrow)
+// ============================================
+exports.applyForJobWithEscrow = async (req, res) => {
+  try {
+    const jobId = req.params.jobId;
+    const contractorId = req.userid;
+    const { notes, document } = req.body;
+
+    const jobPost = await JobPost.findById(jobId);
+    if (!jobPost) {
+      return res.status(404).json({ success: false, message: "Job not found" });
+    }
+
+    if (jobPost.contract_status !== "open") {
+      return res.status(400).json({ success: false, message: "This job is no longer accepting applications" });
+    }
+
+    if (jobPost.escrow_enabled && jobPost.escrow_id) {
+      const escrow = await Escrow.findById(jobPost.escrow_id).select("status").lean();
+      if (escrow && escrow.status === "pending_deposit") {
+        return res.status(400).json({ success: false, message: "This job's escrow deposit hasn't been made yet — applications aren't open until it's funded" });
+      }
+    }
+
+    // Check for duplicate application
+    const existingApplication = await AppliedJobs.findOne({ contractorId, jobId });
+    if (existingApplication) {
+      return res.status(400).json({ success: false, message: "You have already applied for this job" });
+    }
+
+    // Create the application record
+    const application = new AppliedJobs({
+      contractorId,
+      clientId: jobPost.employer,
+      jobId,
+      document: document || "",
+      notes: notes || "",
+      status: "pending",
+    });
+
+    await application.save();
+
+    // Populate for response
+    const populated = await AppliedJobs.findById(application._id)
+      .populate("jobId", "job_title job_description project_fees")
+      .lean();
+    [populated.contractorId, populated.clientId] = await Promise.all([
+      resolveContractorInfo(populated.contractorId),
+      resolveClientInfo(populated.clientId),
+    ]);
+
+    return res.status(200).json({
+      success: true,
+      message: "Application submitted successfully. Escrow is pending employer deposit.",
+      application: populated,
+      contractorFetched: {
+        escrowUpdated: false,
+      },
+    });
+  } catch (error) {
+    console.error("Error applying for job:", error);
+    res.status(500).json({ success: false, message: "Error submitting application", error: error.message });
+  }
+};

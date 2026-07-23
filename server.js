@@ -29,14 +29,7 @@ const sendSms = require("./services/SmsService");
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 app.use(express.static(path.join(__dirname, 'public')));
-
-// Ensure the uploads directory exists and serve it publicly. Uploads are
-// written here by helpers/file_helper.js and fetched by clients via the
-// absolute URL returned from the upload endpoints.
-const uploadsDir = path.join(__dirname, 'uploads');
-fs.mkdirSync(uploadsDir, { recursive: true });
-app.use('/uploads', express.static(uploadsDir));
-
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
@@ -81,8 +74,21 @@ app.use("/search", require("./routes/search.routes"));
 app.use("/stock", require("./routes/stock.routes"));
 app.use("/withdraws", require("./routes/withdraw.routes"));
 app.use("/contractor", require("./routes/contractor.routes"));
+app.use("/jobs", require("./routes/jobs.routes"));
+// Escrow, Wallet & Task Chat
+app.use("/escrow", require("./routes/escrow.routes"));
+app.use("/wallet", require("./routes/wallet.routes"));
+app.use("/task-chat", require("./routes/taskChat.routes"));
 app.use("/role", require("./routes/roles.routes"));
 app.use("/auth", require("./helpers/verify_email"));
+app.use("/admin-revenue", require("./routes/adminRevenue.routes"));
+app.use("/orders",        require("./routes/order.routes"));
+app.use("/cart",          require("./routes/cart.routes"));
+app.use("/reviews",       require("./routes/review.routes"));
+app.use("/notifications", require("./routes/notifications.routes"));
+app.use("/profile",       require("./routes/profile.routes"));
+app.use("/auth", require("./routes/auth.routes"));
+console.log("[BuildUp] Server booted — wallet fix + chat media support deployed");
 // db connection
 const dbOptions = {
   useNewUrlParser: true,

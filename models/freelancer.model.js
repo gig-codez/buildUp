@@ -72,13 +72,20 @@ const freelancerSchema = new mongoose.Schema(
     },
     active: {
       type: Boolean,
-      default: false,
+      default: true,
     },
     emailVerified: {
       type: Boolean,
       default: false,
       required: false,
     },
+    // Profile completion fields
+    bio: { type: String, default: "" },
+    yearsOfExperience: { type: Number, default: 0 },
+    location: { type: String, default: "" },
+    skills: { type: [String], default: [] },
+    certifications: { type: [String], default: [] },
+    profileCompleted: { type: Boolean, default: false },
     passwordChangedAt: Date,
     passwordResetToken: String,
     passwordResetTokenExpires: Date,

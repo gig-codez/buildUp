@@ -39,6 +39,39 @@ class SupplierController {
     }
   }
 
+  static async getAllStocks(req, res) {
+    try {
+      const page = parseInt(req.query.page) || 1;
+      const pageSize = parseInt(req.query.pageSize) || 10;
+      const { search, category } = req.query;
+
+      // Build filter
+      const filter = {};
+      if (search) filter.product_name = { $regex: search, $options: "i" };
+      if (category && category !== "All") filter.category = category;
+
+      const totalDocuments = await supplierStockModel.find(filter).countDocuments();
+      const totalPages = Math.ceil(totalDocuments / pageSize);
+      const skipDocuments = (page - 1) * pageSize;
+
+      const stocks = await supplierStockModel
+        .find(filter)
+        .sort({ createdAt: -1 })
+        .skip(skipDocuments)
+        .limit(pageSize);
+
+      res.status(200).json({
+        totalDocuments,
+        totalPages,
+        currentPage: page,
+        pageSize,
+        data: stocks,
+      });
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  }
+
   static async store(req, res) {
     try {
       // Generate a new short-code with a 5-minute expiration time
@@ -307,13 +340,21 @@ class SupplierController {
   // create stock
   static async create_stock(req, res) {
     try {
-      // console.log(req.body)
       if (req.file) {
         const imagePath = await fileStoreMiddleware(
           req,
           `${req.body.supplier}_stock`
         );
         req.body.product_image = imagePath;
+      }
+      // Parse variants if sent as JSON string
+      let variants = [];
+      if (req.body.variants) {
+        try {
+          variants = typeof req.body.variants === "string"
+            ? JSON.parse(req.body.variants)
+            : req.body.variants;
+        } catch (_) { variants = []; }
       }
       const stock = new supplierStockModel({
         supplier_id: req.body.supplier,
@@ -322,10 +363,14 @@ class SupplierController {
         product_price: req.body.product_price,
         status: req.body.status,
         product_image: req.body.product_image,
+        category: req.body.category || "Other",
+        description: req.body.description || "",
+        unit: req.body.unit || "piece",
+        variants,
       });
       await stock.save();
       if (stock) {
-        res.status(200).json({ message: `${req.body.product_name} created successfully` });
+        res.status(200).json({ message: `${req.body.product_name} created successfully`, data: stock });
       } else {
         res.status(400).json({ message: `${req.body.product_name} stock not created` });
       }
@@ -359,7 +404,7 @@ class SupplierController {
           totalPages,
           currentPage: page,
           pageSize,
-          stock,
+          data: stock,
         });
       } else {
         res.status(400).json({ message: "Error fetching stock.." });
@@ -393,22 +438,140 @@ class SupplierController {
         );
         req.body.product_image = imagePath;
       } else {
-        const oldStock = await supplierStockModel.findOne({
-          _id: req.params.id,
-        });
+        const oldStock = await supplierStockModel.findOne({ _id: req.params.id });
         req.body.product_image = oldStock.product_image;
+      }
+      // Parse variants if sent as JSON string
+      if (req.body.variants && typeof req.body.variants === "string") {
+        try { req.body.variants = JSON.parse(req.body.variants); }
+        catch (_) { delete req.body.variants; }
       }
       const stock = await supplierStockModel.findByIdAndUpdate(
         req.params.id,
-        req.body
+        req.body,
+        { new: true }
       );
       if (stock) {
-        res.status(200).json({ message: "stock updated successfully" });
+        res.status(200).json({ message: "stock updated successfully", data: stock });
       } else {
         res.status(400).json({ message: "stock not updated" });
       }
     } catch (error) {
       res.status(500).json({ message: error.message });
+    }
+  }
+
+  // GET /stock/search?q=name&minPrice=&maxPrice=&location=&category=
+  static async search_stock(req, res) {
+    try {
+      const { q, minPrice, maxPrice, location, category } = req.query;
+      const stockFilter = {};
+      if (q) stockFilter.product_name = { $regex: q, $options: "i" };
+      if (category && category !== "All") stockFilter.category = category;
+      if (minPrice) stockFilter.product_price = { $gte: Number(minPrice) };
+      if (maxPrice) {
+        stockFilter.product_price = {
+          ...(stockFilter.product_price || {}),
+          $lte: Number(maxPrice),
+        };
+      }
+
+      // If location filter, first find matching supplier IDs
+      if (location) {
+        const matchingSuppliers = await supplierModel.find({
+          $or: [
+            { business_address: { $regex: location, $options: "i" } },
+            { business_name: { $regex: location, $options: "i" } },
+          ],
+        }).select("_id");
+        stockFilter.supplier_id = { $in: matchingSuppliers.map((s) => s._id) };
+      }
+
+      const stock = await supplierStockModel
+        .find(stockFilter)
+        .populate("supplier_id", "business_name business_address")
+        .sort({ createdAt: -1 })
+        .limit(100);
+
+      const results = stock.map((s) => ({
+        _id: s._id,
+        productName: s.product_name,
+        productPrice: s.product_price,
+        productQuantity: s.product_quantity,
+        productImage: s.product_image,
+        status: s.status,
+        category: s.category || "Other",
+        description: s.description || "",
+        unit: s.unit || "piece",
+        variants: s.variants || [],
+        supplierId: s.supplier_id?._id,
+        supplierName: s.supplier_id?.business_name || "",
+        supplierAddress: s.supplier_id?.business_address || "",
+      }));
+
+      return res.status(200).json({ data: results });
+    } catch (error) {
+      return res.status(500).json({ message: error.message });
+    }
+  }
+
+  // GET /stock/analytics/:supplierId
+  static async supplier_analytics(req, res) {
+    try {
+      const Order = require("../models/order.model");
+      const supplierId = req.params.supplierId;
+
+      const [stockItems, orders] = await Promise.all([
+        supplierStockModel.find({ supplier_id: supplierId }),
+        Order.find({ supplierId }),
+      ]);
+
+      const totalProducts = stockItems.length;
+      const totalOrders = orders.length;
+      const pendingOrders = orders.filter((o) => o.status === "pending").length;
+      const deliveredOrders = orders.filter((o) => o.status === "delivered").length;
+      const totalEarnings = orders
+        .filter((o) => o.status === "delivered")
+        .reduce((sum, o) => sum + o.totalAmount, 0);
+      const lowStockCount = stockItems.filter((s) => s.product_quantity <= 5).length;
+
+      // Monthly earnings (current calendar month)
+      const now = new Date();
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      const monthlyEarnings = orders
+        .filter((o) => o.status === "delivered" && new Date(o.createdAt) >= monthStart)
+        .reduce((sum, o) => sum + o.totalAmount, 0);
+
+      // Top products by order count
+      const productCount = {};
+      const productRevenue = {};
+      const productMeta = {};
+      for (const order of orders) {
+        for (const item of order.items) {
+          productCount[item.productId] = (productCount[item.productId] || 0) + item.quantity;
+          productRevenue[item.productId] = (productRevenue[item.productId] || 0) + item.unitPrice * item.quantity;
+          productMeta[item.productId] = { productName: item.productName, productImage: item.productImage };
+        }
+      }
+      const topProducts = Object.entries(productCount)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+        .map(([productId, orderCount]) => ({
+          productId,
+          productName: productMeta[productId]?.productName || "",
+          productImage: productMeta[productId]?.productImage || "",
+          orderCount,
+          revenue: productRevenue[productId] || 0,
+        }));
+
+      return res.status(200).json({
+        data: {
+          totalProducts, totalOrders, pendingOrders, deliveredOrders,
+          totalEarnings, monthlyEarnings, lowStockCount, topProducts,
+        },
+      });
+    } catch (error) {
+      return res.status(500).json({ message: error.message });
     }
   }
 }
