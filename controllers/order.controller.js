@@ -96,9 +96,23 @@ class OrderController {
   // GET /orders/supplier/:supplierId  — supplier sees their incoming orders
   static async getBySupplier(req, res) {
     try {
-      const orders = await Order.find({ supplierId: req.params.supplierId })
-        .sort({ createdAt: -1 });
-      return res.status(200).json({ data: orders });
+      const { status, page = 1, limit = 10 } = req.query;
+      const filter = { supplierId: req.params.supplierId };
+      if (status) filter.status = status;
+
+      const skip = (parseInt(page) - 1) * parseInt(limit);
+      const [orders, total] = await Promise.all([
+        Order.find(filter)
+          .sort({ createdAt: -1 })
+          .skip(skip)
+          .limit(parseInt(limit)),
+        Order.countDocuments(filter),
+      ]);
+
+      return res.status(200).json({
+        data: orders,
+        pagination: { total, page: parseInt(page), pages: Math.ceil(total / limit) },
+      });
     } catch (err) {
       return res.status(500).json({ message: err.message });
     }
