@@ -106,6 +106,18 @@ function fullName(doc) {
   return `${doc.first_name || ""} ${doc.last_name || ""}`.trim();
 }
 
+/**
+ * Compare strings the way MongoDB does (raw code-unit/byte order) instead of
+ * `localeCompare`. `localeCompare` is locale- and case-aware, so it would sort
+ * "alice" before "Bob" while Mongo's BSON ordering puts "Bob" first ("B" = 0x42
+ * < "a" = 0x61). Any divergence between the per-collection window and the
+ * in-memory merge would break pagination, so both sides must use byte order.
+ */
+function compareStrings(a, b) {
+  if (a === b) return 0;
+  return a < b ? -1 : 1;
+}
+
 function timeOf(doc) {
   const value = doc.createdAt ? new Date(doc.createdAt).getTime() : 0;
   return Number.isNaN(value) ? 0 : value;
@@ -114,15 +126,16 @@ function timeOf(doc) {
 /**
  * Comparator for the merged (in-memory) window. Must order identically to the
  * database-side sort so that paginating the combined set stays consistent.
+ * (See `dbSortFor` — the two must stay in lockstep.)
  */
 function comparatorFor(sort) {
   switch (sort) {
     case "createdAt_asc":
       return (a, b) => timeOf(a) - timeOf(b);
     case "name_asc":
-      return (a, b) => fullName(a).localeCompare(fullName(b));
+      return (a, b) => compareStrings(fullName(a), fullName(b));
     case "name_desc":
-      return (a, b) => fullName(b).localeCompare(fullName(a));
+      return (a, b) => compareStrings(fullName(b), fullName(a));
     case "rating_asc":
       return (a, b) => (a.averageRating ?? 0) - (b.averageRating ?? 0);
     case "rating_desc":
@@ -133,11 +146,30 @@ function comparatorFor(sort) {
   }
 }
 
-/** The matching database-side sort for the options Mongo can sort directly. */
+/**
+ * The database-side sort matching each option, used to pick the top
+ * `skip + pageSize` candidates from EACH collection before merging them.
+ *
+ * The direction here MUST equal the direction in `comparatorFor`. Each source is
+ * queried in the final sort order so that the union of the two per-collection
+ * top-N windows is guaranteed to contain the true global page. Querying one
+ * collection in the opposite direction would return that collection's *worst*
+ * candidates and silently drop the correct ones — e.g. for `name_desc`,
+ * fetching each source's 60 alphabetically-earliest names can never surface a
+ * late-page name that sorts 5th from the top.
+ */
 function dbSortFor(sort) {
-  return sort === "name_asc" || sort === "name_desc"
-    ? { first_name: 1, last_name: 1 }
-    : { createdAt: -1 };
+  switch (sort) {
+    case "createdAt_asc":
+      return { createdAt: 1 };
+    case "name_asc":
+      return { first_name: 1, last_name: 1 };
+    case "name_desc":
+      return { first_name: -1, last_name: -1 };
+    case "createdAt_desc":
+    default:
+      return { createdAt: -1 };
+  }
 }
 
 /**
@@ -555,4 +587,8 @@ module.exports = {
   attachRatings,
   attachGalleries,
   listContractors,
+  // Exported so tests can assert the database-side sort and the in-memory
+  // comparator stay in agreement — that pairing is easy to break silently.
+  dbSortFor,
+  comparatorFor,
 };

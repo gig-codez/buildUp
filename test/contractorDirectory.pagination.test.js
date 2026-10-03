@@ -6,37 +6,56 @@ const reviewModel = require("../models/reviews_ratings.model");
 const professionModel = require("../models/contractorProfession.model");
 const portfolioModel = require("../models/portifolio.model");
 
-// ── Build a fake combined dataset: 12 legacy + 13 unified = 25 contractors ──
+// ── Fixtures: 12 legacy + 13 unified = 25 contractors ────────────────────────
+// Names are assigned in REVERSE of createdAt, so createdAt_desc is the exact
+// reverse of name_asc. A wrong sort direction therefore produces an obviously
+// wrong page rather than an accidentally-correct one. Index 12 is lower-case so
+// byte-order vs locale-collation disagree for it.
+const TOTAL = 25;
 const legacyData = [];
 const unifiedData = [];
-for (let i = 0; i < 25; i++) {
+for (let i = 0; i < TOTAL; i++) {
+  const nameIdx = TOTAL - 1 - i;
   const id = new mongoose.Types.ObjectId();
+  const first = nameIdx === 12 ? "name12" : `Name${String(nameIdx).padStart(2, "0")}`;
   const doc = {
     _id: id,
-    first_name: `First${i}`,
-    last_name: `Last${String(i).padStart(2, "0")}`,
+    first_name: first,
+    last_name: `Last${String(nameIdx).padStart(2, "0")}`,
     email: `c${i}@x.com`,
-    // Deliberately interleaved createdAt so neither collection is contiguous
     createdAt: new Date(2026, 0, 1, 0, 0, i),
   };
   if (i % 2 === 0) legacyData.push({ ...doc, role: "r", _legacy: true });
   else unifiedData.push({ ...doc, contractorProfile: { profession: null } });
 }
 
-const base = new Date(2026, 0, 1).getTime();
-const byCreatedAtDesc = (a, b) =>
-  new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-legacyData.sort(byCreatedAtDesc);
-unifiedData.sort(byCreatedAtDesc);
+// ── Mongo-like stub: honours .sort() AND .limit() ────────────────────────────
+// The previous stub ignored .sort(), which is exactly why a sort-direction bug
+// went unnoticed. Field values compare in byte order, like BSON.
+function cmpValues(a, b) {
+  const av = a instanceof Date ? a.getTime() : a;
+  const bv = b instanceof Date ? b.getTime() : b;
+  if (av === bv) return 0;
+  return av < bv ? -1 : 1;
+}
 
-// ── Stub the mongoose query chain ────────────────────────────────────────────
 function makeFind(docs) {
   return () => {
     let results = docs.slice();
     const q = {
       select: () => q,
       populate: () => q,
-      sort: () => q,
+      sort: (spec) => {
+        const keys = Object.keys(spec);
+        results.sort((x, y) => {
+          for (const k of keys) {
+            const c = cmpValues(x[k], y[k]);
+            if (c !== 0) return spec[k] < 0 ? -c : c;
+          }
+          return 0;
+        });
+        return q;
+      },
       limit: (n) => { results = results.slice(0, n); return q; },
       lean: async () => results,
     };
@@ -48,18 +67,16 @@ userModel.find = makeFind(unifiedData);
 freelancerModel.countDocuments = async () => legacyData.length;
 userModel.countDocuments = async () => unifiedData.length;
 
-// Ratings: contractor 0 gets 5.0, contractor 1 gets 1.0, rest unrated.
+// Ratings: the two newest contractors get 5.0 and 1.0, rest unrated.
 const ratedIds = new Map([
-  [String(legacyData[0]._id), 5],
-  [String(unifiedData[0]._id), 1],
+  [String(unifiedData.reduce((a, b) => (a.createdAt > b.createdAt ? a : b))._id), 5],
+  [String(legacyData.reduce((a, b) => (a.createdAt > b.createdAt ? a : b))._id), 1],
 ]);
 reviewModel.aggregate = async (pipe) => {
   if (pipe[0] && pipe[0].$match && pipe[0].$match.user_id) {
     return [...ratedIds.entries()]
       .filter(([id]) => pipe[0].$match.user_id.$in.some((x) => String(x) === id))
-      .map(([id, rating]) => ({
-        _id: id, averageRating: rating, totalReviews: 3,
-      }));
+      .map(([id, rating]) => ({ _id: id, averageRating: rating, totalReviews: 3 }));
   }
   if (pipe[0] && pipe[0].$group && pipe[0].$group.averageRating && !pipe[0].$match) {
     return [...ratedIds.entries()].map(([id, rating]) => ({ _id: id, averageRating: rating }));
@@ -69,127 +86,152 @@ reviewModel.aggregate = async (pipe) => {
 professionModel.find = () => ({ select: () => ({ lean: async () => [] }) });
 
 // ── Portfolio fixtures ───────────────────────────────────────────────────────
-// legacyData[0] gets 3 projects (one with 5 snaps) so truncation is testable;
-// everyone else gets none. Assert the lookup is a single batched $in query.
+// The newest legacy contractor owns 3 projects (5, 1 and 0 snaps) so truncation
+// is testable; everyone else owns none.
 let portfolioQueries = 0;
+const galleryOwner = legacyData.reduce((a, b) => (a.createdAt > b.createdAt ? a : b));
 portfolioModel.find = (filter) => {
   portfolioQueries++;
   const wanted = new Set((filter.ownerId.$in || []).map(String));
   let rows = [];
-  const q = {
-    select: () => q,
-    sort: () => q,
-    lean: async () => rows,
-  };
-  if (wanted.has(String(legacyData[0]._id))) {
+  const q = { select: () => q, sort: () => q, lean: async () => rows };
+  if (wanted.has(String(galleryOwner._id))) {
     rows = [
-      { _id: "p1", ownerId: legacyData[0]._id, projectName: "P1", clientName: "C1",
-        description: "d1", snaps: ["s1","s2","s3","s4","s5"], createdAt: new Date() },
-      { _id: "p2", ownerId: legacyData[0]._id, projectName: "P2", clientName: "C2",
+      { _id: "p1", ownerId: galleryOwner._id, projectName: "P1", clientName: "C1",
+        description: "d1", snaps: ["s1", "s2", "s3", "s4", "s5"], createdAt: new Date() },
+      { _id: "p2", ownerId: galleryOwner._id, projectName: "P2", clientName: "C2",
         description: "d2", snaps: ["s1"], createdAt: new Date() },
-      { _id: "p3", ownerId: legacyData[0]._id, projectName: "P3", clientName: "C3",
+      { _id: "p3", ownerId: galleryOwner._id, projectName: "P3", clientName: "C3",
         description: "d3", snaps: [], createdAt: new Date() },
     ];
   }
   return q;
 };
 
-const { listContractors } = require("../utils/contractorDirectory");
+const { listContractors, SORT_OPTIONS, dbSortFor } = require("../utils/contractorDirectory");
 
-const ids = (page) => page.data.map((d) => String(d._id));
+// ── Independent expected-order computation (byte order, not locale) ──────────
+const nameOf = (d) => `${d.first_name} ${d.last_name}`.trim();
+const byByte = (a, b) => (a === b ? 0 : a < b ? -1 : 1);
+const byTime = (a, b) => a.createdAt.getTime() - b.createdAt.getTime();
+const ALL = [...legacyData, ...unifiedData];
+
+function expectedOrder(sort) {
+  switch (sort) {
+    case "createdAt_asc": return [...ALL].sort(byTime);
+    case "createdAt_desc": return [...ALL].sort((a, b) => -byTime(a, b));
+    case "name_asc": return [...ALL].sort((a, b) => byByte(nameOf(a), nameOf(b)));
+    case "name_desc": return [...ALL].sort((a, b) => -byByte(nameOf(a), nameOf(b)));
+    default: return null; // rating sorts handled separately
+  }
+}
+
+let pass = true;
+const fail = (...m) => { pass = false; console.log("  FAIL:", ...m); };
 
 (async () => {
-  // The expected full ordering: newest-first across BOTH collections.
-  const expected = [...legacyData, ...unifiedData].sort(byCreatedAtDesc);
-  let pass = true;
-  const seen = [];
-
-  for (const pageSize of [5, 7, 10]) {
-    seen.length = 0;
-    const total = expected.length;
-    const totalPages = Math.ceil(total / pageSize);
-    for (let page = 1; page <= totalPages; page++) {
-      const r = await listContractors({ page, pageSize });
-      const got = ids(r);
-      const want = expected
-        .slice((page - 1) * pageSize, page * pageSize)
-        .map((d) => String(d._id));
-      const ok = JSON.stringify(got) === JSON.stringify(want);
-      if (!ok) { pass = false; console.log(`  MISMATCH pageSize=${pageSize} page=${page}`); console.log("   got ", got); console.log("   want", want); }
-      seen.push(...got);
-      if (r.totalDocuments !== total) { pass = false; console.log(`  BAD total pageSize=${pageSize} page=${page}: ${r.totalDocuments} != ${total}`); }
-      if (r.totalPages !== totalPages) { pass = false; console.log(`  BAD totalPages: ${r.totalPages} != ${totalPages}`); }
-      if (r.currentPage !== page) { pass = false; console.log(`  BAD currentPage: ${r.currentPage} != ${page}`); }
+  // ── 1. Full page-walk for every non-rating sort ─────────────────────────────
+  // Regression guard: a dbSort/comparator direction mismatch corrupts pages 2+.
+  const PAGED_SORTS = ["createdAt_desc", "createdAt_asc", "name_asc", "name_desc"];
+  for (const sort of PAGED_SORTS) {
+    for (const pageSize of [5, 7, 10]) {
+      const want = expectedOrder(sort).map((d) => String(d._id));
+      const seen = [];
+      const totalPages = Math.ceil(TOTAL / pageSize);
+      let bad = null;
+      for (let page = 1; page <= totalPages && !bad; page++) {
+        const r = await listContractors({ page, pageSize, sort });
+        const got = r.data.map((d) => String(d._id));
+        const slice = want.slice((page - 1) * pageSize, page * pageSize);
+        if (JSON.stringify(got) !== JSON.stringify(slice)) {
+          bad = `page=${page}: got [${got.join(",")}] want [${slice.join(",")}]`;
+        }
+        if (r.totalDocuments !== TOTAL) bad = `totalDocuments=${r.totalDocuments}`;
+        if (r.totalPages !== totalPages) bad = `totalPages=${r.totalPages}`;
+        if (r.currentPage !== page) bad = `currentPage=${r.currentPage}`;
+        seen.push(...got);
+      }
+      if (bad) fail(`sort=${sort} pageSize=${pageSize}`, bad);
+      else if (new Set(seen).size !== TOTAL) fail(`sort=${sort} pageSize=${pageSize} duplicates/omissions`);
+      else console.log(`sort=${sort} pageSize=${pageSize}: ${totalPages} pages, ${TOTAL}/${TOTAL} unique -> OK`);
     }
-    // No duplicates and nothing missed across the whole paged walk.
-    if (new Set(seen).size !== total) { pass = false; console.log(`  DUPLICATES/MISSES at pageSize=${pageSize}`); }
-    console.log(`pageSize=${pageSize}: walked ${seen.length}/${total} docs, unique=${new Set(seen).size} -> ${pass ? "OK" : "FAIL"}`);
   }
 
-  // name_asc ordering
-  const namePage = await listContractors({ page: 1, pageSize: 5, sort: "name_asc" });
+  // ── 2. dbSortFor direction must match comparatorFor ────────────────────────
+  // Explicit guard so the two can't silently drift apart again.
+  const DIRECTION = {
+    createdAt_desc: { createdAt: -1 },
+    createdAt_asc: { createdAt: 1 },
+    name_asc: { first_name: 1, last_name: 1 },
+    name_desc: { first_name: -1, last_name: -1 },
+  };
+  for (const [sort, want] of Object.entries(DIRECTION)) {
+    const got = dbSortFor(sort);
+    const ok = JSON.stringify(got) === JSON.stringify(want);
+    if (!ok) fail(`dbSortFor(${sort}) = ${JSON.stringify(got)}, want ${JSON.stringify(want)}`);
+  }
+  console.log("dbSortFor directions:", pass ? "OK" : "FAIL");
+
+  // ── 3. Lower-case name proves byte-order (not locale) ordering ─────────────
+  const namePage = await listContractors({ page: 1, pageSize: 25, sort: "name_asc" });
   const names = namePage.data.map((d) => `${d.first_name} ${d.last_name}`);
-  const sortedNames = [...names].sort((a, b) => a.localeCompare(b));
-  const nameOk = JSON.stringify(names) === JSON.stringify(sortedNames);
-  if (!nameOk) { pass = false; console.log("  BAD name_asc", names); }
-  console.log("sort=name_asc ->", nameOk ? "OK" : "FAIL", names.slice(0, 2));
+  const lowerIdx = names.findIndex((n) => n.startsWith("name12"));
+  const upperAfter = names.slice(lowerIdx + 1).filter((n) => n.startsWith("Name"));
+  if (lowerIdx !== names.length - 1 - upperAfter.length) {
+    fail("lower-case name not ordered by byte order");
+  } else {
+    console.log("byte-order name sort -> OK ('name12' sorts after all 'Name*')");
+  }
 
-  // rating_desc: rated (5.0) must come first
-  const ratingPage = await listContractors({ page: 1, pageSize: 5, sort: "rating_desc" });
-  console.log("sort=rating_desc -> first rating:", ratingPage.data[0].averageRating,
-    "| ratings:", ratingPage.data.map((d) => d.averageRating).join(","));
-  const ratingOk = ratingPage.data[0].averageRating === 5;
-  if (!ratingOk) { pass = false; }
+  // ── 4. Rating sorts ────────────────────────────────────────────────────────
+  const descPage = await listContractors({ page: 1, pageSize: 5, sort: "rating_desc" });
+  if (descPage.data[0].averageRating !== 5) fail("rating_desc should lead with 5.0");
+  else console.log("sort=rating_desc -> OK, first rating 5.0");
+  const ascPage = await listContractors({ page: 1, pageSize: 5, sort: "rating_asc" });
+  if (ascPage.data[0].averageRating !== 0) fail("rating_asc should lead with unrated (0)");
+  else console.log("sort=rating_asc -> OK, unrated (0) first");
+  const ratingSeq = [...descPage.data, ...ascPage.data].every(
+    (d) => "averageRating" in d && "totalReviews" in d,
+  );
+  if (!ratingSeq) fail("missing rating stats");
+  else console.log("rating stats attached -> OK");
 
-  // Every returned doc must carry rating stats + be sanitised
-  const anyDoc = ratingPage.data[0];
-  const shapeOk = "averageRating" in anyDoc && "totalReviews" in anyDoc;
-  if (!shapeOk) { pass = false; console.log("  MISSING rating stats"); }
-  console.log("rating stats attached ->", shapeOk ? "OK" : "FAIL");
+  // ── 5. sort option validation ──────────────────────────────────────────────
+  if (!SORT_OPTIONS.includes("rating_desc")) fail("SORT_OPTIONS missing rating_desc");
+  const fallback = await listContractors({ sort: "nonsense" });
+  if (fallback.currentPage !== 1) fail("bad sort should fall back, not throw");
+  else console.log("invalid sort falls back -> OK");
 
-  // ── Galleries ──────────────────────────────────────────────────────────────
-  // legacyData[0] owns 3 projects (5, 1 and 0 snaps).
+  // ── 6. Galleries ───────────────────────────────────────────────────────────
   const galPage = await listContractors({ page: 1, pageSize: 25 });
-  const owner = galPage.data.find((d) => String(d._id) === String(legacyData[0]._id));
-  const empty  = galPage.data.find((d) => String(d._id) !== String(legacyData[0]._id));
-
+  const owner = galPage.data.find((d) => String(d._id) === String(galleryOwner._id));
+  const empty = galPage.data.find((d) => String(d._id) !== String(galleryOwner._id));
   const galOk =
-    Array.isArray(owner.gallery) &&
-    owner.gallery.length === 3 &&
-    owner.galleryCount === 3 &&
-    owner.gallery[0].projectName === "P1" &&
-    owner.gallery[0].snaps.length === 5 &&
-    owner.gallery[2].snaps.length === 0 &&
+    owner.gallery.length === 3 && owner.galleryCount === 3 &&
+    owner.gallery[0].snaps.length === 5 && owner.gallery[2].snaps.length === 0 &&
     !("ownerId" in owner.gallery[0]) &&
-    Array.isArray(empty.gallery) && empty.gallery.length === 0 && empty.galleryCount === 0;
-  if (!galOk) { pass = false; console.log("  BAD gallery", JSON.stringify(owner.gallery, null, 2)); }
-  console.log("gallery attached ->", galOk ? "OK" : "FAIL",
-    `(${owner.gallery.length} projects, ${owner.gallery[0].snaps.length} snaps)`);
+    empty.gallery.length === 0 && empty.galleryCount === 0;
+  if (!galOk) fail("gallery", JSON.stringify(owner.gallery));
+  else console.log("gallery attached -> OK (3 projects, 5 snaps)");
 
-  // Truncation: galleryLimit=2 / snapsLimit=2, but galleryCount stays truthful.
-  const truncPage = await listContractors({ page: 1, pageSize: 25, galleryLimit: 2, snapsLimit: 2 });
-  const t = truncPage.data.find((d) => String(d._id) === String(legacyData[0]._id));
-  const truncOk = t.gallery.length === 2 && t.gallery[0].snaps.length === 2 && t.galleryCount === 3;
-  if (!truncOk) { pass = false; console.log("  BAD truncation", JSON.stringify(t.gallery)); }
-  console.log("gallery truncation ->", truncOk ? "OK" : "FAIL",
-    `(gallery=${t.gallery.length}, snaps=${t.gallery[0].snaps.length}, count=${t.galleryCount})`);
+  const trunc = await listContractors({ page: 1, pageSize: 25, galleryLimit: 2, snapsLimit: 2 });
+  const t = trunc.data.find((d) => String(d._id) === String(galleryOwner._id));
+  if (!(t.gallery.length === 2 && t.gallery[0].snaps.length === 2 && t.galleryCount === 3)) {
+    fail("gallery truncation", JSON.stringify(t.gallery));
+  } else console.log("gallery truncation -> OK (gallery=2, snaps=2, galleryCount=3)");
 
-  // includeGallery=false must skip the portfolio query entirely.
   const before = portfolioQueries;
   const noGal = await listContractors({ page: 1, pageSize: 25, includeGallery: "false" });
-  const skipped = portfolioQueries === before;
-  const noGalOk = skipped &&
-    noGal.data.every((d) => Array.isArray(d.gallery) && d.gallery.length === 0 && d.galleryCount === 0);
-  if (!noGalOk) { pass = false; console.log("  BAD includeGallery=false"); }
-  console.log("includeGallery=false ->", noGalOk ? "OK" : "FAIL", "(portfolio query skipped)");
+  if (portfolioQueries !== before) fail("includeGallery=false still queried portfolio");
+  else if (!noGal.data.every((d) => d.gallery.length === 0 && d.galleryCount === 0)) {
+    fail("includeGallery=false should give empty galleries");
+  } else console.log("includeGallery=false -> OK (query skipped, empty gallery)");
 
-  // One batched $in query per page, never one per contractor.
   const before2 = portfolioQueries;
   await listContractors({ page: 1, pageSize: 100 });
-  const batched = portfolioQueries - before2 === 1;
-  if (!batched) { pass = false; console.log(`  NOT BATCHED: ${portfolioQueries - before2} portfolio queries`); }
-  console.log("batched gallery lookup ->", batched ? "OK" : "FAIL", "(1 query for the whole page)");
+  if (portfolioQueries - before2 !== 1) fail(`not batched: ${portfolioQueries - before2} queries`);
+  else console.log("batched gallery lookup -> OK (1 query for the whole page)");
 
-  console.log(pass ? "\nALL PAGINATION TESTS PASSED" : "\nFAILURES DETECTED");
+  console.log(pass ? "\nALL TESTS PASSED" : "\nFAILURES DETECTED");
   process.exit(pass ? 0 : 1);
 })();
