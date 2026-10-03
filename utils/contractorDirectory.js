@@ -513,7 +513,9 @@ async function attachGalleries(contractors, options = {}) {
 
   const rows = await portfolioModel
     .find({ ownerId: { $in: contractors.map((c) => c._id) } })
-    .select("ownerId clientName projectName description snaps createdAt updatedAt")
+    // `__v` is requested explicitly: clients reuse their existing portfolio
+    // model, whose `fromJson` reads `__v` as a non-nullable int.
+    .select("ownerId clientName projectName description snaps createdAt updatedAt __v")
     .sort({ _id: -1 })
     .lean();
 
@@ -529,6 +531,7 @@ async function attachGalleries(contractors, options = {}) {
       snaps: Array.isArray(row.snaps) ? row.snaps.slice(0, snapsLimit) : [],
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
+      __v: row.__v,
     });
   }
 
