@@ -13,47 +13,16 @@ const jwt = require("jsonwebtoken");
 const OtpController = require("./otpController");
 const employerModel = require("../models/employer.model");
 const supplierModel = require("../models/supplier.model");
+const { listContractors } = require("../utils/contractorDirectory");
 class FreelancerController {
+  // GET /get/contractors?page=&pageSize=&name=&profession=&minRating=&...
+  // Paginated contractor directory across both the legacy `freelancer`
+  // collection and the unified `user` collection. All filtering and
+  // pagination happens in the database — see utils/contractorDirectory.js.
   static async index(req, res) {
     try {
-      const page = parseInt(req.query.page) || 1;
-      const pageSize = parseInt(req.query.pageSize) || 10;
-      const skipDocuments = (page - 1) * pageSize;
-
-      // Legacy contractors (old registration flow)
-      const legacyContractors = await freelancerModel.find({
-        role: "65c35d821f9b6742f96bbd96",
-      }).sort({ _id: -1 }).populate("profession", "name").lean();
-
-      // Unified-user contractors (new registration flow)
-      const unifiedContractors = await userModel.find({
-        roles: { $in: ["contractor"] },
-      }).select("first_name last_name email contractorProfile createdAt").lean();
-
-      // Normalise unified users into freelancer-like shape so the app can read them
-      const normalised = unifiedContractors.map((u) => ({
-        _id: u._id,
-        first_name: u.first_name,
-        last_name: u.last_name,
-        email: u.email,
-        profession: u.contractorProfile?.profession ?? null,
-        role: "contractor",
-        createdAt: u.createdAt,
-        _source: "unified",
-      }));
-
-      const combined = [...legacyContractors, ...normalised];
-      const totalDocuments = combined.length;
-      const totalPages = Math.ceil(totalDocuments / pageSize);
-      const page_data = combined.slice(skipDocuments, skipDocuments + pageSize);
-
-      res.status(200).json({
-        totalDocuments,
-        totalPages,
-        currentPage: page,
-        pageSize,
-        data: page_data,
-      });
+      const result = await listContractors(req.query);
+      res.status(200).json(result);
     } catch (err) {
       res.status(500).json({ message: err.message });
     }
