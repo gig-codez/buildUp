@@ -85,6 +85,7 @@ async function migrateLegacyUser(userId) {
       : "consultant";
     const profile = {
       profession:        freelancer.profession,
+      working_category:  freelancer.working_category || "",
       NIN_NUM:           freelancer.NIN_NUM || "",
       bio:               freelancer.bio || "",
       yearsOfExperience: freelancer.yearsOfExperience || 0,
@@ -193,8 +194,9 @@ class UnifiedAuthController {
       const {
         first_name, last_name, email, password, tel_num,
         country, gender, address, initialRole,
-        // contractor
-        profession, NIN_NUM,
+        // contractor / consultant trade: either a legacy profession ObjectId,
+        // the new working_category label, or both (at least one is required).
+        profession, working_category, NIN_NUM,
         // supplier
         business_name, about_business, TIN, supplier_type,
       } = req.body;
@@ -222,18 +224,23 @@ class UnifiedAuthController {
       let supplierProfile   = null;
       let consultantProfile = null;
 
-      if (initialRole === "contractor") {
-        if (!profession) {
-          return res.status(400).json({ message: "profession is required for contractor registration." });
+      if (initialRole === "contractor" || initialRole === "consultant") {
+        // A trade is required, but it can now be expressed either way: the
+        // legacy `profession` ObjectId, the new `working_category` label (the
+        // same strings as job_category), or both. Requiring `profession`
+        // specifically is what forced clients to resolve a name to an ObjectId.
+        if (!profession && !working_category) {
+          return res.status(400).json({
+            message: "profession or working_category is required for contractor/consultant registration.",
+          });
         }
-        contractorProfile = { profession, NIN_NUM: NIN_NUM || "" };
-      }
-
-      if (initialRole === "consultant") {
-        if (!profession) {
-          return res.status(400).json({ message: "profession is required for consultant registration." });
-        }
-        consultantProfile = { profession, NIN_NUM: NIN_NUM || "" };
+        const trade = {
+          ...(profession ? { profession } : {}),
+          ...(working_category ? { working_category } : {}),
+          NIN_NUM: NIN_NUM || "",
+        };
+        if (initialRole === "contractor") contractorProfile = trade;
+        else consultantProfile = trade;
       }
 
       if (initialRole === "supplier") {
@@ -439,7 +446,7 @@ class UnifiedAuthController {
    */
   static async addRole(req, res) {
     try {
-      const { role, profession, NIN_NUM, business_name, about_business, TIN, supplier_type } = req.body;
+      const { role, profession, working_category, NIN_NUM, business_name, about_business, TIN, supplier_type } = req.body;
       const userId = req.userid;
 
       if (!role) return res.status(400).json({ message: "role is required." });
@@ -458,14 +465,18 @@ class UnifiedAuthController {
       }
 
       // Validate role-specific required fields
-      if (role === "contractor") {
-        if (!profession) return res.status(400).json({ message: "profession is required to add contractor role." });
-        user.contractorProfile = { profession, NIN_NUM: NIN_NUM || "" };
-      }
-
-      if (role === "consultant") {
-        if (!profession) return res.status(400).json({ message: "profession is required to add consultant role." });
-        user.consultantProfile = { profession, NIN_NUM: NIN_NUM || "" };
+      if (role === "contractor" || role === "consultant") {
+        // Same rule as register: one trade of either kind is enough.
+        if (!profession && !working_category) {
+          return res.status(400).json({ message: "profession or working_category is required to add a contractor/consultant role." });
+        }
+        const trade = {
+          ...(profession ? { profession } : {}),
+          ...(working_category ? { working_category } : {}),
+          NIN_NUM: NIN_NUM || "",
+        };
+        if (role === "contractor") user.contractorProfile = trade;
+        else user.consultantProfile = trade;
       }
 
       if (role === "supplier") {

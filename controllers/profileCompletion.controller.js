@@ -6,11 +6,12 @@ class ProfileCompletionController {
   static async complete(req, res) {
     try {
       const { userId } = req.params;
-      const { bio, yearsOfExperience, location, skills, certifications } = req.body;
+      const { bio, yearsOfExperience, location, skills, certifications, working_category } = req.body;
 
       const updateData = {
         profileCompleted: true,
       };
+      if (working_category !== undefined) updateData.working_category = working_category;
       if (bio !== undefined) updateData.bio = bio;
       if (yearsOfExperience !== undefined) updateData.yearsOfExperience = Number(yearsOfExperience);
       if (location !== undefined) updateData.location = location;

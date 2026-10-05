@@ -250,6 +250,16 @@ async function buildFilters(query = {}) {
     unifiedClauses.push({ "contractorProfile.profession": { $in: professionIds } });
   }
 
+  // Filter by trade category, matched case-insensitively because the label is
+  // free text typed by hand on the profile. Applies to both collections so one
+  // query parameter covers legacy and unified contractors alike.
+  const workingCategory = (query.working_category || query.category || "").trim();
+  if (workingCategory) {
+    const rx = { $regex: escapeRegex(workingCategory), $options: "i" };
+    legacyClauses.push({ working_category: rx });
+    unifiedClauses.push({ "contractorProfile.working_category": rx });
+  }
+
   const minRatingIds = await resolveRatingFilter(query.minRating);
   if (minRatingIds) {
     const idFilter = { _id: { $in: minRatingIds } };
@@ -363,6 +373,7 @@ function normaliseUnifiedUser(user) {
     address: user.address,
     location: user.location,
     profession: shapeProfession(profile.profession),
+    working_category: profile.working_category ?? "",
     bio: profile.bio ?? "",
     skills: profile.skills ?? [],
     certifications: profile.certifications ?? [],

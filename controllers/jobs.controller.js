@@ -285,9 +285,14 @@ exports.addJobs = async (req, res) => {
       application_deadline,
       job_duration,
       profession,
+      job_category,
     } = req.body;
 
-    if (!job_title || !job_description || !project_fees || !experience || !application_deadline || !job_duration || !profession) {
+    // `profession` is intentionally NOT required: trade selection was removed
+    // from the app's Post Job screen, so requiring it here rejected every real
+    // request. Classification now comes from `job_category`, which is
+    // defaulted by the schema and indexed.
+    if (!job_title || !job_description || !project_fees || !experience || !application_deadline || !job_duration) {
       return res.status(400).json({ success: false, message: "Missing required fields for job creation" });
     }
 
@@ -301,7 +306,8 @@ exports.addJobs = async (req, res) => {
       contact,
       application_deadline,
       job_duration,
-      profession,
+      ...(profession ? { profession } : {}),
+      job_category: job_category || "General Construction",
       contract_status: "open",
     });
 

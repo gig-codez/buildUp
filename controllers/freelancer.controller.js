@@ -67,6 +67,7 @@ class FreelancerController {
           tel_num: req.body.tel_num,
           role: req.body.role,
           profession: req.body.profession,
+          working_category: req.body.working_category || "",
           otp: short_code,
         });
         const newfreelancer = await freelancerPayload.save();

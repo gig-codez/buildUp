@@ -40,10 +40,25 @@ const freelancerSchema = new mongoose.Schema(
       type: String,
       required: false,
     },
+    // Optional: `working_category` (below) is the primary trade classifier.
+    // Profession is kept for backwards compatibility with older clients that
+    // still send it, and is no longer required so a contractor can register
+    // with only a category.
     profession: {
       type: mongoose.Types.ObjectId,
       ref: "contractorProfession",
-      required: true,
+      required: false,
+      default: null,
+    },
+    // Free-text trade label, deliberately NOT an enum: it must hold the same
+    // labels as jobPost.job_category ("General Construction", "Electrical", …)
+    // so a contractor can be matched to a job by plain string comparison.
+    // An enum here would reject any label the app adds and 500 the write.
+    working_category: {
+      type: String,
+      default: "",
+      required: false,
+      trim: true,
     },
     balance: {
       type: Number,

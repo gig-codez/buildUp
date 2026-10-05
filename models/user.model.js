@@ -19,6 +19,11 @@ const crypto = require("crypto");
 const contractorProfileSchema = new mongoose.Schema(
   {
     profession: { type: mongoose.Types.ObjectId, ref: "contractorProfession" },
+    // Optional trade label, holding the same strings as jobPost.job_category
+    // ("General Construction", "Electrical", …) so a contractor can be matched
+    // to a job by plain string comparison. Free text on purpose: an enum
+    // would reject any label the app adds and fail the write.
+    working_category: { type: String, default: "", trim: true },
     NIN_NUM: { type: String, default: "" },
     bio: { type: String, default: "" },
     yearsOfExperience: { type: Number, default: 0 },
@@ -56,6 +61,11 @@ const supplierProfileSchema = new mongoose.Schema(
 const consultantProfileSchema = new mongoose.Schema(
   {
     profession: { type: mongoose.Types.ObjectId, ref: "contractorProfession" },
+    // Optional trade label, holding the same strings as jobPost.job_category
+    // ("General Construction", "Electrical", …) so a contractor can be matched
+    // to a job by plain string comparison. Free text on purpose: an enum
+    // would reject any label the app adds and fail the write.
+    working_category: { type: String, default: "", trim: true },
     NIN_NUM: { type: String, default: "" },
     bio: { type: String, default: "" },
     yearsOfExperience: { type: Number, default: 0 },
