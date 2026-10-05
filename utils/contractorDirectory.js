@@ -324,6 +324,27 @@ async function buildFilters(query = {}) {
 }
 
 /**
+ * Normalise a populated profession into the `{ _id, name }` shape the Flutter
+ * app parses (models/JobPost.dart calls Profession.fromJson on it).
+ *
+ * The legacy `freelancer` collection gets this shape from
+ * `.populate("profession", "name")`. Unified users store theirs at
+ * `contractorProfile.profession`, so without an explicit populate that field
+ * comes back as a bare ObjectId string — clients then see a blank profession
+ * name, and contractor_jobs.dart crashes calling fromJson on a string.
+ */
+function shapeProfession(populated) {
+  if (!populated) return null;
+  // Already populated (object with a name).
+  if (typeof populated === "object" && populated.name !== undefined) {
+    return { _id: populated._id, name: populated.name };
+  }
+  // Not populated, or the referenced profession was deleted — fall back to the
+  // id only so the client can still render something rather than nothing.
+  return { _id: populated, name: "" };
+}
+
+/**
  * Reshape a unified `user` contractor into the freelancer-like document shape
  * the Flutter app already parses, so callers can treat both collections as one
  * list. Keeps `_source` so clients can tell where a record came from.
@@ -341,7 +362,7 @@ function normaliseUnifiedUser(user) {
     country: user.country,
     address: user.address,
     location: user.location,
-    profession: profile.profession ?? null,
+    profession: shapeProfession(profile.profession),
     bio: profile.bio ?? "",
     skills: profile.skills ?? [],
     certifications: profile.certifications ?? [],
@@ -402,6 +423,9 @@ async function paginatedWindow({ legacy, unified, sort, skip, pageSize }) {
       .select(UNIFIED_PUBLIC_FIELDS)
       .sort(dbSort)
       .limit(window)
+      // Without this the unified branch returns a raw ObjectId where the
+      // legacy branch returns { _id, name }.
+      .populate("contractorProfile.profession", "name")
       .lean(),
   ]);
 
@@ -444,7 +468,11 @@ async function ratingRankedPage({ legacy, unified, sort, skip, pageSize }) {
       .select(PUBLIC_FIELDS)
       .populate("profession", "name")
       .lean(),
-    userModel.find({ _id: { $in: ids } }).select(UNIFIED_PUBLIC_FIELDS).lean(),
+    userModel
+      .find({ _id: { $in: ids } })
+      .select(UNIFIED_PUBLIC_FIELDS)
+      .populate("contractorProfile.profession", "name")
+      .lean(),
   ]);
 
   const documents = new Map([

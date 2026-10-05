@@ -16,7 +16,7 @@ const notificationSchema = new Schema({
     },
     type: {
         type: String,
-        enum: ["job", "application", "payment", "escrow", "order", "system"],
+        enum: ["job", "application", "payment", "escrow", "order", "chat", "system"],
         default: "system",
     },
     read: {

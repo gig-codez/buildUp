@@ -170,9 +170,16 @@ exports.createJobWithEscrow = async (req, res) => {
       job_category: job_category || "General Construction",
       skills_required: parsedSkills,
       escrow_enabled,
-      escrow_type: escrow_enabled ? escrow_type : null,
       escrow_amount: escrowAmount,
       contract_status: "open",
+      // escrow_type must be OMITTED rather than set to null when escrow is
+      // off. `escrow_type` is an enum without a null member, and Mongoose
+      // validates an explicit null against it, so writing null fails
+      // validation and the whole request dies with a 500 — which is what
+      // every client that omits escrow_enabled was hitting. Omitting the key
+      // lets the schema default ("partial_60_40") apply, matching
+      // escrow_enabled: false.
+      ...(escrow_enabled ? { escrow_type } : {}),
     });
 
     await jobPost.save();
