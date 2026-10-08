@@ -38,6 +38,10 @@ const supplierStockSchema = new mongoose.Schema(
       default: "",
       required: false,
     },
+    product_images: {
+      type: [String],
+      default: [],
+    },
     category: {
       type: String,
       default: "Other",

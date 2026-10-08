@@ -56,16 +56,39 @@ class SupplierController {
 
       const stocks = await supplierStockModel
         .find(filter)
+        .populate("supplier_id", "business_name business_address")
         .sort({ createdAt: -1 })
         .skip(skipDocuments)
         .limit(pageSize);
+
+      // Map to include supplierName for consistency with mobile model
+      const results = stocks.map((s) => ({
+        _id: s._id,
+        supplier_id: s.supplier_id?._id || s.supplier_id,
+        product_name: s.product_name,
+        product_quantity: s.product_quantity,
+        product_price: s.product_price,
+        status: s.status,
+        product_image: s.product_image,
+        product_images: s.product_images || [],
+        category: s.category || "Other",
+        description: s.description || "",
+        unit: s.unit || "piece",
+        variants: s.variants || [],
+        createdAt: s.createdAt,
+        updatedAt: s.updatedAt,
+        __v: s.__v,
+        supplier: s.supplier_id && typeof s.supplier_id === "object" ? s.supplier_id : undefined,
+        supplier_name: s.supplier_id?.business_name || "",
+        business_name: s.supplier_id?.business_name || "",
+      }));
 
       res.status(200).json({
         totalDocuments,
         totalPages,
         currentPage: page,
         pageSize,
-        data: stocks,
+        data: results,
       });
     } catch (error) {
       res.status(500).json({ message: error.message });
@@ -340,12 +363,22 @@ class SupplierController {
   // create stock
   static async create_stock(req, res) {
     try {
-      if (req.file) {
+      let imagePaths = [];
+      if (req.files && req.files.length > 0) {
+        imagePaths = await fileStoreMiddleware(
+          req,
+          `${req.body.supplier}_stock`
+        );
+      } else if (req.file) {
         const imagePath = await fileStoreMiddleware(
           req,
           `${req.body.supplier}_stock`
         );
-        req.body.product_image = imagePath;
+        imagePaths = Array.isArray(imagePath) ? imagePath : [imagePath];
+      }
+      if (imagePaths.length > 0) {
+        req.body.product_image = imagePaths[0];
+        req.body.product_images = imagePaths;
       }
       // Parse variants if sent as JSON string
       let variants = [];
@@ -362,15 +395,37 @@ class SupplierController {
         product_quantity: req.body.product_quantity,
         product_price: req.body.product_price,
         status: req.body.status,
-        product_image: req.body.product_image,
+        product_image: req.body.product_image || "",
+        product_images: req.body.product_images || [],
         category: req.body.category || "Other",
         description: req.body.description || "",
         unit: req.body.unit || "piece",
         variants,
       });
       await stock.save();
+      await stock.populate("supplier_id", "business_name business_address");
+      const result = {
+        _id: stock._id,
+        supplier_id: stock.supplier_id?._id || stock.supplier_id,
+        product_name: stock.product_name,
+        product_quantity: stock.product_quantity,
+        product_price: stock.product_price,
+        status: stock.status,
+        product_image: stock.product_image,
+        product_images: stock.product_images || [],
+        category: stock.category || "Other",
+        description: stock.description || "",
+        unit: stock.unit || "piece",
+        variants: stock.variants || [],
+        createdAt: stock.createdAt,
+        updatedAt: stock.updatedAt,
+        __v: stock.__v,
+        supplier: stock.supplier_id && typeof stock.supplier_id === "object" ? stock.supplier_id : undefined,
+        supplier_name: stock.supplier_id?.business_name || "",
+        business_name: stock.supplier_id?.business_name || "",
+      };
       if (stock) {
-        res.status(200).json({ message: `${req.body.product_name} created successfully`, data: stock });
+        res.status(200).json({ message: `${req.body.product_name} created successfully`, data: result });
       } else {
         res.status(400).json({ message: `${req.body.product_name} stock not created` });
       }
@@ -395,16 +450,37 @@ class SupplierController {
       const skipDocuments = (page - 1) * pageSize;
       const stock = await supplierStockModel
         .find({ supplier_id: req.params.id })
+        .populate("supplier_id", "business_name business_address")
         .sort({ _id: -1 })
         .skip(skipDocuments)
         .limit(pageSize);
+      const results = stock.map((s) => ({
+        _id: s._id,
+        supplier_id: s.supplier_id?._id || s.supplier_id,
+        product_name: s.product_name,
+        product_quantity: s.product_quantity,
+        product_price: s.product_price,
+        status: s.status,
+        product_image: s.product_image,
+        product_images: s.product_images || [],
+        category: s.category || "Other",
+        description: s.description || "",
+        unit: s.unit || "piece",
+        variants: s.variants || [],
+        createdAt: s.createdAt,
+        updatedAt: s.updatedAt,
+        __v: s.__v,
+        supplier: s.supplier_id && typeof s.supplier_id === "object" ? s.supplier_id : undefined,
+        supplier_name: s.supplier_id?.business_name || "",
+        business_name: s.supplier_id?.business_name || "",
+      }));
       if (stock) {
         res.status(200).json({
           totalDocuments,
           totalPages,
           currentPage: page,
           pageSize,
-          data: stock,
+          data: results,
         });
       } else {
         res.status(400).json({ message: "Error fetching stock.." });
@@ -431,15 +507,26 @@ class SupplierController {
 
   static async update_stock(req, res) {
     try {
-      if (req.file) {
+      let imagePaths = [];
+      if (req.files && req.files.length > 0) {
+        imagePaths = await fileStoreMiddleware(
+          req,
+          `${req.body.supplier}_stock`
+        );
+      } else if (req.file) {
         const imagePath = await fileStoreMiddleware(
           req,
           `${req.body.supplier}_stock`
         );
-        req.body.product_image = imagePath;
+        imagePaths = Array.isArray(imagePath) ? imagePath : [imagePath];
+      }
+      if (imagePaths.length > 0) {
+        req.body.product_image = imagePaths[0];
+        req.body.product_images = imagePaths;
       } else {
         const oldStock = await supplierStockModel.findOne({ _id: req.params.id });
-        req.body.product_image = oldStock.product_image;
+        if (!req.body.product_image) req.body.product_image = oldStock.product_image;
+        if (!req.body.product_images) req.body.product_images = oldStock.product_images || [];
       }
       // Parse variants if sent as JSON string
       if (req.body.variants && typeof req.body.variants === "string") {
@@ -450,9 +537,29 @@ class SupplierController {
         req.params.id,
         req.body,
         { new: true }
-      );
+      ).populate("supplier_id", "business_name business_address");
+      const result = stock ? {
+        _id: stock._id,
+        supplier_id: stock.supplier_id?._id || stock.supplier_id,
+        product_name: stock.product_name,
+        product_quantity: stock.product_quantity,
+        product_price: stock.product_price,
+        status: stock.status,
+        product_image: stock.product_image,
+        product_images: stock.product_images || [],
+        category: stock.category || "Other",
+        description: stock.description || "",
+        unit: stock.unit || "piece",
+        variants: stock.variants || [],
+        createdAt: stock.createdAt,
+        updatedAt: stock.updatedAt,
+        __v: stock.__v,
+        supplier: stock.supplier_id && typeof stock.supplier_id === "object" ? stock.supplier_id : undefined,
+        supplier_name: stock.supplier_id?.business_name || "",
+        business_name: stock.supplier_id?.business_name || "",
+      } : null;
       if (stock) {
-        res.status(200).json({ message: "stock updated successfully", data: stock });
+        res.status(200).json({ message: "stock updated successfully", data: result });
       } else {
         res.status(400).json({ message: "stock not updated" });
       }
@@ -499,6 +606,7 @@ class SupplierController {
         productPrice: s.product_price,
         productQuantity: s.product_quantity,
         productImage: s.product_image,
+        productImages: s.product_images || [],
         status: s.status,
         category: s.category || "Other",
         description: s.description || "",
