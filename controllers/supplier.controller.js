@@ -1,4 +1,5 @@
 const supplierModel = require("../models/supplier.model");
+const userModel = require("../models/user.model");
 const bcrypt = require("bcrypt");
 const SupplierLogin = require("../Auth/supplierlogin");
 const dealModel = require("../models/deal.model");
@@ -244,7 +245,27 @@ class SupplierController {
   static async show(req, res) {
     try {
       const supplierId = req.params.id;
-      const singleSupplier = await supplierModel.findById(supplierId).populate("supplier_type", "name");
+      let singleSupplier = await supplierModel.findById(supplierId).populate("supplier_type", "name");
+      if (!singleSupplier) {
+        const unified = await userModel.findById(supplierId).populate("supplierProfile.supplier_type", "name");
+        if (unified && unified.activeRole === "supplier" && unified.supplierProfile) {
+          singleSupplier = {
+            _id: unified._id,
+            business_name: unified.supplierProfile.business_name || `${unified.first_name} ${unified.last_name}`.trim(),
+            business_email_address: unified.email,
+            business_tel: unified.tel_num,
+            TIN: unified.supplierProfile.TIN,
+            supplier_type: unified.supplierProfile.supplier_type,
+            profile_pic: unified.profile_pic,
+            balance: unified.balance || 0,
+            active: unified.active,
+            role: unified.activeRole,
+            createdAt: unified.createdAt,
+            updatedAt: unified.updatedAt,
+            __v: unified.__v,
+          };
+        }
+      }
 
       if (!singleSupplier) {
         return res.status(404).json({ message: "Supplier not found" });
