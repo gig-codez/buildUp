@@ -30,5 +30,27 @@ const messageModel = new mongoose.Schema({
     type: Date,
     required: true,
   },
+  // Admin-mediated communication flow
+  status: {
+    type: String,
+    enum: ["pending", "forwarded", "rejected"],
+    default: "pending",
+  },
+  admin_note: {
+    type: String,
+    default: "",
+  },
+  forwarded_at: {
+    type: Date,
+  },
+  // Media support
+  media_url: {
+    type: String,
+    default: "",
+  },
+  media_thumbnail: {
+    type: String,
+    default: "",
+  },
 });
 module.exports = mongoose.model("messages", messageModel);

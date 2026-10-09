@@ -13,10 +13,6 @@ class SupplierLogin {
         let error = new Error("Account is inactive, please contact admin");
         error.code = 401;
         throw error;
-      } if (supplier.emailVerified === false) {
-        let error = new Error("Please verify your email to proceed with business. Check your email for further instructions");
-        error.code = 400;
-        throw error;
       }
 
       let isMatch = bcrypt.compareSync(req.body.password, supplier.password);

@@ -1,0 +1,20 @@
+services:
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: buildup-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./buildup-backend.conf:/etc/nginx/conf.d/buildup-backend.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - /var/www/certbot:/var/www/certbot:ro
+    networks:
+      - buildup-net
+
+networks:
+  buildup-net:
+    # Same external network the app's docker-compose.deploy.yml joins, so
+    # nginx can reach both the prod and staging containers by name.
+    external: true

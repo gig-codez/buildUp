@@ -5,6 +5,10 @@ const AdminLogin = require("../Auth/adminLogin");
 const RoleController = require("../controllers/role.controller");
 const ContractorProfessionController = require("../controllers/contractorProfession.controller");
 const SupplierTypeController = require("../controllers/supplierType.controller");
+const ContactRequestController = require("../controllers/contactRequest.controller");
+const MessageController = require("../controllers/message.controller");
+const TaskChatController = require("../controllers/taskChat.controller");
+
 router.get("/", AdminController.index);
 router.post("/admin/login", AdminLogin.login);
 router.post("/create/admin", AdminController.store);
@@ -18,8 +22,23 @@ router.post("/profession", ContractorProfessionController.store);
 router.post("/supplier-type", SupplierTypeController.store);
 // get user data
 router.get("/userData", AdminController.userData);
-// deactivate user
+// deactivate / reactivate user
 router.patch("/deactivate/:id", AdminController.deactivateUser);
-// reactivate user
 router.patch("/reactivate/:id", AdminController.reactivateUser);
+
+// ── Contact Requests (client → admin → contractor routing) ───────────────
+router.post("/contact-request", ContactRequestController.create);
+router.get("/contact-requests", ContactRequestController.getAll);
+router.patch("/contact-requests/:id/status", ContactRequestController.updateStatus);
+
+// ── Admin message inbox (all comms route through admin) ───────────────────
+router.get("/messages", MessageController.getAdminMessages);
+router.patch("/messages/:id/forward", MessageController.forwardMessage);
+router.patch("/messages/:id/reject", MessageController.rejectMessage);
+
+// ── Admin escrow chat moderation (same forward/reject flow as messages) ───
+router.get("/escrow-messages", TaskChatController.getAdminMessages);
+router.patch("/escrow-messages/:id/forward", TaskChatController.forwardMessage);
+router.patch("/escrow-messages/:id/reject", TaskChatController.rejectMessage);
+
 module.exports = router;

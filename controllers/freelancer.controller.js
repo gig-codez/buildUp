@@ -1,4 +1,5 @@
 const freelancerModel = require("../models/freelancer.model");
+const userModel = require("../models/user.model");
 // const otpModel = require("../models/otp.model");
 const bcrypt = require("bcrypt");
 const FreelancerLogin = require("../Auth/freelancerLogin");
@@ -12,27 +13,16 @@ const jwt = require("jsonwebtoken");
 const OtpController = require("./otpController");
 const employerModel = require("../models/employer.model");
 const supplierModel = require("../models/supplier.model");
+const { listContractors } = require("../utils/contractorDirectory");
 class FreelancerController {
+  // GET /get/contractors?page=&pageSize=&name=&profession=&minRating=&...
+  // Paginated contractor directory across both the legacy `freelancer`
+  // collection and the unified `user` collection. All filtering and
+  // pagination happens in the database — see utils/contractorDirectory.js.
   static async index(req, res) {
     try {
-      // ADDING PAGINATION FUNCTIONALITY
-      const page = parseInt(req.query.page) || 1; // Default to page 1 if page query param is not provided
-      const pageSize = parseInt(req.query.pageSize) || 10; // Default page size to 10 if pageSize query param is not provided
-      const totalDocuments = await freelancerModel
-        .find({ role: "65c35d821f9b6742f96bbd96", })
-        .countDocuments();
-      const totalPages = Math.ceil(totalDocuments / pageSize);
-      // Calculate the number of documents to skip
-      const skipDocuments = (page - 1) * pageSize;
-      const freelancerPayload = await freelancerModel.find({
-        role: "65c35d821f9b6742f96bbd96",
-      }).sort({ _id: -1 }).populate("profession", "name");
-      res.status(200).json({
-        totalDocuments,
-        totalPages,
-        currentPage: page,
-        pageSize, data: freelancerPayload
-      });
+      const result = await listContractors(req.query);
+      res.status(200).json(result);
     } catch (err) {
       res.status(500).json({ message: err.message });
     }
@@ -77,6 +67,7 @@ class FreelancerController {
           tel_num: req.body.tel_num,
           role: req.body.role,
           profession: req.body.profession,
+          working_category: req.body.working_category || "",
           otp: short_code,
         });
         const newfreelancer = await freelancerPayload.save();
@@ -223,10 +214,43 @@ class FreelancerController {
     try {
       const freelancer = await freelancerModel.findById(req.params.id);
       if (freelancer) {
-        res.status(200).json(freelancer);
-      } else {
-        res.status(400).json({ message: "Contractor not found" });
+        return res.status(200).json(freelancer);
       }
+
+      // Fall back to the unified user model — contractors/consultants who
+      // registered via /auth/register (or were migrated on role-switch)
+      // live there instead of the legacy freelancer collection.
+      const user = await userModel
+        .findById(req.params.id)
+        .populate("contractorProfile.profession consultantProfile.profession", "name")
+        .lean();
+
+      const isContractorOrConsultant =
+        user && (user.roles?.includes("contractor") || user.roles?.includes("consultant"));
+
+      if (isContractorOrConsultant) {
+        const profile = user.contractorProfile || user.consultantProfile || {};
+        return res.status(200).json({
+          _id: user._id,
+          profile_pic: user.profile_pic,
+          email: user.email,
+          password: user.password,
+          category: "",
+          first_name: user.first_name,
+          last_name: user.last_name,
+          tel_num: parseInt(user.tel_num, 10) || 0,
+          profession: profile.profession || null,
+          balance: 0,
+          address: user.address,
+          gender: user.gender,
+          role: user.activeRole,
+          createdAt: user.createdAt,
+          updatedAt: user.updatedAt,
+          __v: user.__v,
+        });
+      }
+
+      return res.status(400).json({ message: "Contractor not found" });
     } catch (err) {
       res.status(500).json({ message: err.message });
     }
@@ -290,6 +314,33 @@ class FreelancerController {
       });
     } catch (error) {
       res.status(500).json({ message: error.message });
+    }
+  }
+
+  static async update_profile_picture(req, res) {
+    let imageUrl = "";
+    try {
+      const { id } = req.params;
+      let profilePic = null;
+      const freelancer = await freelancerModel.findById(id);
+      if (freelancer) {
+        if (req.file) imageUrl = await fileStorageMiddleware(req, "photos");
+        freelancer.profile_pic = imageUrl || freelancer.profile_pic;
+        await freelancer.save();
+        profilePic = freelancer.profile_pic;
+      } else {
+        const user = await userModel.findById(id);
+        if (!user) {
+          return res.status(404).json({ message: "Freelancer not found" });
+        }
+        if (req.file) imageUrl = await fileStorageMiddleware(req, "photos");
+        user.profile_pic = imageUrl || user.profile_pic;
+        await user.save();
+        profilePic = user.profile_pic;
+      }
+      return res.status(200).json({ message: "Profile picture updated successfully", data: { profile_pic: profilePic } });
+    } catch (error) {
+      return res.status(500).json({ message: error.message });
     }
   }
 }
