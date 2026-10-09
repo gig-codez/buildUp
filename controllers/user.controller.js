@@ -16,7 +16,9 @@ class UserController {
         .select("first_name last_name");
       const unifiedMapped = unifiedSuppliers.map((u) => ({
         _id: u._id,
-        business_name: u.supplierProfile?.business_name || `${u.first_name} ${u.last_name}`.trim(),
+        business_name:
+          u.supplierProfile?.business_name ||
+          `${u.first_name} ${u.last_name}`.trim(),
         business_email_address: u.email,
         business_tel: u.tel_num,
         profile_pic: u.profile_pic,
@@ -31,11 +33,19 @@ class UserController {
     }
   }
 
-  static async getUserDetailsByIds(ids) {
-    if (!ids || ids.length === 0) return { contractor: [], client: [], supplier: [] };
-    const contractorIds = ids.filter((id) => id.startsWith("F")).map((id) => id.replace("F", ""));
-    const clientIds = ids.filter((id) => id.startsWith("E")).map((id) => id.replace("E", ""));
-    const supplierIds = ids.filter((id) => id.startsWith("S")).map((id) => id.replace("S", ""));
+  static async searchUsersByRolesRequest(req, res) {
+    try {
+      const users = await UserController.searchUsersByRoles(req.body);
+      res.status(200).json({ data: users });
+    } catch (err) {
+      res.status(err.code ?? 500).json({ message: err.message });
+    }
+  }
+
+  static async searchUsersByRoles(data) {
+    const contractorIds = data.contractor ?? [];
+    const clientIds = data.client ?? [];
+    const supplierIds = data.supplier ?? [];
 
     let contractors = [];
     let clients = [];
@@ -48,11 +58,16 @@ class UserController {
     if (supplierIds.length > 0) {
       const legacy = await supplierModel.find({ _id: { $in: supplierIds } });
       const unified = await userModel
-        .find({ _id: { $in: supplierIds }, $or: [{ roles: "supplier" }, { activeRole: "supplier" }, { supplierProfile: { $ne: null } }] })
+        .find({
+          _id: { $in: supplierIds },
+          $or: [{ roles: "supplier" }, { activeRole: "supplier" }, { supplierProfile: { $ne: null } }],
+        })
         .lean();
       const unifiedMapped = unified.map((u) => ({
         _id: u._id,
-        business_name: u.supplierProfile?.business_name || `${u.first_name} ${u.last_name}`.trim(),
+        business_name:
+          u.supplierProfile?.business_name ||
+          `${u.first_name} ${u.last_name}`.trim(),
         business_email_address: u.email,
         business_tel: u.tel_num,
         profile_pic: u.profile_pic,
@@ -64,6 +79,20 @@ class UserController {
     return { contractor: contractors, client: clients, supplier: suppliers };
   }
 
+  static async searchUserByEmailRequest(req, res) {
+    try {
+      const users = await UserController.searchUserByEmail(req.body);
+      res.status(200).json({ data: users });
+    } catch (err) {
+      res.status(err.code ?? 500).json({ message: err.message });
+    }
+  }
+
+  /**
+   *
+   * @param data {role: "contractor", email:"email@.com"}
+   * @returns {QueryWithHelpers<...>}
+   */
   static searchUserByEmail(data) {
     if (!(data.hasOwnProperty("role") && data.hasOwnProperty("email"))) {
       let error = new Error("Bad request. role and email are required!");
