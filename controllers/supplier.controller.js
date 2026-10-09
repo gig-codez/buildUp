@@ -10,6 +10,79 @@ require("dotenv").config();
 const speakeasy = require("speakeasy");
 const OtpController = require("./otpController.js");
 class SupplierController {
+  // Resolves supplier details for stock rows, supporting both legacy
+  // `supplier` documents and unified `user` documents (activeRole/supplierProfile).
+  // Returns a map keyed by supplier _id string.
+  static async _resolveSuppliers(stockDocs) {
+    const ids = [
+      ...new Set(
+        stockDocs
+          .map((s) => s.supplier_id)
+          .filter(Boolean)
+          .map((id) => (id._id ? id._id.toString() : id.toString()))
+      ),
+    ];
+    if (ids.length === 0) return {};
+
+    const [legacy, unified] = await Promise.all([
+      supplierModel.find({ _id: { $in: ids } }).lean(),
+      userModel.find({ _id: { $in: ids } }).lean(),
+    ]);
+
+    const map = {};
+    legacy.forEach((s) => {
+      map[s._id.toString()] = {
+        _id: s._id,
+        business_name: s.business_name || "",
+        business_address: s.business_address || "",
+        business_email_address: s.business_email_address || "",
+        business_tel: s.business_tel || "",
+        profile_pic: s.profile_pic || "",
+        supplier_type: s.supplier_type,
+      };
+    });
+    unified.forEach((u) => {
+      map[u._id.toString()] = {
+        _id: u._id,
+        business_name:
+          u.supplierProfile?.business_name ||
+          `${u.first_name || ""} ${u.last_name || ""}`.trim(),
+        business_address: u.supplierProfile?.business_address || u.location || "",
+        business_email_address: u.email || "",
+        business_tel: u.tel_num || "",
+        profile_pic: u.profile_pic || "",
+        supplier_type: u.supplierProfile?.supplier_type,
+      };
+    });
+    return map;
+  }
+
+  static _mapStock(s, supplierMap) {
+    const rawId = s.supplier_id && s.supplier_id._id ? s.supplier_id._id : s.supplier_id;
+    const key = rawId ? rawId.toString() : null;
+    const supplier = key ? supplierMap[key] : null;
+    return {
+      _id: s._id,
+      supplier_id: supplier?._id || rawId,
+      product_name: s.product_name,
+      product_quantity: s.product_quantity,
+      product_price: s.product_price,
+      status: s.status,
+      product_image: s.product_image,
+      product_images: s.product_images || [],
+      category: s.category || "Other",
+      description: s.description || "",
+      unit: s.unit || "piece",
+      variants: s.variants || [],
+      createdAt: s.createdAt,
+      updatedAt: s.updatedAt,
+      __v: s.__v,
+      supplier: supplier || undefined,
+      supplier_name: supplier?.business_name || "",
+      business_name: supplier?.business_name || "",
+    };
+  }
+
   static async getAll(req, res) {
     try {
       // ADDING PAGINATION FUNCTIONALITY
@@ -57,32 +130,12 @@ class SupplierController {
 
       const stocks = await supplierStockModel
         .find(filter)
-        .populate("supplier_id", "business_name business_address")
         .sort({ createdAt: -1 })
         .skip(skipDocuments)
         .limit(pageSize);
 
-      // Map to include supplierName for consistency with mobile model
-      const results = stocks.map((s) => ({
-        _id: s._id,
-        supplier_id: s.supplier_id?._id || s.supplier_id,
-        product_name: s.product_name,
-        product_quantity: s.product_quantity,
-        product_price: s.product_price,
-        status: s.status,
-        product_image: s.product_image,
-        product_images: s.product_images || [],
-        category: s.category || "Other",
-        description: s.description || "",
-        unit: s.unit || "piece",
-        variants: s.variants || [],
-        createdAt: s.createdAt,
-        updatedAt: s.updatedAt,
-        __v: s.__v,
-        supplier: s.supplier_id && typeof s.supplier_id === "object" ? s.supplier_id : undefined,
-        supplier_name: s.supplier_id?.business_name || "",
-        business_name: s.supplier_id?.business_name || "",
-      }));
+      const supplierMap = await SupplierController._resolveSuppliers(stocks);
+      const results = stocks.map((s) => SupplierController._mapStock(s, supplierMap));
 
       res.status(200).json({
         totalDocuments,
@@ -248,14 +301,20 @@ class SupplierController {
       let singleSupplier = await supplierModel.findById(supplierId).populate("supplier_type", "name");
       if (!singleSupplier) {
         const unified = await userModel.findById(supplierId).populate("supplierProfile.supplier_type", "name");
-        if (unified && unified.activeRole === "supplier" && unified.supplierProfile) {
+        const hasSupplierRole =
+          unified &&
+          (unified.activeRole === "supplier" ||
+            (Array.isArray(unified.roles) && unified.roles.includes("supplier")) ||
+            unified.supplierProfile);
+        if (hasSupplierRole) {
           singleSupplier = {
             _id: unified._id,
-            business_name: unified.supplierProfile.business_name || `${unified.first_name} ${unified.last_name}`.trim(),
+            business_name: unified.supplierProfile?.business_name || `${unified.first_name || ""} ${unified.last_name || ""}`.trim(),
             business_email_address: unified.email,
             business_tel: unified.tel_num,
-            TIN: unified.supplierProfile.TIN,
-            supplier_type: unified.supplierProfile.supplier_type,
+            business_address: unified.supplierProfile?.business_address || unified.location,
+            TIN: unified.supplierProfile?.TIN,
+            supplier_type: unified.supplierProfile?.supplier_type,
             profile_pic: unified.profile_pic,
             balance: unified.balance || 0,
             active: unified.active,
@@ -424,27 +483,8 @@ class SupplierController {
         variants,
       });
       await stock.save();
-      await stock.populate("supplier_id", "business_name business_address");
-      const result = {
-        _id: stock._id,
-        supplier_id: stock.supplier_id?._id || stock.supplier_id,
-        product_name: stock.product_name,
-        product_quantity: stock.product_quantity,
-        product_price: stock.product_price,
-        status: stock.status,
-        product_image: stock.product_image,
-        product_images: stock.product_images || [],
-        category: stock.category || "Other",
-        description: stock.description || "",
-        unit: stock.unit || "piece",
-        variants: stock.variants || [],
-        createdAt: stock.createdAt,
-        updatedAt: stock.updatedAt,
-        __v: stock.__v,
-        supplier: stock.supplier_id && typeof stock.supplier_id === "object" ? stock.supplier_id : undefined,
-        supplier_name: stock.supplier_id?.business_name || "",
-        business_name: stock.supplier_id?.business_name || "",
-      };
+      const supplierMap = await SupplierController._resolveSuppliers([stock]);
+      const result = SupplierController._mapStock(stock, supplierMap);
       if (stock) {
         res.status(200).json({ message: `${req.body.product_name} created successfully`, data: result });
       } else {
@@ -471,30 +511,11 @@ class SupplierController {
       const skipDocuments = (page - 1) * pageSize;
       const stock = await supplierStockModel
         .find({ supplier_id: req.params.id })
-        .populate("supplier_id", "business_name business_address")
         .sort({ _id: -1 })
         .skip(skipDocuments)
         .limit(pageSize);
-      const results = stock.map((s) => ({
-        _id: s._id,
-        supplier_id: s.supplier_id?._id || s.supplier_id,
-        product_name: s.product_name,
-        product_quantity: s.product_quantity,
-        product_price: s.product_price,
-        status: s.status,
-        product_image: s.product_image,
-        product_images: s.product_images || [],
-        category: s.category || "Other",
-        description: s.description || "",
-        unit: s.unit || "piece",
-        variants: s.variants || [],
-        createdAt: s.createdAt,
-        updatedAt: s.updatedAt,
-        __v: s.__v,
-        supplier: s.supplier_id && typeof s.supplier_id === "object" ? s.supplier_id : undefined,
-        supplier_name: s.supplier_id?.business_name || "",
-        business_name: s.supplier_id?.business_name || "",
-      }));
+      const supplierMap = await SupplierController._resolveSuppliers(stock);
+      const results = stock.map((s) => SupplierController._mapStock(s, supplierMap));
       if (stock) {
         res.status(200).json({
           totalDocuments,
@@ -558,27 +579,12 @@ class SupplierController {
         req.params.id,
         req.body,
         { new: true }
-      ).populate("supplier_id", "business_name business_address");
-      const result = stock ? {
-        _id: stock._id,
-        supplier_id: stock.supplier_id?._id || stock.supplier_id,
-        product_name: stock.product_name,
-        product_quantity: stock.product_quantity,
-        product_price: stock.product_price,
-        status: stock.status,
-        product_image: stock.product_image,
-        product_images: stock.product_images || [],
-        category: stock.category || "Other",
-        description: stock.description || "",
-        unit: stock.unit || "piece",
-        variants: stock.variants || [],
-        createdAt: stock.createdAt,
-        updatedAt: stock.updatedAt,
-        __v: stock.__v,
-        supplier: stock.supplier_id && typeof stock.supplier_id === "object" ? stock.supplier_id : undefined,
-        supplier_name: stock.supplier_id?.business_name || "",
-        business_name: stock.supplier_id?.business_name || "",
-      } : null;
+      );
+      let result = null;
+      if (stock) {
+        const supplierMap = await SupplierController._resolveSuppliers([stock]);
+        result = SupplierController._mapStock(stock, supplierMap);
+      }
       if (stock) {
         res.status(200).json({ message: "stock updated successfully", data: result });
       } else {
@@ -604,39 +610,60 @@ class SupplierController {
         };
       }
 
-      // If location filter, first find matching supplier IDs
+      // If location filter, first find matching supplier IDs (legacy + unified)
       if (location) {
-        const matchingSuppliers = await supplierModel.find({
-          $or: [
-            { business_address: { $regex: location, $options: "i" } },
-            { business_name: { $regex: location, $options: "i" } },
+        const [matchingSuppliers, matchingUnified] = await Promise.all([
+          supplierModel
+            .find({
+              $or: [
+                { business_address: { $regex: location, $options: "i" } },
+                { business_name: { $regex: location, $options: "i" } },
+              ],
+            })
+            .select("_id"),
+          userModel
+            .find({
+              $or: [
+                { "supplierProfile.business_address": { $regex: location, $options: "i" } },
+                { "supplierProfile.business_name": { $regex: location, $options: "i" } },
+                { location: { $regex: location, $options: "i" } },
+              ],
+            })
+            .select("_id"),
+        ]);
+        stockFilter.supplier_id = {
+          $in: [
+            ...matchingSuppliers.map((s) => s._id),
+            ...matchingUnified.map((u) => u._id),
           ],
-        }).select("_id");
-        stockFilter.supplier_id = { $in: matchingSuppliers.map((s) => s._id) };
+        };
       }
 
       const stock = await supplierStockModel
         .find(stockFilter)
-        .populate("supplier_id", "business_name business_address")
         .sort({ createdAt: -1 })
         .limit(100);
 
-      const results = stock.map((s) => ({
-        _id: s._id,
-        productName: s.product_name,
-        productPrice: s.product_price,
-        productQuantity: s.product_quantity,
-        productImage: s.product_image,
-        productImages: s.product_images || [],
-        status: s.status,
-        category: s.category || "Other",
-        description: s.description || "",
-        unit: s.unit || "piece",
-        variants: s.variants || [],
-        supplierId: s.supplier_id?._id,
-        supplierName: s.supplier_id?.business_name || "",
-        supplierAddress: s.supplier_id?.business_address || "",
-      }));
+      const supplierMap = await SupplierController._resolveSuppliers(stock);
+      const results = stock.map((s) => {
+        const mapped = SupplierController._mapStock(s, supplierMap);
+        return {
+          _id: mapped._id,
+          productName: mapped.product_name,
+          productPrice: mapped.product_price,
+          productQuantity: mapped.product_quantity,
+          productImage: mapped.product_image,
+          productImages: mapped.product_images,
+          status: mapped.status,
+          category: mapped.category,
+          description: mapped.description,
+          unit: mapped.unit,
+          variants: mapped.variants,
+          supplierId: mapped.supplier_id,
+          supplierName: mapped.supplier_name,
+          supplierAddress: supplierMap[mapped.supplier_id?.toString()]?.business_address || "",
+        };
+      });
 
       return res.status(200).json({ data: results });
     } catch (error) {
@@ -703,5 +730,34 @@ class SupplierController {
       return res.status(500).json({ message: error.message });
     }
   }
+
+  static async update_profile_picture(req, res) {
+    let imageUrl = "";
+    try {
+      const { id } = req.params;
+      let profilePic = null;
+      const supplier = await supplierModel.findById(id);
+      if (supplier) {
+        if (req.file) imageUrl = await fileStoreMiddleware(req, "photos");
+        supplier.profile_pic = imageUrl || supplier.profile_pic;
+        await supplier.save();
+        profilePic = supplier.profile_pic;
+      } else {
+        const user = await userModel.findById(id);
+        if (!user) {
+          return res.status(404).json({ message: "Supplier not found" });
+        }
+        if (req.file) imageUrl = await fileStoreMiddleware(req, "photos");
+        user.profile_pic = imageUrl || user.profile_pic;
+        await user.save();
+        profilePic = user.profile_pic;
+      }
+      return res.status(200).json({ message: "Profile picture updated successfully", data: { profile_pic: profilePic } });
+    } catch (error) {
+      return res.status(500).json({ message: error.message });
+    }
+  }
+
+
 }
 module.exports = SupplierController;

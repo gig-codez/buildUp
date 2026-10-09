@@ -9,6 +9,8 @@ const OtpController = require("./otpController.js");
 const freelancerModel = require("../models/freelancer.model.js");
 const { response } = require("express");
 const supplierModel = require("../models/supplier.model.js");
+const fileStorageMiddleware = require("../helpers/file_helper");
+const userModel = require("../models/user.model");
 
 class EmployerController {
   static async getAll(req, res) {
@@ -227,5 +229,33 @@ class EmployerController {
       res.status(500).json({ message: error.message });
     }
   }
+
+  static async update_profile_picture(req, res) {
+    let imageUrl = "";
+    try {
+      const { id } = req.params;
+      let profilePic = null;
+      const employer = await employerModel.findById(id);
+      if (employer) {
+        if (req.file) imageUrl = await fileStorageMiddleware(req, "photos");
+        employer.profile_pic = imageUrl || employer.profile_pic;
+        await employer.save();
+        profilePic = employer.profile_pic;
+      } else {
+        const user = await userModel.findById(id);
+        if (!user) {
+          return res.status(404).json({ message: "Employer not found" });
+        }
+        if (req.file) imageUrl = await fileStorageMiddleware(req, "photos");
+        user.profile_pic = imageUrl || user.profile_pic;
+        await user.save();
+        profilePic = user.profile_pic;
+      }
+      return res.status(200).json({ message: "Profile picture updated successfully", data: { profile_pic: profilePic } });
+    } catch (error) {
+      return res.status(500).json({ message: error.message });
+    }
+  }
 }
+
 module.exports = EmployerController;

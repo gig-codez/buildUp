@@ -316,5 +316,32 @@ class FreelancerController {
       res.status(500).json({ message: error.message });
     }
   }
+
+  static async update_profile_picture(req, res) {
+    let imageUrl = "";
+    try {
+      const { id } = req.params;
+      let profilePic = null;
+      const freelancer = await freelancerModel.findById(id);
+      if (freelancer) {
+        if (req.file) imageUrl = await fileStorageMiddleware(req, "photos");
+        freelancer.profile_pic = imageUrl || freelancer.profile_pic;
+        await freelancer.save();
+        profilePic = freelancer.profile_pic;
+      } else {
+        const user = await userModel.findById(id);
+        if (!user) {
+          return res.status(404).json({ message: "Freelancer not found" });
+        }
+        if (req.file) imageUrl = await fileStorageMiddleware(req, "photos");
+        user.profile_pic = imageUrl || user.profile_pic;
+        await user.save();
+        profilePic = user.profile_pic;
+      }
+      return res.status(200).json({ message: "Profile picture updated successfully", data: { profile_pic: profilePic } });
+    } catch (error) {
+      return res.status(500).json({ message: error.message });
+    }
+  }
 }
 module.exports = FreelancerController;
