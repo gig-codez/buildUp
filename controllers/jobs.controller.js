@@ -7,6 +7,8 @@ const Employer = require("../models/employer.model");
 const UserModel = require("../models/user.model");
 const mailSender = require("../utils/mailSender");
 const { v4: uuidv4 } = require("uuid");
+const Notification = require("../models/notifications.model");
+const pushService = require("../services/pushNotification.service");
 
 // ============================================
 // RESOLVE APPLICANT INFO ACROSS LEGACY + UNIFIED MODELS
@@ -262,6 +264,7 @@ exports.updateJob = async (req, res) => {
     }
 
     await jobPost.save();
+
     return res.status(200).json({ success: true, message: "Job updated successfully", data: jobPost });
   } catch (error) {
     console.error("Error updating job:", error);
@@ -377,6 +380,20 @@ exports.store_applied_jobs = async (req, res) => {
       resolveClientInfo(populated.clientId),
     ]);
 
+
+    // Notify client (job owner) about new application
+    try {
+      const contractorInfoNotif = await resolveContractorInfo(contractor_id);
+      const clientId = jobPost.employer;
+      const notTitle = 'New application';
+      const notMsg = contractorInfoNotif
+        ? `${contractorInfoNotif.first_name || 'A contractor'} applied for "${jobPost.job_title}"`
+        : `A new application for "${jobPost.job_title}"`;
+      const notif = await Notification.create({ user: clientId, title: notTitle, message: notMsg, type: 'application' });
+      try { global.io?.emit?.('notification:new', notif.toObject()); } catch (_) {}
+      try { await pushService.sendToUser(clientId, { title: notTitle, body: notMsg, data: { type: 'application' } }); } catch (e) { console.error('[jobs] push failed:', e.message); }
+    } catch (e) { console.error('[jobs] notification failed:', e.message); }
+
     return res.status(200).json({
       success: true,
       message: "Application submitted successfully. Awaiting client review.",
@@ -469,6 +486,18 @@ exports.acceptApplication = async (req, res) => {
       console.error("Failed to send acceptance email:", mailErr);
     }
 
+
+    // Notify contractor about application acceptance
+    try {
+      const contractorInfoNotif = await resolveContractorInfo(contractorId);
+      const notTitle = 'Application accepted';
+      const notMsg = `Your application for "${jobPost.job_title}" was accepted`;
+      const notif = await Notification.create({ user: contractorId, title: notTitle, message: notMsg, type: 'job' });
+      try { global.io?.emit?.('notification:new', notif.toObject()); } catch (_) {}
+      try { await pushService.sendToUser(contractorId, { title: notTitle, body: notMsg, data: { type: 'job' } }); } catch (e) { console.error('[jobs] push failed:', e.message); }
+    } catch (e) { console.error('[jobs] notification failed:', e.message); }
+
+
     return res.status(200).json({
       success: true,
       message: "Application accepted. Contractor has been hired.",
@@ -528,7 +557,18 @@ exports.declineApplication = async (req, res) => {
       console.error("Failed to send decline email:", mailErr);
     }
 
-    return res.status(200).json({ success: true, message: "Application declined." });
+
+        // Notify contractor about decline
+    try {
+      const cid = application.contractorId;
+      const notTitle = 'Application declined';
+      const notMsg = `Your application for "${application.jobId.job_title}" was declined`;
+      const notif = await Notification.create({ user: cid, title: notTitle, message: notMsg, type: 'application' });
+      try { global.io?.emit?.('notification:new', notif.toObject()); } catch (_) {}
+      try { await pushService.sendToUser(cid, { title: notTitle, body: notMsg, data: { type: 'application' } }); } catch (e) { console.error('[jobs] push failed:', e.message); }
+    } catch (e) { console.error('[jobs] notification failed:', e.message); }
+
+    return res.status(200).json({ success: true, message: "Application declined successfully" });
   } catch (error) {
     console.error("Error declining application:", error);
     res.status(500).json({ success: false, message: "Error declining application", error: error.message });
@@ -566,6 +606,7 @@ exports.contractor_applied_jobs = async (req, res) => {
     );
 
     const total = await AppliedJobs.countDocuments({ contractorId: contractor_id });
+
 
     return res.status(200).json({
       success: true,
@@ -609,6 +650,7 @@ exports.client_jobs = async (req, res) => {
     );
 
     const total = await AppliedJobs.countDocuments(query);
+
 
     return res.status(200).json({
       success: true,
@@ -663,6 +705,7 @@ exports.getContractorJobs = async (req, res) => {
 
     const total = await JobPost.countDocuments(query);
 
+
     return res.status(200).json({
       success: true,
       jobs,
@@ -698,6 +741,7 @@ exports.getContractorAssignedJobs = async (req, res) => {
 
     const total = await JobPost.countDocuments(query);
 
+
     return res.status(200).json({
       success: true,
       jobs,
@@ -722,6 +766,7 @@ exports.getContractorStats = async (req, res) => {
       JobPost.countDocuments({ selected_contractor_id: contractorId, contract_status: "in_progress" }),
       AppliedJobs.countDocuments({ contractorId }),
     ]);
+
     return res.status(200).json({
       success: true,
       completedJobs,
@@ -757,6 +802,7 @@ exports.getEmployerJobs = async (req, res) => {
       .limit(parseInt(limit));
 
     const total = await JobPost.countDocuments(query);
+
 
     return res.status(200).json({
       success: true,
@@ -794,6 +840,7 @@ exports.get_all_jobs = async (req, res) => {
 
     const total = await JobPost.countDocuments(query);
 
+
     return res.status(200).json({
       success: true,
       jobs,
@@ -829,6 +876,7 @@ exports.getJobsByProfession = async (req, res) => {
 
     const total = await JobPost.countDocuments(query);
 
+
     return res.status(200).json({
       success: true,
       jobs,
@@ -859,6 +907,7 @@ exports.getJobsByEmployer = async (req, res) => {
       .limit(parseInt(limit));
 
     const total = await JobPost.countDocuments(query);
+
 
     return res.status(200).json({
       success: true,
@@ -894,6 +943,7 @@ exports.getJobWithEscrow = async (req, res) => {
     if (!jobPost) {
       return res.status(404).json({ success: false, message: "Job post not found" });
     }
+
 
     return res.status(200).json({ success: true, jobPost });
   } catch (error) {
@@ -958,6 +1008,7 @@ exports.completeJob = async (req, res) => {
     } catch (mailErr) {
       console.error("Failed to send completion email:", mailErr);
     }
+
 
     return res.status(200).json({
       success: true,
@@ -1069,6 +1120,7 @@ exports.confirmJobCompletion = async (req, res) => {
     jobPost.employer_confirmed = true;
     await jobPost.save();
 
+
     return res.status(200).json({
       success: true,
       message: fundsReleased
@@ -1095,6 +1147,7 @@ exports.delete_applied_jobs = async (req, res) => {
     if (!application) {
       return res.status(404).json({ success: false, message: "Application not found" });
     }
+
     return res.status(200).json({ success: true, message: "Application deleted successfully" });
   } catch (error) {
     console.error("Error deleting applied job:", error);
@@ -1112,6 +1165,7 @@ exports.delete_prof_jobs = async (req, res) => {
     if (!jobPost) {
       return res.status(404).json({ success: false, message: "Job not found" });
     }
+
     return res.status(200).json({ success: true, message: "Job deleted successfully", jobPost });
   } catch (error) {
     console.error("Error deleting prof job:", error);
@@ -1170,6 +1224,19 @@ exports.applyForJobWithEscrow = async (req, res) => {
       resolveContractorInfo(populated.contractorId),
       resolveClientInfo(populated.clientId),
     ]);
+
+
+
+    // Notify client about new application
+    try {
+      const clientId = jobPost.employer;
+      const c = await resolveContractorInfo(contractorId);
+      const notTitle = 'New application';
+      const notMsg = c ? `${c.first_name || 'A contractor'} applied for "${jobPost.job_title}"` : `A new application for "${jobPost.job_title}"`;
+      const notif = await Notification.create({ user: clientId, title: notTitle, message: notMsg, type: 'application' });
+      try { global.io?.emit?.('notification:new', notif.toObject()); } catch (_) {}
+      try { await pushService.sendToUser(clientId, { title: notTitle, body: notMsg, data: { type: 'application' } }); } catch (e) { console.error('[jobs] push failed:', e.message); }
+    } catch (e) { console.error('[jobs] notification failed:', e.message); }
 
     return res.status(200).json({
       success: true,
