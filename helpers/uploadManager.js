@@ -1,9 +1,8 @@
 const multer = require("multer");
+// Firebase is initialised once in helpers/firebaseAdmin.js — requiring it here
+// guarantees we reuse that app rather than racing to call initializeApp() twice.
+require("./firebaseAdmin");
 
-// Uploads are buffered in memory, then persisted to local disk by
-// helpers/file_helper.js once the controller decides where they belong.
-// This keeps folder organization (e.g. per-supplier) in controller logic
-// instead of multer config.
 const uploaderManager = () => {
   return multer({
     storage: multer.memoryStorage(),

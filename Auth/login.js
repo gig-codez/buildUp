@@ -4,12 +4,40 @@ var employerModel = require("../models/employer.model");
 var EmployerLogin = require("./employerlogin");
 var supplierModel = require("../models/supplier.model");
 var SupplierLogin = require("./supplierlogin");
+var userModel = require("../models/user.model");
+var bcrypt = require("bcrypt");
+var jwt = require("jsonwebtoken");
+require("dotenv").config();
 
 module.exports = class LoginController {
     // function to check which user to login
     static async loginUser(req, res) {
         try {
-            const { email } = req.body;
+            const { email, password } = req.body;
+
+            // check unified accounts first (created via /auth/register)
+            const unifiedUser = await userModel.findOne({ email: email.toLowerCase() });
+            if (unifiedUser) {
+                if (!unifiedUser.active) {
+                    return res.status(401).json({ message: "Account is not activated. Please contact support." });
+                }
+                const isMatch = bcrypt.compareSync(password, unifiedUser.password);
+                if (!isMatch) {
+                    return res.status(401).json({ message: "Invalid email or password." });
+                }
+                const token = jwt.sign({ id: unifiedUser._id }, process.env.SECRET_KEY, { expiresIn: "24h" });
+                return res.status(200).json({
+                    token,
+                    userId:     unifiedUser._id,
+                    first_name: unifiedUser.first_name,
+                    last_name:  unifiedUser.last_name,
+                    email:      unifiedUser.email,
+                    role:       unifiedUser.activeRole,
+                    roles:      unifiedUser.roles,
+                    activeRole: unifiedUser.activeRole,
+                    userData:   unifiedUser,
+                });
+            }
 
             // check if user is a freelancer
             const freelancer = await freelancerModel.findOne({

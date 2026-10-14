@@ -8,6 +8,8 @@ const ContractorProfessionController = require("../controllers/contractorProfess
 const Password = require("../Auth/userpassword");
 const docUploader = require("../helpers/uploadManager");
 const MeetingController = require("../controllers/meetings.controller");
+const UserController = require("../controllers/user.controller");
+const uploader = require("../helpers/uploadManager");
 const router = express.Router();
 
 router.patch("/admin/profession", ContractorProfessionController.update);
@@ -33,4 +35,11 @@ router.patch("/meetings/:id", MeetingController.update);
 // password routes
 router.patch("/employer/password/:id", EmployerController.updatePassword);
 router.patch("/supplier/password/:id", SupplierController.updatePassword);
+
+// profile picture updates
+router.patch("/profile-picture/user/:id", uploader().single("image"), UserController.update_profile_picture);
+router.patch("/profile-picture/employer/:id", uploader().single("image"), EmployerController.update_profile_picture);
+router.patch("/profile-picture/supplier/:id", uploader().single("image"), SupplierController.update_profile_picture);
+router.patch("/profile-picture/contractor/:id", uploader().single("image"), FreelancerController.update_profile_picture);
+
 module.exports = router;

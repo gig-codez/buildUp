@@ -1,8 +1,25 @@
 const SupplierModel = require("../models/supplier.model");
 const freelancerModel = require("../models/freelancer.model");
 const supplierDealModel = require("../models/supplierDeal.model");
+const { listContractors } = require("../utils/contractorDirectory");
 
 class SearchController {
+  // GET /search/contractors?page=&pageSize=&name=&profession=&minRating=&...
+  //
+  // Filtered + paginated contractor directory. Searches both the legacy
+  // `freelancer` collection and the unified `user` collection and returns one
+  // merged, consistently ordered page. Filtering and pagination are done in
+  // the database — see utils/contractorDirectory.js for the full list of
+  // supported query params.
+  static async contractors(req, res) {
+    try {
+      const result = await listContractors(req.query);
+      res.status(200).json(result);
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  }
+
   static async query(req, res) {
     try {
       const { profession, category, minPrice, supplier_type, maxPrice, role } =

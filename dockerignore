@@ -1,0 +1,19 @@
+node_modules
+npm-debug.log
+yarn-error.log
+
+# secrets — never bake these into an image layer
+.env
+.env.*
+helpers/*firebase-adminsdk*.json
+
+.git
+.github
+.vscode
+.DS_Store
+
+# user-generated content — served from a volume, not the image
+uploads/*
+!uploads/.gitkeep
+
+README.md

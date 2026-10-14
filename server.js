@@ -29,25 +29,25 @@ const sendSms = require("./services/SmsService");
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 app.use(express.static(path.join(__dirname, 'public')));
-
-// Ensure the uploads directory exists and serve it publicly. Uploads are
-// written here by helpers/file_helper.js and fetched by clients via the
-// absolute URL returned from the upload endpoints.
-const uploadsDir = path.join(__dirname, 'uploads');
-fs.mkdirSync(uploadsDir, { recursive: true });
-app.use('/uploads', express.static(uploadsDir));
-
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
 // Lightweight health endpoint used by the deploy pipeline and uptime checks.
 // Does not touch the database on purpose so it can't cascade DB outages into
-// a failing health check.
+// a failing health check. Socket presence is in-memory, so reporting it here
+// is safe for the same reason.
+//
+// `push.credentialFault` latches true once FCM rejects our service account
+// key. It is reported, not enforced, so a credential outage degrades push
+// rather than failing every deploy and rolling back good code.
 app.get('/health', (req, res) => {
   res.status(200).json({
     status: 'ok',
     uptime: process.uptime(),
     timestamp: new Date().toISOString(),
+    socket: require('./services/socket.service').getPresence(),
+    push: { credentialFault: require('./services/pushNotification.service').hasCredentialFault() },
   });
 });
 
@@ -81,8 +81,23 @@ app.use("/search", require("./routes/search.routes"));
 app.use("/stock", require("./routes/stock.routes"));
 app.use("/withdraws", require("./routes/withdraw.routes"));
 app.use("/contractor", require("./routes/contractor.routes"));
+app.use("/jobs", require("./routes/jobs.routes"));
+// Escrow, Wallet & Task Chat
+app.use("/escrow", require("./routes/escrow.routes"));
+app.use("/wallet", require("./routes/wallet.routes"));
+app.use("/task-chat", require("./routes/taskChat.routes"));
 app.use("/role", require("./routes/roles.routes"));
 app.use("/auth", require("./helpers/verify_email"));
+app.use("/admin-revenue", require("./routes/adminRevenue.routes"));
+app.use("/orders",        require("./routes/order.routes"));
+app.use("/cart",          require("./routes/cart.routes"));
+app.use("/reviews",       require("./routes/review.routes"));
+app.use("/notifications", require("./routes/notifications.routes"));
+app.use("/profile",       require("./routes/profile.routes"));
+app.use("/auth", require("./routes/auth.routes"));
+// Direct 1:1 chat: REST endpoints + Socket.IO real-time + FCM push
+app.use("/chat", require("./routes/chat.routes"));
+console.log("[BuildUp] Server booted — direct chat (REST + Socket.IO + FCM) deployed");
 // db connection
 const dbOptions = {
   useNewUrlParser: true,
@@ -128,6 +143,15 @@ cron.schedule('0 0 * * *', async () => {
 const httpServer = app.listen(process.env.PORT, () => {
   console.log(`Server running on port => ${process.env.APP_HOST}:${process.env.PORT}`);
   console.table("\nWaiting for database connection");
+});
+
+// Real-time chat. Attach to the same http server the routes already run on
+// rather than spinning up a second listener — one port for REST + Socket.IO.
+const socketService = require("./services/socket.service");
+socketService.init(httpServer, {
+  // Lock this to the app's real origins before going to production; "*" is
+  // fine for the Flutter clients, which send no Origin header at all.
+  corsOrigin: process.env.SOCKET_CORS_ORIGIN || "*",
 });
 
 //webserver connections
