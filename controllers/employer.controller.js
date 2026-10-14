@@ -60,15 +60,21 @@ class EmployerController {
   }
   static async getEmployerById(req, res) {
     try {
-      const employer = await employerModel
+      let employer = await employerModel
         .findOne({ _id: req.params.id })
         .populate("business");
 
       if (employer) {
         return res.status(200).json({ data: employer });
-      } else {
-        return res.status(400).json({ message: "No employer found" });
       }
+
+      // fallback to unified user model
+      const user = await userModel.findById(req.params.id).lean();
+      if (user) {
+        return res.status(200).json({ data: user });
+      }
+
+      return res.status(400).json({ message: "No employer found" });
     } catch (error) {
       console.error(error);
       return res.status(500).json({ message: error.message });
